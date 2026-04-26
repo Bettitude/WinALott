@@ -1,7 +1,24 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiTrash2, FiShoppingCart, FiTag, FiArrowRight } from 'react-icons/fi';
+import { FiTrash2, FiShoppingCart, FiTag, FiArrowRight, FiStar, FiAward, FiZap } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
+
+const TIER_BADGE = {
+  silver:   { Icon: FiStar,  cls: 'bg-gray-100 text-gray-600 border border-gray-300',       label: 'Silver' },
+  gold:     { Icon: FiAward, cls: 'bg-yellow-50 text-yellow-700 border border-yellow-300',  label: 'Gold' },
+  platinum: { Icon: FiZap,   cls: 'bg-purple-50 text-purple-700 border border-purple-300',  label: 'Platinum' },
+};
+
+function TierBadge({ tier }) {
+  const meta = TIER_BADGE[tier];
+  if (!meta) return null;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black ${meta.cls}`}>
+      <meta.Icon className="w-2.5 h-2.5" />
+      {meta.label}
+    </span>
+  );
+}
 
 export default function Cart() {
   const { items, removeFromCart, clearCart, cartTotal } = useCart();
@@ -40,7 +57,10 @@ export default function Cart() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-black text-[#1A1A2E]">Your Cart</h1>
+        <div>
+          <h1 className="text-2xl font-black text-[#1A1A2E]">Your Cart</h1>
+          <p className="text-sm text-gray-400 mt-0.5">{items.length} ticket{items.length !== 1 ? 's' : ''}</p>
+        </div>
         <button onClick={clearCart} className="text-sm text-red-400 hover:text-red-600 transition-colors font-medium">
           Clear All
         </button>
@@ -50,25 +70,47 @@ export default function Cart() {
         {/* Items */}
         <div className="lg:col-span-2 space-y-3">
           {items.map(item => (
-            <div key={item.cartId} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                <FiShoppingCart className="w-5 h-5 text-[#1A4D8F]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-[#1A1A2E] text-sm">{item.match}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{item.market}</p>
-                <div className="mt-1.5 inline-flex items-center bg-blue-50 px-2 py-0.5 rounded-full">
-                  <span className="text-xs text-[#1A4D8F] font-medium">Pick: {item.pick}</span>
+            <div key={item.cartId} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+              <div className="flex items-start gap-3">
+                {/* Tier color strip */}
+                <div className={`w-1 self-stretch rounded-full shrink-0 ${
+                  item.tier === 'platinum' ? 'bg-purple-500'
+                  : item.tier === 'gold' ? 'bg-[#F5C518]'
+                  : 'bg-gray-300'
+                }`} />
+
+                <div className="flex-1 min-w-0">
+                  {/* Match + Tier badge */}
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <p className="font-bold text-[#1A1A2E] text-sm">{item.match}</p>
+                    <TierBadge tier={item.tier} />
+                  </div>
+
+                  {/* Market */}
+                  <p className="text-xs text-gray-400">{item.market}</p>
+
+                  {/* Pick */}
+                  <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center bg-blue-50 px-2 py-0.5 rounded-full">
+                      <span className="text-xs text-[#1A4D8F] font-medium">Pick: {item.pick}</span>
+                    </span>
+                  </div>
+
+                  {/* Match ID reference */}
+                  <p className="text-[10px] text-gray-300 mt-1.5 font-mono">Match ID: {item.matchId}</p>
                 </div>
-              </div>
-              <div className="flex flex-col items-end gap-2 shrink-0">
-                <span className="font-black text-[#1A4D8F]">
-                  {item.price === 0 ? 'FREE' : `$${item.price.toFixed(2)}`}
-                </span>
-                <button onClick={() => removeFromCart(item.cartId)}
-                  className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors">
-                  <FiTrash2 className="w-4 h-4" />
-                </button>
+
+                <div className="flex flex-col items-end gap-2 shrink-0">
+                  <span className="font-black text-[#1A4D8F]">
+                    {item.price === 0 ? 'FREE' : `$${item.price.toFixed(2)}`}
+                  </span>
+                  <button
+                    onClick={() => removeFromCart(item.cartId)}
+                    className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"
+                  >
+                    <FiTrash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -79,7 +121,27 @@ export default function Cart() {
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sticky top-20">
             <h3 className="font-bold text-[#1A1A2E] mb-4">Order Summary</h3>
 
-            <div className="space-y-2 text-sm mb-4">
+            {/* Tier breakdown */}
+            <div className="space-y-1.5 mb-4">
+              {['silver','gold','platinum'].map(t => {
+                const tierItems = items.filter(i => i.tier === t);
+                if (tierItems.length === 0) return null;
+                const meta = TIER_BADGE[t];
+                return (
+                  <div key={t} className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5 text-gray-500">
+                      <meta.Icon className="w-3 h-3" />
+                      {meta.label} × {tierItems.length}
+                    </span>
+                    <span className="font-medium text-gray-700">
+                      ${tierItems.reduce((s, i) => s + (i.price || 0), 0).toFixed(2)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="space-y-2 text-sm mb-4 border-t border-gray-100 pt-3">
               <div className="flex justify-between">
                 <span className="text-gray-500">Subtotal ({items.length} tickets)</span>
                 <span className="font-medium">${cartTotal.toFixed(2)}</span>
@@ -108,8 +170,11 @@ export default function Cart() {
                     className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F]"
                   />
                 </div>
-                <button onClick={applyPromo} disabled={promoApplied}
-                  className="px-3 py-2.5 bg-[#1A4D8F] text-white rounded-xl text-sm font-semibold hover:bg-[#0D2B5E] transition-colors disabled:opacity-40">
+                <button
+                  onClick={applyPromo}
+                  disabled={promoApplied}
+                  className="px-3 py-2.5 bg-[#1A4D8F] text-white rounded-xl text-sm font-semibold hover:bg-[#0D2B5E] transition-colors disabled:opacity-40"
+                >
                   Apply
                 </button>
               </div>
@@ -118,8 +183,10 @@ export default function Cart() {
               <p className="text-gray-300 text-xs mt-1">Try: WINALOT10</p>
             </div>
 
-            <Link to="/checkout"
-              className="flex items-center justify-center gap-2 w-full bg-[#1A4D8F] text-white font-bold py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors text-sm">
+            <Link
+              to="/checkout"
+              className="flex items-center justify-center gap-2 w-full bg-[#1A4D8F] text-white font-bold py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors text-sm"
+            >
               Proceed to Checkout <FiArrowRight className="w-4 h-4" />
             </Link>
           </div>

@@ -1,27 +1,41 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiCheck, FiCreditCard, FiShoppingBag, FiArrowLeft } from 'react-icons/fi';
+import { FiCheck, FiCreditCard, FiShoppingBag, FiArrowLeft, FiStar, FiAward, FiZap, FiCopy } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
 
 const steps = ['Review', 'Payment', 'Confirmation'];
 
+const TIER_BADGE = {
+  silver:   { Icon: FiStar,  cls: 'bg-gray-100 text-gray-600 border border-gray-300',      label: 'Silver' },
+  gold:     { Icon: FiAward, cls: 'bg-yellow-50 text-yellow-700 border border-yellow-300', label: 'Gold' },
+  platinum: { Icon: FiZap,   cls: 'bg-purple-50 text-purple-700 border border-purple-300', label: 'Platinum' },
+};
+
+function generateTicketNumber() {
+  const now   = new Date();
+  const date  = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  const seq   = String(Math.floor(Math.random() * 99999) + 1).padStart(5,'0');
+  return `WAL-${date}-${seq}`;
+}
+
 export default function Checkout() {
   const { items, cartTotal, clearCart } = useCart();
-  const [step, setStep] = useState(1);
+  const [step, setStep]         = useState(1);
   const [payMethod, setPayMethod] = useState('card');
-  const [card, setCard] = useState({ name: '', number: '', expiry: '', cvv: '' });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [orderId] = useState(`WL-${Date.now().toString().slice(-8)}`);
+  const [card, setCard]         = useState({ name: '', number: '', expiry: '', cvv: '' });
+  const [errors, setErrors]     = useState({});
+  const [loading, setLoading]   = useState(false);
+  const [confirmedTickets, setConfirmedTickets] = useState([]);
+  const [copiedId, setCopiedId] = useState(null);
 
   const setC = (k, v) => setCard(c => ({ ...c, [k]: v }));
 
   const validateCard = () => {
     const e = {};
-    if (!card.name) e.name = 'Name required';
+    if (!card.name)                                          e.name   = 'Name required';
     if (!card.number || card.number.replace(/\s/g,'').length < 16) e.number = 'Valid 16-digit card number required';
     if (!card.expiry || !/\d{2}\/\d{2}/.test(card.expiry)) e.expiry = 'Format: MM/YY';
-    if (!card.cvv || card.cvv.length < 3) e.cvv = 'CVV required';
+    if (!card.cvv    || card.cvv.length < 3)                e.cvv    = 'CVV required';
     return e;
   };
 
@@ -32,20 +46,31 @@ export default function Checkout() {
     setLoading(true);
     await new Promise(r => setTimeout(r, 1500));
     setLoading(false);
+
+    // Generate ticket numbers for each cart item, linked to match ID
+    const tickets = items.map(item => ({
+      ticketNumber: generateTicketNumber(),
+      matchId:      item.matchId,
+      match:        item.match,
+      market:       item.market,
+      pick:         item.pick,
+      tier:         item.tier,
+      price:        item.price,
+      prediction:   item.prediction,
+    }));
+    setConfirmedTickets(tickets);
     clearCart();
     setStep(3);
   };
 
-  const formatCard = (val) => {
-    const raw = val.replace(/\D/g,'').slice(0,16);
-    return raw.replace(/(.{4})/g,'$1 ').trim();
+  const copyTicket = (num) => {
+    navigator.clipboard.writeText(num).catch(() => {});
+    setCopiedId(num);
+    setTimeout(() => setCopiedId(null), 1500);
   };
 
-  const formatExpiry = (val) => {
-    const raw = val.replace(/\D/g,'').slice(0,4);
-    if (raw.length > 2) return raw.slice(0,2) + '/' + raw.slice(2);
-    return raw;
-  };
+  const formatCard   = (v) => v.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim();
+  const formatExpiry = (v) => { const r = v.replace(/\D/g,'').slice(0,4); return r.length > 2 ? r.slice(0,2)+'/'+r.slice(2) : r; };
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -53,9 +78,9 @@ export default function Checkout() {
       <div className="flex items-center justify-center mb-10">
         {steps.map((s, i) => (
           <div key={s} className="flex items-center">
-            <div className={`flex flex-col items-center`}>
+            <div className="flex flex-col items-center">
               <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
-                step > i + 1 ? 'bg-[#22C55E] text-white' :
+                step > i + 1  ? 'bg-green-500 text-white' :
                 step === i + 1 ? 'bg-[#1A4D8F] text-white shadow-lg' :
                 'bg-gray-100 text-gray-400'
               }`}>
@@ -64,7 +89,7 @@ export default function Checkout() {
               <span className={`text-xs mt-1 font-medium ${step === i + 1 ? 'text-[#1A4D8F]' : 'text-gray-400'}`}>{s}</span>
             </div>
             {i < steps.length - 1 && (
-              <div className={`h-0.5 w-16 mx-2 mb-5 transition-all ${step > i + 1 ? 'bg-[#22C55E]' : 'bg-gray-200'}`} />
+              <div className={`h-0.5 w-16 mx-2 mb-5 transition-all ${step > i + 1 ? 'bg-green-500' : 'bg-gray-200'}`} />
             )}
           </div>
         ))}
@@ -82,22 +107,44 @@ export default function Checkout() {
           ) : (
             <>
               <div className="space-y-3 mb-6">
-                {items.map(item => (
-                  <div key={item.cartId} className="flex items-center justify-between py-3 border-b border-gray-50">
-                    <div>
-                      <p className="text-sm font-semibold text-[#1A1A2E]">{item.match}</p>
-                      <p className="text-xs text-gray-400">{item.market} — {item.pick}</p>
+                {items.map(item => {
+                  const tierMeta = TIER_BADGE[item.tier];
+                  return (
+                    <div key={item.cartId} className="flex items-center gap-3 py-3 border-b border-gray-50">
+                      {/* Tier strip */}
+                      <div className={`w-1 h-12 rounded-full shrink-0 ${
+                        item.tier === 'platinum' ? 'bg-purple-500'
+                        : item.tier === 'gold' ? 'bg-[#F5C518]'
+                        : 'bg-gray-300'
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-semibold text-[#1A1A2E] truncate">{item.match}</p>
+                          {tierMeta && (
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-black ${tierMeta.cls}`}>
+                              <tierMeta.Icon className="w-2.5 h-2.5" />
+                              {tierMeta.label}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-400">{item.market} — {item.pick}</p>
+                        <p className="text-[10px] text-gray-300 font-mono mt-0.5">Match ID: {item.matchId}</p>
+                      </div>
+                      <span className="font-bold text-[#1A4D8F] text-sm shrink-0">
+                        {item.price === 0 ? 'FREE' : `$${item.price.toFixed(2)}`}
+                      </span>
                     </div>
-                    <span className="font-bold text-[#1A4D8F] text-sm">{item.price === 0 ? 'FREE' : `$${item.price.toFixed(2)}`}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <div className="flex justify-between font-black text-lg mb-6">
                 <span className="text-[#1A1A2E]">Total</span>
                 <span className="text-[#1A4D8F]">${cartTotal.toFixed(2)}</span>
               </div>
-              <button onClick={() => setStep(2)}
-                className="w-full bg-[#1A4D8F] text-white font-bold py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors text-sm">
+              <button
+                onClick={() => setStep(2)}
+                className="w-full bg-[#1A4D8F] text-white font-bold py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors text-sm"
+              >
                 Continue to Payment
               </button>
             </>
@@ -113,13 +160,15 @@ export default function Checkout() {
           </button>
           <h2 className="text-xl font-black text-[#1A1A2E] mb-5">Payment</h2>
 
-          {/* Method select */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             {[{id:'card',label:'Debit/Credit Card'},{id:'flutterwave',label:'Flutterwave'}].map(m => (
-              <button key={m.id} onClick={() => setPayMethod(m.id)}
+              <button
+                key={m.id}
+                onClick={() => setPayMethod(m.id)}
                 className={`py-3 px-4 rounded-xl border-2 text-sm font-semibold transition-all ${
                   payMethod === m.id ? 'border-[#1A4D8F] bg-blue-50 text-[#1A4D8F]' : 'border-gray-200 text-gray-600'
-                }`}>
+                }`}
+              >
                 {m.label}
               </button>
             ))}
@@ -129,30 +178,46 @@ export default function Checkout() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Name on Card</label>
-                <input value={card.name} onChange={e => setC('name', e.target.value)} placeholder="John Doe"
-                  className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] ${errors.name ? 'border-red-400' : 'border-gray-200'}`} />
+                <input
+                  value={card.name}
+                  onChange={e => setC('name', e.target.value)}
+                  placeholder="John Doe"
+                  className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] ${errors.name ? 'border-red-400' : 'border-gray-200'}`}
+                />
                 {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Card Number</label>
                 <div className="relative">
                   <FiCreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input value={card.number} onChange={e => setC('number', formatCard(e.target.value))} placeholder="1234 5678 9012 3456"
-                    className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] ${errors.number ? 'border-red-400' : 'border-gray-200'}`} />
+                  <input
+                    value={card.number}
+                    onChange={e => setC('number', formatCard(e.target.value))}
+                    placeholder="1234 5678 9012 3456"
+                    className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] ${errors.number ? 'border-red-400' : 'border-gray-200'}`}
+                  />
                 </div>
                 {errors.number && <p className="text-red-500 text-xs mt-1">{errors.number}</p>}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Expiry</label>
-                  <input value={card.expiry} onChange={e => setC('expiry', formatExpiry(e.target.value))} placeholder="MM/YY"
-                    className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] ${errors.expiry ? 'border-red-400' : 'border-gray-200'}`} />
+                  <input
+                    value={card.expiry}
+                    onChange={e => setC('expiry', formatExpiry(e.target.value))}
+                    placeholder="MM/YY"
+                    className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] ${errors.expiry ? 'border-red-400' : 'border-gray-200'}`}
+                  />
                   {errors.expiry && <p className="text-red-500 text-xs mt-1">{errors.expiry}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">CVV</label>
-                  <input value={card.cvv} onChange={e => setC('cvv', e.target.value.slice(0,4))} placeholder="123"
-                    className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] ${errors.cvv ? 'border-red-400' : 'border-gray-200'}`} />
+                  <input
+                    value={card.cvv}
+                    onChange={e => setC('cvv', e.target.value.slice(0,4))}
+                    placeholder="123"
+                    className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] ${errors.cvv ? 'border-red-400' : 'border-gray-200'}`}
+                  />
                   {errors.cvv && <p className="text-red-500 text-xs mt-1">{errors.cvv}</p>}
                 </div>
               </div>
@@ -165,8 +230,11 @@ export default function Checkout() {
             </div>
           )}
 
-          <button onClick={handlePay} disabled={loading}
-            className="w-full mt-6 bg-[#1A4D8F] text-white font-bold py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors disabled:opacity-60 text-sm">
+          <button
+            onClick={handlePay}
+            disabled={loading}
+            className="w-full mt-6 bg-[#1A4D8F] text-white font-bold py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors disabled:opacity-60 text-sm"
+          >
             {loading ? 'Processing…' : `Pay $${cartTotal.toFixed(2)}`}
           </button>
         </div>
@@ -174,22 +242,80 @@ export default function Checkout() {
 
       {/* Step 3 — Confirmation */}
       {step === 3 && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-md p-8 text-center">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
-            <FiCheck className="w-10 h-10 text-green-500" />
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-md p-8">
+          <div className="text-center mb-6">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FiCheck className="w-10 h-10 text-green-500" />
+            </div>
+            <h2 className="text-2xl font-black text-[#1A1A2E] mb-2">Your tickets are confirmed!</h2>
+            <p className="text-gray-400 text-sm">
+              We've sent a confirmation to your email. Good luck with your predictions!
+            </p>
           </div>
-          <h2 className="text-2xl font-black text-[#1A1A2E] mb-2">Your tickets are confirmed!</h2>
-          <p className="text-gray-500 text-sm mb-2">Order ID: <span className="font-bold text-[#1A4D8F]">{orderId}</span></p>
-          <p className="text-gray-400 text-sm mb-8">
-            We've sent a confirmation to your email. Good luck with your predictions!
-          </p>
+
+          {/* Ticket list */}
+          <div className="space-y-3 mb-6">
+            {confirmedTickets.map(tk => {
+              const tierMeta = TIER_BADGE[tk.tier];
+              return (
+                <div
+                  key={tk.ticketNumber}
+                  className="border border-gray-100 rounded-2xl p-4 bg-gray-50"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <p className="text-sm font-bold text-[#1A1A2E] truncate">{tk.match}</p>
+                        {tierMeta && (
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-black ${tierMeta.cls}`}>
+                            <tierMeta.Icon className="w-2.5 h-2.5" />
+                            {tierMeta.label}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 mb-2">{tk.market} — {tk.pick}</p>
+
+                      {/* Ticket number */}
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-[#1A4D8F] bg-blue-50 px-2.5 py-1 rounded-lg tracking-wide">
+                          {tk.ticketNumber}
+                        </span>
+                        <button
+                          onClick={() => copyTicket(tk.ticketNumber)}
+                          className="p-1 text-gray-400 hover:text-[#1A4D8F] transition-colors"
+                          title="Copy ticket number"
+                        >
+                          {copiedId === tk.ticketNumber
+                            ? <FiCheck className="w-3.5 h-3.5 text-green-500" />
+                            : <FiCopy className="w-3.5 h-3.5" />
+                          }
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <p className="font-black text-[#1A4D8F]">
+                        {tk.price === 0 ? 'FREE' : `$${tk.price.toFixed(2)}`}
+                      </p>
+                      <p className="text-[10px] text-gray-400 mt-0.5 font-mono">ID: {tk.matchId}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
           <div className="flex gap-3 justify-center flex-wrap">
-            <Link to="/dashboard/tickets"
-              className="bg-[#1A4D8F] text-white font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-[#0D2B5E] transition-colors flex items-center gap-2">
+            <Link
+              to="/dashboard/tickets"
+              className="bg-[#1A4D8F] text-white font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-[#0D2B5E] transition-colors flex items-center gap-2"
+            >
               <FiShoppingBag className="w-4 h-4" /> View My Tickets
             </Link>
-            <Link to="/lobby"
-              className="border border-[#1A4D8F] text-[#1A4D8F] font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-blue-50 transition-colors">
+            <Link
+              to="/lobby"
+              className="border border-[#1A4D8F] text-[#1A4D8F] font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-blue-50 transition-colors"
+            >
               Back to Lobby
             </Link>
           </div>
