@@ -73,6 +73,15 @@ export default function Home() {
       {/* Hero Slider */}
       <HeroSlider />
 
+      {/* Ad Banner — leaderboard slot */}
+      <div className="bg-white border-b border-gray-100 py-3 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="w-full h-[90px] rounded-xl bg-gray-100 border-2 border-dashed border-gray-200 flex items-center justify-center text-xs font-semibold text-gray-300 tracking-widest uppercase">
+            Advertisement
+          </div>
+        </div>
+      </div>
+
       {/* Stats Banner */}
       <section className="bg-white border-b border-gray-100 py-6 px-4">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -170,6 +179,15 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Ad Banner — mid-page rectangle */}
+      <div className="py-4 px-4 bg-gray-50 border-t border-b border-gray-100">
+        <div className="max-w-7xl mx-auto flex justify-center">
+          <div className="w-full max-w-[728px] h-[90px] rounded-xl bg-gray-100 border-2 border-dashed border-gray-200 flex items-center justify-center text-xs font-semibold text-gray-300 tracking-widest uppercase">
+            Advertisement
+          </div>
+        </div>
+      </div>
+
       {/* Top Game Picks */}
       <section className="py-12 px-4">
         <div className="max-w-7xl mx-auto">
@@ -182,25 +200,44 @@ export default function Home() {
             <MarketFilterTabs active={activeMarket} onChange={setActiveMarket} />
           </div>
 
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {Array(9).fill(0).map((_, i) => <MatchCard key={i} loading />)}
+          <div className="flex gap-4 items-start">
+            {/* Left side ad */}
+            <aside className="hidden xl:flex flex-col gap-4 w-[160px] shrink-0 sticky top-28">
+              <div className="w-full h-[600px] rounded-xl bg-gray-100 border-2 border-dashed border-gray-200 flex items-center justify-center">
+                <span className="text-[10px] font-semibold text-gray-300 tracking-widest uppercase rotate-90 whitespace-nowrap">Advertisement</span>
+              </div>
+            </aside>
+
+            {/* Cards grid */}
+            <div className="flex-1 min-w-0">
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {Array(9).fill(0).map((_, i) => <MatchCard key={i} loading />)}
+                </div>
+              ) : filtered.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {filtered.map(m => <MatchCard key={m.id} match={m} homeMode />)}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <p className="text-gray-400 mb-4">No matches for this market right now.</p>
+                  <button
+                    onClick={() => setActiveMarket('All Markets')}
+                    className="text-[#1A4D8F] font-semibold text-sm hover:underline"
+                  >
+                    Show all markets
+                  </button>
+                </div>
+              )}
             </div>
-          ) : filtered.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filtered.map(m => <MatchCard key={m.id} match={m} />)}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <p className="text-gray-400 mb-4">No matches for this market right now.</p>
-              <button
-                onClick={() => setActiveMarket('All Markets')}
-                className="text-[#1A4D8F] font-semibold text-sm hover:underline"
-              >
-                Show all markets
-              </button>
-            </div>
-          )}
+
+            {/* Right side ad */}
+            <aside className="hidden xl:flex flex-col gap-4 w-[160px] shrink-0 sticky top-28">
+              <div className="w-full h-[600px] rounded-xl bg-gray-100 border-2 border-dashed border-gray-200 flex items-center justify-center">
+                <span className="text-[10px] font-semibold text-gray-300 tracking-widest uppercase rotate-90 whitespace-nowrap">Advertisement</span>
+              </div>
+            </aside>
+          </div>
 
           <div className="mt-6 text-center">
             <Link

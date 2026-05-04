@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiX, FiStar, FiAward, FiZap, FiUsers, FiShoppingCart, FiCheckCircle, FiLock } from 'react-icons/fi';
+import { FiX, FiStar, FiAward, FiZap, FiUsers, FiShoppingCart, FiCheckCircle, FiLock, FiCreditCard } from 'react-icons/fi';
 import { useCart } from '../../hooks/useCart';
 import TeamAvatar from './TeamAvatar';
 import { matchTiers } from '../../data/mockData';
@@ -45,6 +45,7 @@ export default function StakeModal({ match, open, onClose }) {
   const [pick, setPick]      = useState(null);
   const [selectedTier, setSelectedTier] = useState(null);
   const [added, setAdded]    = useState(false);
+  const [paid, setPaid]      = useState(false);
 
   const tiers  = matchTiers[match?.id] || [];
   // Find which tier (if any) this match is already staked at in cart
@@ -56,6 +57,7 @@ export default function StakeModal({ match, open, onClose }) {
     if (open && match) {
       setPick(null);
       setAdded(false);
+      setPaid(false);
       const defaultTier = tiers.find(t => t.tier === match.tier) || tiers[1] || tiers[0];
       setSelectedTier(defaultTier?.tier || null);
     }
@@ -73,20 +75,29 @@ export default function StakeModal({ match, open, onClose }) {
 
   const chosen = tiers.find(t => t.tier === selectedTier);
 
+  const cartPayload = () => ({
+    cartId:     `${match.id}-${chosen.tier}-${Date.now()}`,
+    matchId:    match.id,
+    match:      `${match.homeTeam.name} vs ${match.awayTeam.name}`,
+    market:     match.market,
+    pick:       `${match.adminPick} (${pick.toUpperCase()})`,
+    prediction: pick,
+    tier:       chosen.tier,
+    price:      chosen.price,
+  });
+
   const handleAddToCart = () => {
     if (!pick || !chosen) return;
-    addToCart({
-      cartId:     `${match.id}-${chosen.tier}-${Date.now()}`,
-      matchId:    match.id,
-      match:      `${match.homeTeam.name} vs ${match.awayTeam.name}`,
-      market:     match.market,
-      pick:       `${match.adminPick} (${pick.toUpperCase()})`,
-      prediction: pick,
-      tier:       chosen.tier,
-      price:      chosen.price,
-    });
+    addToCart(cartPayload());
     setAdded(true);
     setTimeout(() => { setAdded(false); onClose(); }, 1400);
+  };
+
+  const handlePayNow = () => {
+    if (!pick || !chosen) return;
+    addToCart(cartPayload());
+    setPaid(true);
+    setTimeout(() => { setPaid(false); onClose(); }, 1600);
   };
 
   const isLive = match.status === 'live';
@@ -298,27 +309,46 @@ export default function StakeModal({ match, open, onClose }) {
                 {!pick && (
                   <p className="text-xs text-center text-amber-500 font-medium mb-2">Select YES or NO above before staking</p>
                 )}
-                <button
-                  onClick={handleAddToCart}
-                  disabled={!pick || !selectedTier || added}
-                  className={`w-full py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all ${
-                    added
-                      ? 'bg-green-500 text-white'
-                      : !pick || !selectedTier
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-[#1A4D8F] hover:bg-[#0D2B5E] text-white'
-                  }`}
-                >
-                  {added ? (
-                    <><FiCheckCircle className="w-4 h-4" /> Added to Cart!</>
-                  ) : (
-                    <><FiShoppingCart className="w-4 h-4" />
-                      {chosen
-                        ? `Stake ${TIER_CONFIG[chosen.tier]?.label} — $${chosen.price.toFixed(2)}`
-                        : 'Select a tier to stake'}
-                    </>
-                  )}
-                </button>
+
+                {paid ? (
+                  <div className="w-full py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 bg-green-500 text-white">
+                    <FiCheckCircle className="w-4 h-4" /> Payment confirmed!
+                  </div>
+                ) : added ? (
+                  <div className="w-full py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 bg-green-500 text-white">
+                    <FiCheckCircle className="w-4 h-4" /> Added to Cart!
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    {/* Add to Cart */}
+                    <button
+                      onClick={handleAddToCart}
+                      disabled={!pick || !selectedTier}
+                      className={`flex-1 py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-1.5 border-2 transition-all ${
+                        !pick || !selectedTier
+                          ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                          : 'border-[#1A4D8F] text-[#1A4D8F] hover:bg-blue-50'
+                      }`}
+                    >
+                      <FiShoppingCart className="w-4 h-4" />
+                      Cart
+                    </button>
+
+                    {/* Pay Now */}
+                    <button
+                      onClick={handlePayNow}
+                      disabled={!pick || !selectedTier}
+                      className={`flex-1 py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-1.5 transition-all ${
+                        !pick || !selectedTier
+                          ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                          : 'bg-[#F5C518] hover:brightness-105 text-[#1A1A2E]'
+                      }`}
+                    >
+                      <FiCreditCard className="w-4 h-4" />
+                      {chosen ? `Pay $${chosen.price.toFixed(2)}` : 'Pay Now'}
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>
