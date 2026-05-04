@@ -21,19 +21,21 @@ export default function BTGiveaway() {
   return (
     <div>
       {/* Hero */}
-      <div className="bg-gradient-to-br from-[#F5C518] to-[#e0ad0e] py-16 px-4 text-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-48 h-48 rounded-full bg-[#1A4D8F]" />
-          <div className="absolute bottom-0 right-20 w-32 h-32 rounded-full bg-[#0D2B5E]" />
-        </div>
+      <div className="relative py-20 px-4 text-center overflow-hidden min-h-[260px] flex items-center justify-center">
+        <img
+          src="https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=1920&q=80&auto=format&fit=crop"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-[#1A1A2E]/70" />
         <div className="relative z-10">
           <div className="flex justify-center mb-4">
-            <div className="bg-white/30 rounded-full p-4">
-              <FiGift className="w-10 h-10 text-[#1A1A2E]" />
+            <div className="bg-[#F5C518]/20 border border-[#F5C518]/40 rounded-full p-4">
+              <FiGift className="w-10 h-10 text-[#F5C518]" />
             </div>
           </div>
-          <h1 className="text-4xl font-black text-[#1A1A2E] mb-3">BT Giveaway</h1>
-          <p className="text-[#1A1A2E]/80 text-lg font-medium max-w-lg mx-auto">
+          <h1 className="text-4xl font-black text-white mb-3">BT Giveaway</h1>
+          <p className="text-blue-200 text-lg font-medium max-w-lg mx-auto">
             Your Free Shot at Big Prizes — No Purchase Needed
           </p>
         </div>

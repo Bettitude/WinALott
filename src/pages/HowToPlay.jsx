@@ -19,11 +19,19 @@ export default function HowToPlay() {
   return (
     <div>
       {/* Hero */}
-      <div className="bg-gradient-to-br from-[#0D2B5E] to-[#1A4D8F] py-16 px-4 text-white text-center">
-        <h1 className="text-4xl font-black mb-3">How to Play</h1>
-        <p className="text-blue-200 text-lg max-w-xl mx-auto">
-          WinALot is simple. Predict the outcome, buy a ticket, and if you're right — enter the draw to win!
-        </p>
+      <div className="relative py-20 px-4 text-white text-center overflow-hidden min-h-[240px] flex items-center justify-center">
+        <img
+          src="https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1920&q=80&auto=format&fit=crop"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-[#0D2B5E]/72" />
+        <div className="relative z-10">
+          <h1 className="text-4xl font-black mb-3">How to Play</h1>
+          <p className="text-blue-200 text-lg max-w-xl mx-auto">
+            WinALot is simple. Predict the outcome, buy a ticket, and if you're right — enter the draw to win!
+          </p>
+        </div>
       </div>
 
       {/* Steps */}

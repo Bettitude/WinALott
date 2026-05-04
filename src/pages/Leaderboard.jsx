@@ -53,11 +53,13 @@ export default function Leaderboard() {
   return (
     <div>
       {/* Hero */}
-      <div className="bg-gradient-to-br from-[#0D2B5E] via-[#1A4D8F] to-[#0D2B5E] py-14 px-4 text-white text-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-8 left-16 w-36 h-36 rounded-full bg-[#F5C518]" />
-          <div className="absolute bottom-8 right-16 w-28 h-28 rounded-full bg-white" />
-        </div>
+      <div className="relative py-20 px-4 text-white text-center overflow-hidden min-h-[240px] flex items-center justify-center">
+        <img
+          src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=1920&q=80&auto=format&fit=crop"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-[#0D2B5E]/75" />
         <div className="relative z-10">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#F5C518]/20 border border-[#F5C518]/30 mb-4">
             <FiTrendingUp className="w-7 h-7 text-[#F5C518]" />

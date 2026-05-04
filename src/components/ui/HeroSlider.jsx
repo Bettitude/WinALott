@@ -10,17 +10,20 @@ const slides = [
   {
     headline: 'Predict. Stake. Win.',
     subline: 'Your Winning Streak Starts Here',
-    bg: 'from-[#0D2B5E] to-[#1A4D8F]',
+    image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1920&q=80&auto=format&fit=crop',
+    overlay: 'bg-[#0D2B5E]/70',
   },
   {
     headline: 'Every Match. Every Market.',
     subline: 'Corners, Goals, Cards — you call it.',
-    bg: 'from-[#1A1A2E] to-[#0D2B5E]',
+    image: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1920&q=80&auto=format&fit=crop',
+    overlay: 'bg-[#1A1A2E]/75',
   },
   {
     headline: 'Take a Side. Win the Pride.',
     subline: 'Join thousands of winners on WinALot.',
-    bg: 'from-[#0D2B5E] to-[#1A4D8F]',
+    image: 'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=1920&q=80&auto=format&fit=crop',
+    overlay: 'bg-[#0D2B5E]/70',
   },
 ];
 
@@ -40,15 +43,16 @@ export default function HeroSlider() {
       >
         {slides.map((slide, i) => (
           <SwiperSlide key={i}>
-            <div className={`w-full h-full bg-gradient-to-br ${slide.bg} relative overflow-hidden`}>
-              {/* Background pattern */}
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute top-10 left-10 w-64 h-64 rounded-full bg-white" />
-                <div className="absolute bottom-10 right-20 w-48 h-48 rounded-full bg-[#F5C518]" />
-                <div className="absolute top-1/2 left-1/3 w-32 h-32 rounded-full bg-white" />
-              </div>
-
-              <div className="absolute inset-0 bg-black/30" />
+            <div className="w-full h-full relative overflow-hidden">
+              {/* Background image */}
+              <img
+                src={slide.image}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover"
+                draggable={false}
+              />
+              {/* Dark overlay */}
+              <div className={`absolute inset-0 ${slide.overlay}`} />
 
               <div className="relative z-10 max-w-7xl mx-auto px-6 h-full flex items-center">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full items-center">

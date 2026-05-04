@@ -14,11 +14,13 @@ export default function Winners() {
   return (
     <div>
       {/* Hero */}
-      <div className="bg-gradient-to-br from-[#0D2B5E] via-[#1A4D8F] to-[#0D2B5E] py-16 px-4 text-white text-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-20 w-40 h-40 rounded-full bg-[#F5C518]" />
-          <div className="absolute bottom-10 right-20 w-32 h-32 rounded-full bg-white" />
-        </div>
+      <div className="relative py-20 px-4 text-white text-center overflow-hidden min-h-[260px] flex items-center justify-center">
+        <img
+          src="https://images.unsplash.com/photo-1567537234878-ed2d8a0cbdcd?w=1920&q=80&auto=format&fit=crop"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-[#0D2B5E]/78" />
         <div className="relative z-10">
           <div className="flex justify-center mb-4">
             <div className="bg-[#F5C518]/20 border border-[#F5C518]/40 rounded-full p-4">
