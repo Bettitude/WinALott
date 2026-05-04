@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { FiShoppingCart, FiUsers, FiZap, FiAward, FiStar, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { FiShoppingCart, FiUsers, FiZap, FiAward, FiStar, FiClock, FiCheckCircle, FiTrendingUp, FiAlertCircle } from 'react-icons/fi';
 import TeamAvatar from './TeamAvatar';
 import StakeModal from './StakeModal';
 import { useCart } from '../../hooks/useCart';
@@ -35,6 +36,7 @@ const TIER = {
 };
 
 export default function MatchCard({ match, loading = false }) {
+  const navigate = useNavigate();
   const { items } = useCart();
   const [modalOpen, setModalOpen] = useState(false);
   const inCart = items.some(i => i.matchId === match?.id);
@@ -60,18 +62,31 @@ export default function MatchCard({ match, loading = false }) {
     );
   }
 
-  const tier     = TIER[match.tier] || TIER.silver;
-  const TierIcon = tier.Icon;
-  const isLive   = match.status === 'live';
-  const isFree   = match.price === 0;
+  const tier       = TIER[match.tier] || TIER.silver;
+  const TierIcon   = tier.Icon;
+  const isLive     = match.status === 'live';
+  const isFree     = match.price === 0;
   const isPlatinum = match.tier === 'platinum';
+
+  const isHot      = (match.fillPercent ?? 0) > 50;
+  const closesMs   = new Date(`${match.date}T${match.time}:00`).getTime() - Date.now();
+  const closesMin  = Math.floor(closesMs / 60000);
+  const closingSoon = closesMin > 0 && closesMin < 15;
+  const viewing     = 30 + (parseInt(match.id, 10) * 17) % 80;
+  const almostFull  = (match.fillPercent ?? 0) >= 80;
+  const ticketsLeft = Math.max(0, Math.round(100 * (1 - (match.fillPercent ?? 0) / 100)));
+
+  const stopAndOpenModal = (e) => { e.stopPropagation(); setModalOpen(true); };
 
   return (
     <>
-      <div className={`bg-white rounded-2xl border border-gray-200 shadow-md ${tier.shadow} card-hover flex flex-col overflow-hidden border-l-4 ${tier.border}`}>
+      <div
+        onClick={() => navigate(`/match/${match.id}`)}
+        className={`bg-white rounded-2xl border border-gray-200 shadow-md ${tier.shadow} card-hover flex flex-col overflow-hidden border-l-4 ${tier.border} cursor-pointer`}
+      >
         {/* Header row */}
         <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className={`inline-flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded-full ${tier.badge}`}>
               <TierIcon className="w-3 h-3" />
               {tier.label}
@@ -79,6 +94,16 @@ export default function MatchCard({ match, loading = false }) {
             {isPlatinum && (
               <span className="text-xs font-black text-purple-600 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full animate-pulse">
                 HIGH ROLLER
+              </span>
+            )}
+            {isHot && !closingSoon && (
+              <span className="flex items-center gap-1 text-xs font-black text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+                <FiTrendingUp className="w-3 h-3" /> HOT
+              </span>
+            )}
+            {closingSoon && (
+              <span className="flex items-center gap-1 text-xs font-black text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                <FiClock className="w-3 h-3" /> CLOSING SOON
               </span>
             )}
           </div>
@@ -135,7 +160,7 @@ export default function MatchCard({ match, loading = false }) {
           </div>
 
           {/* Stats row */}
-          <div className="flex items-center gap-3 text-xs text-gray-500 mb-3 flex-wrap">
+          <div className="flex items-center gap-3 text-xs text-gray-500 mb-2 flex-wrap">
             <span className="flex items-center gap-1">
               <FiUsers className="w-3 h-3" />
               {match.maxWinners} winner{match.maxWinners > 1 ? 's' : ''}
@@ -146,6 +171,16 @@ export default function MatchCard({ match, loading = false }) {
             <span className="ml-auto font-black text-sm" style={{ color: match.tier === 'platinum' ? '#7C3AED' : match.tier === 'gold' ? '#d97706' : '#6b7280' }}>
               {isFree ? 'FREE' : `from $0.99`}
             </span>
+          </div>
+
+          {/* Micro-details */}
+          <div className="flex items-center gap-2 text-[10px] text-gray-400 mb-3 flex-wrap">
+            <span>{viewing} viewing</span>
+            {almostFull && (
+              <span className="flex items-center gap-0.5 text-orange-500 font-bold">
+                <FiAlertCircle className="w-3 h-3" />{ticketsLeft} tickets left
+              </span>
+            )}
           </div>
 
           {/* Pool fill progress bar */}
@@ -162,8 +197,8 @@ export default function MatchCard({ match, loading = false }) {
             </div>
           </div>
 
-          {/* Action — opens stake modal */}
-          <div className="flex gap-2 mt-auto">
+          {/* Action — stop propagation so clicks don't navigate */}
+          <div className="flex gap-2 mt-auto" onClick={e => e.stopPropagation()}>
             {inCart ? (
               <div className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-50 border-2 border-green-200 text-green-600 text-sm font-black">
                 <FiCheckCircle className="w-4 h-4" />
@@ -171,14 +206,14 @@ export default function MatchCard({ match, loading = false }) {
               </div>
             ) : (
               <button
-                onClick={() => setModalOpen(true)}
+                onClick={stopAndOpenModal}
                 className={`flex-1 text-white text-sm font-black py-2.5 rounded-xl text-center transition-colors ${tier.btnBg}`}
               >
                 {isFree ? 'Enter Free' : 'Stake Now'}
               </button>
             )}
             <button
-              onClick={() => !inCart && setModalOpen(true)}
+              onClick={inCart ? undefined : stopAndOpenModal}
               disabled={inCart}
               className={`flex items-center justify-center gap-1 px-3.5 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
                 inCart
@@ -191,7 +226,7 @@ export default function MatchCard({ match, loading = false }) {
           </div>
 
           <p className="text-xs text-center text-gray-400 mt-2">
-            {inCart ? 'Remove from cart to change your stake' : 'Choose Silver, Gold or Platinum'}
+            {inCart ? 'Remove from cart to change your stake' : 'Click card to view details'}
           </p>
         </div>
       </div>

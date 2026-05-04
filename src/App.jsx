@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { RadioProvider } from './context/RadioContext';
 import PageWrapper from './components/layout/PageWrapper';
 import { useAuth } from './hooks/useAuth';
 
@@ -129,7 +130,9 @@ export default function App() {
   return (
     <AuthProvider>
       <CartProvider>
-        <AppRoutes />
+        <RadioProvider>
+          <AppRoutes />
+        </RadioProvider>
       </CartProvider>
     </AuthProvider>
   );

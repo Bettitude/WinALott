@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiArrowRight, FiUsers, FiDollarSign, FiTrendingUp,
   FiCheckCircle, FiShield, FiZap, FiRadio, FiAward,
 } from 'react-icons/fi';
+import { useRadio } from '../context/RadioContext';
 import HeroSlider from '../components/ui/HeroSlider';
 import MatchCard from '../components/ui/MatchCard';
 import MarketFilterTabs from '../components/ui/MarketFilterTabs';
@@ -29,6 +30,16 @@ const TRUST_BADGES = [
 export default function Home() {
   const [activeMarket, setActiveMarket] = useState('All Markets');
   const [loading] = useState(false);
+  const [stakingCount, setStakingCount] = useState(842);
+  const { openPlayer, isOpen: radioOpen } = useRadio();
+
+  // Animate staking count every 60s
+  useEffect(() => {
+    const id = setInterval(() => {
+      setStakingCount(c => c + Math.floor(Math.random() * 7) - 3);
+    }, 60000);
+    return () => clearInterval(id);
+  }, []);
 
   const filtered = activeMarket === 'All Markets'
     ? mockMatches.slice(0, 9)
@@ -38,6 +49,27 @@ export default function Home() {
 
   return (
     <div>
+      {/* Now Staking — fixed bottom-right */}
+      <div className={`fixed right-4 z-20 transition-all ${radioOpen ? 'bottom-20' : 'bottom-4'}`}>
+        <div className="bg-[#1A4D8F] text-white rounded-full shadow-xl px-4 py-2 flex items-center gap-2 text-xs font-bold">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          {stakingCount.toLocaleString()} staking now
+        </div>
+      </div>
+
+      {/* Radio invite pill — fixed above Now Staking when radio closed */}
+      {!radioOpen && (
+        <div className={`fixed right-4 z-20 ${radioOpen ? 'bottom-36' : 'bottom-14'}`}>
+          <button
+            onClick={openPlayer}
+            className="bg-[#0D2B5E]/90 hover:bg-[#0D2B5E] text-white rounded-full shadow-lg px-3 py-1.5 flex items-center gap-1.5 text-[11px] font-bold transition-colors border border-white/10"
+          >
+            <FiRadio className="w-3 h-3 text-[#F5C518]" />
+            Match Day Radio
+          </button>
+        </div>
+      )}
+
       {/* Hero Slider */}
       <HeroSlider />
 
