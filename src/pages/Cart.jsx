@@ -56,12 +56,12 @@ export default function Cart() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-black text-[#1A1A2E]">Your Cart</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-[#1A1A2E]">Your Cart</h1>
           <p className="text-sm text-gray-400 mt-0.5">{items.length} ticket{items.length !== 1 ? 's' : ''}</p>
         </div>
-        <button onClick={clearCart} className="text-sm text-red-400 hover:text-red-600 transition-colors font-medium">
+        <button onClick={clearCart} className="text-sm text-red-400 hover:text-red-600 transition-colors font-medium shrink-0">
           Clear All
         </button>
       </div>
@@ -82,7 +82,12 @@ export default function Cart() {
                 <div className="flex-1 min-w-0">
                   {/* Match + Tier badge */}
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <p className="font-bold text-[#1A1A2E] text-sm">{item.match}</p>
+                    <Link
+                      to={`/match/${item.matchId}`}
+                      className="font-bold text-[#1A1A2E] text-sm hover:text-[#1A4D8F] hover:underline transition-colors"
+                    >
+                      {item.match}
+                    </Link>
                     <TierBadge tier={item.tier} />
                   </div>
 
@@ -95,9 +100,6 @@ export default function Cart() {
                       <span className="text-xs text-[#1A4D8F] font-medium">Pick: {item.pick}</span>
                     </span>
                   </div>
-
-                  {/* Match ID reference */}
-                  <p className="text-[10px] text-gray-300 mt-1.5 font-mono">Match ID: {item.matchId}</p>
                 </div>
 
                 <div className="flex flex-col items-end gap-2 shrink-0">

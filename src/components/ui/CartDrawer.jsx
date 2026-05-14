@@ -50,7 +50,13 @@ export default function CartDrawer() {
               <div key={item.cartId} className="bg-gray-50 rounded-2xl p-3 border border-gray-100">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#1A1A2E] truncate">{item.match}</p>
+                    <Link
+                      to={`/match/${item.matchId}`}
+                      onClick={() => setIsOpen(false)}
+                      className="text-sm font-semibold text-[#1A1A2E] hover:text-[#1A4D8F] hover:underline truncate block transition-colors"
+                    >
+                      {item.match}
+                    </Link>
                     <p className="text-xs text-gray-500 mt-0.5">{item.market}</p>
                     <div className="mt-1.5 inline-flex items-center bg-blue-50 px-2 py-0.5 rounded-full">
                       <span className="text-xs text-[#1A4D8F] font-medium">Pick: {item.pick}</span>

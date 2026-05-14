@@ -1,28 +1,31 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiList } from 'react-icons/fi';
-import { dashboardTickets } from '../../data/mockData';
+import { useTickets } from '../../hooks/useTickets';
 
 const filters = ['All', 'Active', 'Won', 'Lost'];
 const statusColors = {
   pending: 'bg-yellow-50 text-yellow-700',
-  won: 'bg-green-50 text-green-700',
-  lost: 'bg-red-50 text-red-500',
+  active:  'bg-yellow-50 text-yellow-700',
+  won:     'bg-green-50 text-green-700',
+  lost:    'bg-red-50 text-red-500',
+  voided:  'bg-gray-50 text-gray-500',
 };
 
 export default function MyTickets() {
   const [filter, setFilter] = useState('All');
+  const { tickets, loading } = useTickets({ limit: 50 });
 
-  const filtered = dashboardTickets.filter(t => {
-    if (filter === 'Active') return t.status === 'pending';
-    if (filter === 'Won') return t.status === 'won';
-    if (filter === 'Lost') return t.status === 'lost';
+  const filtered = tickets.filter(t => {
+    if (filter === 'Active') return t.status === 'pending' || t.status === 'active';
+    if (filter === 'Won')    return t.status === 'won';
+    if (filter === 'Lost')   return t.status === 'lost';
     return true;
   });
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap mb-6">
         <div>
           <h1 className="text-2xl font-black text-[#1A1A2E]">My Tickets</h1>
           <p className="text-gray-400 text-sm">All your prediction tickets</p>
@@ -44,7 +47,11 @@ export default function MyTickets() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+          {Array(5).fill(0).map((_, i) => <div key={i} className="h-12 bg-gray-50 rounded-xl animate-pulse" />)}
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-200 text-center py-16">
           <FiList className="w-10 h-10 text-gray-200 mx-auto mb-3" />
           <p className="text-gray-400 font-medium">No tickets found</p>
@@ -78,7 +85,9 @@ export default function MyTickets() {
                     <td className="py-3.5 hidden md:table-cell text-xs text-gray-600">{t.myPick}</td>
                     <td className="py-3.5 hidden lg:table-cell text-xs text-gray-600">{t.adminPick}</td>
                     <td className="py-3.5">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full capitalize ${statusColors[t.status]}`}>{t.status}</span>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full capitalize ${statusColors[t.status] || 'bg-gray-50 text-gray-500'}`}>
+                        {t.status}
+                      </span>
                     </td>
                     <td className="py-3.5 text-right text-xs font-bold text-[#1A4D8F]">${t.entryFee.toFixed(2)}</td>
                     <td className="py-3.5 pr-5 text-right">

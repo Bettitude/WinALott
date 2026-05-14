@@ -1,23 +1,21 @@
 import { useState } from 'react';
 import { FiDollarSign, FiCheckCircle } from 'react-icons/fi';
 import Modal from '../../components/ui/Modal';
-import { dashboardTickets } from '../../data/mockData';
-
-const winnings = dashboardTickets
-  .filter(t => t.status === 'won' && t.prize > 0)
-  .map(t => ({ ...t, claimed: false }));
+import { useTickets } from '../../hooks/useTickets';
 
 export default function MyWinnings() {
+  const { tickets, loading } = useTickets({ status: 'won', limit: 50 });
   const [claimModal, setClaimModal] = useState(null);
-  const [claimed, setClaimed] = useState([]);
-  const [claiming, setClaiming] = useState(false);
+  const [claimed, setClaimed]       = useState([]);
+  const [claiming, setClaiming]     = useState(false);
 
-  const totalWon = winnings.reduce((s, w) => s + w.prize, 0);
+  const winnings    = tickets.filter(t => t.prize > 0);
+  const totalWon    = winnings.reduce((s, w) => s + w.prize, 0);
   const totalClaimed = winnings.filter(w => claimed.includes(w.id)).reduce((s, w) => s + w.prize, 0);
 
   const handleClaim = async () => {
     setClaiming(true);
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 800));
     setClaimed(c => [...c, claimModal.id]);
     setClaiming(false);
     setClaimModal(null);
@@ -30,9 +28,9 @@ export default function MyWinnings() {
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Total Won', value: `$${totalWon.toFixed(2)}`, color: 'text-green-600', border: 'border-l-green-400' },
-          { label: 'Claimed', value: `$${totalClaimed.toFixed(2)}`, color: 'text-[#1A4D8F]', border: 'border-l-[#1A4D8F]' },
-          { label: 'Unclaimed', value: `$${(totalWon - totalClaimed).toFixed(2)}`, color: 'text-orange-600', border: 'border-l-orange-400' },
+          { label: 'Total Won',  value: `$${totalWon.toFixed(2)}`,               color: 'text-green-600',  border: 'border-l-green-400' },
+          { label: 'Claimed',    value: `$${totalClaimed.toFixed(2)}`,            color: 'text-[#1A4D8F]',  border: 'border-l-[#1A4D8F]' },
+          { label: 'Unclaimed',  value: `$${(totalWon - totalClaimed).toFixed(2)}`, color: 'text-orange-600', border: 'border-l-orange-400' },
         ].map(s => (
           <div key={s.label} className={`bg-white rounded-2xl border border-gray-200 shadow-sm p-4 border-l-4 ${s.border}`}>
             <p className="text-xs text-gray-400 mb-1">{s.label}</p>
@@ -41,8 +39,11 @@ export default function MyWinnings() {
         ))}
       </div>
 
-      {/* Winnings table */}
-      {winnings.length === 0 ? (
+      {loading ? (
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+          {Array(3).fill(0).map((_, i) => <div key={i} className="h-12 bg-gray-50 rounded-xl animate-pulse" />)}
+        </div>
+      ) : winnings.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-200 text-center py-16">
           <FiDollarSign className="w-10 h-10 text-gray-200 mx-auto mb-3" />
           <p className="text-gray-400 font-medium">No winnings yet</p>
@@ -92,7 +93,6 @@ export default function MyWinnings() {
         </div>
       )}
 
-      {/* Claim modal */}
       <Modal isOpen={!!claimModal} onClose={() => setClaimModal(null)} title="Claim Your Winnings">
         {claimModal && (
           <div className="text-center">

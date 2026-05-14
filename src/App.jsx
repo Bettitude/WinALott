@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { RadioProvider } from './context/RadioContext';
+import { ThemeProvider } from './context/ThemeContext';
 import PageWrapper from './components/layout/PageWrapper';
 import { useAuth } from './hooks/useAuth';
 
@@ -35,6 +36,8 @@ import Referrals from './pages/dashboard/Referrals';
 import Leaderboard from './pages/Leaderboard';
 import Verify from './pages/Verify';
 import TicketDetail from './pages/TicketDetail';
+import TeamPage from './pages/TeamPage';
+import Team from './pages/Team';
 import ResetPassword from './pages/auth/ResetPassword';
 
 import About from './pages/static/About';
@@ -108,6 +111,8 @@ function AppRoutes() {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/verify" element={<Verify />} />
           <Route path="/ticket/:ticketNumber" element={<TicketDetail />} />
+          <Route path="/team/:slug" element={<TeamPage />} />
+          <Route path="/team/:teamSlug" element={<Team />} />
 
           {/* Static */}
           <Route path="/about" element={<About />} />
@@ -128,12 +133,14 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <RadioProvider>
-          <AppRoutes />
-        </RadioProvider>
-      </CartProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <CartProvider>
+          <RadioProvider>
+            <AppRoutes />
+          </RadioProvider>
+        </CartProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

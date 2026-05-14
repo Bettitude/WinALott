@@ -1,11 +1,10 @@
 import { createContext, useContext, useRef, useState, useCallback } from 'react';
 
 export const STATIONS = [
-  { id: 1, name: 'TalkSPORT',         genre: 'Sports Talk',    url: 'https://stream.talksport.com/ts-extra-aac-64' },
-  { id: 2, name: 'BBC Radio 5 Live',  genre: 'Sports News',    url: 'https://stream.live.vc.bbcmedia.co.uk/bbc_radio_five_live' },
-  { id: 3, name: 'ESPN Radio',        genre: 'US Sports',      url: 'https://espnradio.streaming.live365.com/espn_radio' },
+  { id: 1, name: 'WinALott Vibes',    genre: 'Match Day Hype', url: 'https://radio.sternhost.com:8430/radio.mp3' },
+  { id: 2, name: 'TalkSPORT',         genre: 'Sports Talk',    url: 'https://stream.talksport.com/ts-extra-aac-64' },
+  { id: 3, name: 'BBC Radio 5 Live',  genre: 'Sports News',    url: 'https://stream.live.vc.bbcmedia.co.uk/bbc_radio_five_live' },
   { id: 4, name: 'Chill Beats',       genre: 'Lo-fi / Chill',  url: 'https://stream.zeno.fm/f3wvbbqmdg8uv' },
-  { id: 5, name: 'WinALott Vibes',    genre: 'Match Day Hype', url: 'https://stream.zeno.fm/f3wvbbqmdg8uv' },
 ];
 
 const RadioContext = createContext(null);
@@ -71,7 +70,7 @@ export function RadioProvider({ children }) {
   }, [isMuted, getAudio]);
 
   const openPlayer = useCallback(() => setIsOpen(true), []);
-  const closePlayer = useCallback(() => { pause(); setIsOpen(false); }, [pause]);
+  const closePlayer = useCallback(() => setIsOpen(false), []);
 
   return (
     <RadioContext.Provider value={{

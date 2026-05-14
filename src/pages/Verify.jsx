@@ -1,6 +1,18 @@
 import { useState } from 'react';
 import { FiShield, FiCheckCircle, FiXCircle, FiInfo, FiChevronDown, FiChevronUp } from 'react-icons/fi';
-import { mockDraw } from '../data/mockData';
+
+const mockDraw = {
+  id: 'drw_20250412_001',
+  market: 'Corners — Man City vs Chelsea',
+  correct_prediction: 'Over 9.5 (YES)',
+  server_seed_hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+  server_seed:      'a4f5d8c2b1e9374a60d2f8c7b3e1a5d9',
+  client_seed:      'matchday_20250412_corners',
+  completed_at:     '2025-04-12T22:15:00Z',
+  winner_count:     3,
+  prize_pool:       1980,
+  prize_each:       594,
+};
 
 // Lightweight HMAC-SHA256 client-side simulation (for demo — real verify calls the API)
 async function clientVerify(serverSeed, clientSeed, serverSeedHash) {

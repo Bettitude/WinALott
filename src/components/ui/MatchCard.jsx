@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiShoppingCart, FiUsers, FiZap, FiAward, FiStar, FiClock, FiCheckCircle, FiTrendingUp, FiAlertCircle } from 'react-icons/fi';
+import { FiShoppingCart, FiUsers, FiZap, FiAward, FiStar, FiClock, FiCheckCircle,
+         FiTrendingUp, FiAlertCircle } from 'react-icons/fi';
 import TeamAvatar from './TeamAvatar';
 import StakeModal from './StakeModal';
 import { useCart } from '../../hooks/useCart';
+import { btpFromDollars } from '../../utils/btp';
 
 const TIER = {
   silver: {
@@ -35,6 +37,10 @@ const TIER = {
   },
 };
 
+function slugify(name) {
+  return (name || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+}
+
 export default function MatchCard({ match, loading = false, homeMode = false }) {
   const navigate = useNavigate();
   const { items } = useCart();
@@ -43,8 +49,8 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden">
-        <div className="h-1.5 bg-gray-100" />
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-md overflow-hidden">
+        <div className="h-1.5 bg-gray-100 dark:bg-slate-700" />
         <div className="p-4 space-y-3">
           <div className="flex justify-between">
             <div className="skeleton h-5 w-20 rounded-full" />
@@ -68,18 +74,21 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
   const isFree     = match.price === 0;
   const isPlatinum = match.tier === 'platinum';
 
-  const isHot      = (match.fillPercent ?? 0) > 50;
-  const closesMs   = new Date(`${match.date}T${match.time}:00`).getTime() - Date.now();
-  const closesMin  = Math.floor(closesMs / 60000);
+  const isHot       = (match.fillPercent ?? 0) > 50;
+  const closesMs    = new Date(`${match.date}T${match.time}:00`).getTime() - Date.now();
+  const closesMin   = Math.floor(closesMs / 60000);
   const closingSoon = closesMin > 0 && closesMin < 15;
   const viewing     = 30 + (parseInt(match.id, 10) * 17) % 80;
   const almostFull  = (match.fillPercent ?? 0) >= 80;
   const ticketsLeft = Math.max(0, Math.round(100 * (1 - (match.fillPercent ?? 0) / 100)));
 
-  const openModal = (e) => { e.stopPropagation(); setModalOpen(true); };
-  const stopAndOpenModal = openModal;
-
+  const openStakeModal = (e) => { e.stopPropagation(); setModalOpen(true); };
   const handleCardClick = homeMode ? undefined : () => navigate(`/match/${match.id}`);
+
+  const goToTeam = (team, e) => {
+    e.stopPropagation();
+    navigate(`/team/${slugify(team.name)}`, { state: { team, league: match.league } });
+  };
 
   const px  = homeMode ? 'px-3' : 'px-4';
   const pb  = homeMode ? 'pb-3' : 'pb-4';
@@ -89,7 +98,7 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
     <>
       <div
         onClick={handleCardClick}
-        className={`bg-white rounded-2xl border border-gray-200 shadow-md ${tier.shadow} card-hover flex flex-col overflow-hidden border-l-4 ${tier.border} ${homeMode ? '' : 'cursor-pointer'}`}
+        className={`bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-md ${tier.shadow} card-hover flex flex-col overflow-hidden border-l-4 ${tier.border} ${homeMode ? '' : 'cursor-pointer'}`}
       >
         {/* Header row */}
         <div className={`flex items-center justify-between ${px} ${homeMode ? 'pt-2.5 pb-1.5' : 'pt-3.5 pb-2'}`}>
@@ -99,17 +108,17 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
               {tier.label}
             </span>
             {isPlatinum && (
-              <span className="text-[10px] font-black text-purple-600 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-black text-purple-600 bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 px-1.5 py-0.5 rounded-full">
                 HIGH ROLLER
               </span>
             )}
             {!homeMode && isHot && !closingSoon && (
-              <span className="flex items-center gap-1 text-xs font-black text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+              <span className="flex items-center gap-1 text-xs font-black text-orange-600 bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800 px-2 py-0.5 rounded-full">
                 <FiTrendingUp className="w-3 h-3" /> HOT
               </span>
             )}
             {!homeMode && closingSoon && (
-              <span className="flex items-center gap-1 text-xs font-black text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+              <span className="flex items-center gap-1 text-xs font-black text-amber-600 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-full">
                 <FiClock className="w-3 h-3" /> CLOSING SOON
               </span>
             )}
@@ -121,11 +130,11 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
               LIVE {match.minute}
             </span>
           ) : match.status === 'finished' ? (
-            <span className="flex items-center gap-1 bg-gray-100 text-gray-500 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">
+            <span className="flex items-center gap-1 bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">
               <FiCheckCircle className="w-3 h-3" /> FT
             </span>
           ) : (
-            <span className="flex items-center gap-1 text-gray-500 text-[10px] font-semibold bg-gray-50 px-2 py-0.5 rounded-full shrink-0">
+            <span className="flex items-center gap-1 text-gray-500 dark:text-slate-400 text-[10px] font-semibold bg-gray-50 dark:bg-slate-700 px-2 py-0.5 rounded-full shrink-0">
               <FiClock className="w-3 h-3" /> {match.time}
             </span>
           )}
@@ -133,56 +142,70 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
 
         <div className={`${px} ${pb} flex flex-col flex-1`}>
           {/* League */}
-          <p className={`text-[10px] text-gray-400 font-medium ${gap} truncate`}>{match.league}</p>
+          <p className={`text-[10px] text-gray-400 dark:text-slate-500 font-medium ${gap} truncate`}>{match.league}</p>
 
           {/* Teams */}
           <div className={`flex items-center justify-between gap-2 ${gap}`}>
+            {/* Home team — logo navigates to team page */}
             <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
-              <TeamAvatar short={match.homeTeam.short} logo={match.homeTeam.logo} size={homeMode ? 'sm' : 'md'} />
-              <p className="text-[10px] font-bold text-[#1A1A2E] text-center leading-tight truncate w-full">{match.homeTeam.name}</p>
+              <button
+                onClick={(e) => goToTeam(match.homeTeam, e)}
+                className="rounded-full hover:ring-2 hover:ring-[#1A4D8F]/40 transition-all"
+                title={`View ${match.homeTeam.name}`}
+              >
+                <TeamAvatar short={match.homeTeam.short} logo={match.homeTeam.logo} size={homeMode ? 'sm' : 'md'} />
+              </button>
+              <p className="text-[10px] font-bold text-[#1A1A2E] dark:text-slate-200 text-center leading-tight truncate w-full">{match.homeTeam.name}</p>
             </div>
 
             <div className="shrink-0 text-center px-1">
               {isLive ? (
-                <div className="bg-red-50 border border-red-100 rounded-xl px-2 py-1">
-                  <span className={`${homeMode ? 'text-sm' : 'text-lg'} font-black text-red-600 tabular-nums`}>
+                <div className="bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-800 rounded-xl px-2 py-1">
+                  <span className={`${homeMode ? 'text-sm' : 'text-lg'} font-black text-red-600 dark:text-red-400 tabular-nums`}>
                     {match.score?.home} - {match.score?.away}
                   </span>
                 </div>
               ) : (
-                <span className="text-xs font-black text-gray-300">VS</span>
+                <span className="text-xs font-black text-gray-300 dark:text-slate-600">VS</span>
               )}
             </div>
 
+            {/* Away team — logo navigates to team page */}
             <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
-              <TeamAvatar short={match.awayTeam.short} logo={match.awayTeam.logo} size={homeMode ? 'sm' : 'md'} />
-              <p className="text-[10px] font-bold text-[#1A1A2E] text-center leading-tight truncate w-full">{match.awayTeam.name}</p>
+              <button
+                onClick={(e) => goToTeam(match.awayTeam, e)}
+                className="rounded-full hover:ring-2 hover:ring-[#1A4D8F]/40 transition-all"
+                title={`View ${match.awayTeam.name}`}
+              >
+                <TeamAvatar short={match.awayTeam.short} logo={match.awayTeam.logo} size={homeMode ? 'sm' : 'md'} />
+              </button>
+              <p className="text-[10px] font-bold text-[#1A1A2E] dark:text-slate-200 text-center leading-tight truncate w-full">{match.awayTeam.name}</p>
             </div>
           </div>
 
           {/* Market + admin pick */}
-          <div className={`bg-blue-50 border border-blue-100 rounded-xl px-2.5 ${homeMode ? 'py-1.5' : 'py-2.5'} ${gap}`}>
-            <p className="text-[10px] text-gray-400">Market — Pick</p>
-            <p className="text-xs font-bold text-[#1A4D8F] leading-tight truncate">{match.market}: <span>{match.adminPick}</span></p>
+          <div className={`bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-xl px-2.5 ${homeMode ? 'py-1.5' : 'py-2.5'} ${gap}`}>
+            <p className="text-[10px] text-gray-400 dark:text-slate-500">Market — Pick</p>
+            <p className="text-xs font-bold text-[#1A4D8F] dark:text-blue-400 leading-tight truncate">{match.market}: <span>{match.adminPick}</span></p>
           </div>
 
           {/* Stats row */}
-          <div className={`flex items-center gap-2 text-[10px] text-gray-500 ${gap} flex-wrap`}>
+          <div className={`flex items-center gap-2 text-[10px] text-gray-500 dark:text-slate-400 ${gap} flex-wrap`}>
             <span className="flex items-center gap-1">
               <FiUsers className="w-3 h-3" />
               {match.maxWinners}W
             </span>
-            <span className="font-bold text-[#1A1A2E]">
-              ${match.prizePool.toFixed(2)}
+            <span className="font-bold text-[#1A1A2E] dark:text-slate-200">
+              {btpFromDollars(match.prizePool).toLocaleString()} BTP
             </span>
             <span className="ml-auto font-black text-xs" style={{ color: match.tier === 'platinum' ? '#7C3AED' : match.tier === 'gold' ? '#d97706' : '#6b7280' }}>
-              {isFree ? 'FREE' : `from $0.99`}
+              {isFree ? 'FREE' : `${btpFromDollars(match.price)} BTP`}
             </span>
           </div>
 
           {/* Micro-details — lobby/detail pages only */}
           {!homeMode && (
-            <div className="flex items-center gap-2 text-[10px] text-gray-400 mb-3 flex-wrap">
+            <div className="flex items-center gap-2 text-[10px] text-gray-400 dark:text-slate-500 mb-3 flex-wrap">
               <span>{viewing} viewing</span>
               {almostFull && (
                 <span className="flex items-center gap-0.5 text-orange-500 font-bold">
@@ -194,11 +217,11 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
 
           {/* Pool fill progress bar */}
           <div className={homeMode ? 'mb-2.5' : 'mb-4'}>
-            <div className="flex items-center justify-between text-[10px] text-gray-400 mb-1">
+            <div className="flex items-center justify-between text-[10px] text-gray-400 dark:text-slate-500 mb-1">
               <span>Pool</span>
-              <span className="font-bold text-[#1A1A2E]">{match.fillPercent ?? 0}%</span>
+              <span className="font-bold text-[#1A1A2E] dark:text-slate-200">{match.fillPercent ?? 0}%</span>
             </div>
-            <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-1 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${tier.bar}`}
                 style={{ width: `${match.fillPercent ?? 0}%` }}
@@ -209,25 +232,25 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
           {/* Actions */}
           <div className="flex gap-1.5 mt-auto" onClick={e => e.stopPropagation()}>
             {inCart ? (
-              <div className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-50 border-2 border-green-200 text-green-600 text-xs font-black">
+              <div className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-50 dark:bg-green-950/40 border-2 border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 text-xs font-black">
                 <FiCheckCircle className="w-3.5 h-3.5" />
                 In Cart
               </div>
             ) : (
               <button
-                onClick={openModal}
+                onClick={openStakeModal}
                 className={`flex-1 text-white text-xs font-black py-2 rounded-xl text-center transition-colors ${tier.btnBg}`}
               >
                 {isFree ? 'Enter Free' : 'Stake Now'}
               </button>
             )}
             <button
-              onClick={inCart ? undefined : openModal}
+              onClick={inCart ? undefined : openStakeModal}
               disabled={inCart}
               className={`flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-all ${
                 inCart
-                  ? 'border-green-200 text-green-400 cursor-not-allowed bg-green-50'
-                  : 'border-gray-200 text-gray-500 hover:border-[#1A4D8F] hover:text-[#1A4D8F]'
+                  ? 'border-green-200 dark:border-green-800 text-green-400 cursor-not-allowed bg-green-50 dark:bg-green-950/40'
+                  : 'border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-[#1A4D8F] hover:text-[#1A4D8F] dark:hover:border-blue-600 dark:hover:text-blue-400'
               }`}
             >
               <FiShoppingCart className="w-3.5 h-3.5" />
@@ -235,7 +258,7 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
           </div>
 
           {!homeMode && (
-            <p className="text-xs text-center text-gray-400 mt-2">
+            <p className="text-xs text-center text-gray-400 dark:text-slate-500 mt-2">
               {inCart ? 'Remove from cart to change your stake' : 'Click card to view details'}
             </p>
           )}

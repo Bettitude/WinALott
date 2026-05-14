@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiAward, FiTrendingUp, FiUsers, FiDollarSign } from 'react-icons/fi';
-import { leaderboardData } from '../data/mockData';
+import { useLeaderboard } from '../hooks/useLeaderboard';
 import { useAuth } from '../hooks/useAuth';
 
 const TABS = ['weekly', 'monthly', 'allTime'];
@@ -18,7 +18,7 @@ function RankBadge({ rank }) {
   if (style) {
     return (
       <div className={`w-7 h-7 rounded-full ${style.bg} ${style.ring} flex items-center justify-center font-black text-xs ${style.text} shrink-0`}>
-        {rank <= 3 ? <FiAward className="w-3.5 h-3.5" /> : rank}
+        <FiAward className="w-3.5 h-3.5" />
       </div>
     );
   }
@@ -29,25 +29,23 @@ function RankBadge({ rank }) {
   );
 }
 
-const podiumColors = ['bg-yellow-400', 'bg-gray-300', 'bg-orange-400'];
+const podiumColors  = ['bg-yellow-400', 'bg-gray-300', 'bg-orange-400'];
 const podiumHeights = ['h-24', 'h-16', 'h-12'];
-const podiumRanks  = [1, 2, 3];
 
 export default function Leaderboard() {
-  const [tab, setTab]   = useState('weekly');
-  const { user }        = useAuth();
-  const rows            = leaderboardData[tab];
-  const top3            = rows.slice(0, 3);
-  const rest            = rows.slice(3);
+  const [tab, setTab] = useState('weekly');
+  const { user }      = useAuth();
+  const { rows, loading } = useLeaderboard(tab === 'allTime' ? 'alltime' : tab);
 
-  // Mock: highlight user if they're in the list
-  const myUsername = user?.username || 'J***n88';
+  const top3 = rows.slice(0, 3);
+  const rest = rows.slice(3);
+  const myUsername = user?.username || '';
 
   const stats = [
-    { icon: FiUsers,    label: 'Total Players',   value: '12,480', color: 'text-[#1A4D8F]', bg: 'bg-blue-50',   border: 'border-l-[#1A4D8F]' },
-    { icon: FiAward,    label: 'Winners This Week', value: '284',  color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-l-yellow-400' },
-    { icon: FiDollarSign,label: 'Total Paid Out',  value: '$48.2K',color: 'text-green-600',  bg: 'bg-green-50',  border: 'border-l-green-400' },
-    { icon: FiTrendingUp,label: 'Avg Win Rate',    value: '64%',   color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-l-purple-400' },
+    { icon: FiUsers,      label: 'Total Players',    value: '12,480', color: 'text-[#1A4D8F]',  bg: 'bg-blue-50',   border: 'border-l-[#1A4D8F]' },
+    { icon: FiAward,      label: 'Winners This Week', value: rows.length || '—', color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-l-yellow-400' },
+    { icon: FiDollarSign, label: 'Total Paid Out',   value: '$48.2K',  color: 'text-green-600',  bg: 'bg-green-50',  border: 'border-l-green-400' },
+    { icon: FiTrendingUp, label: 'Avg Win Rate',     value: '64%',     color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-l-purple-400' },
   ];
 
   return (
@@ -73,14 +71,16 @@ export default function Leaderboard() {
 
       {/* Stats */}
       <section className="max-w-5xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
           {stats.map(s => (
-            <div key={s.label} className={`bg-white rounded-2xl border border-gray-200 shadow-sm p-4 border-l-4 ${s.border}`}>
-              <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
-                <s.icon className={`w-4 h-4 ${s.color}`} />
+            <div key={s.label} className={`bg-white rounded-xl border border-gray-200 shadow-sm p-3 border-l-4 ${s.border} flex items-center gap-3`}>
+              <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center shrink-0`}>
+                <s.icon className={`w-3.5 h-3.5 ${s.color}`} />
               </div>
-              <p className={`text-xl font-black ${s.color}`}>{s.value}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
+              <div className="min-w-0">
+                <p className={`text-base font-black ${s.color} leading-none`}>{s.value}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">{s.label}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -97,85 +97,94 @@ export default function Leaderboard() {
           ))}
         </div>
 
-        {/* Podium — top 3 */}
-        <div className="flex items-end justify-center gap-4 mb-8">
-          {[top3[1], top3[0], top3[2]].filter(Boolean).map((player, i) => {
-            const realRank = i === 0 ? 2 : i === 1 ? 1 : 3;
-            const hgt = podiumHeights[realRank - 1];
-            const bg  = podiumColors[realRank - 1];
-            return (
-              <div key={player.username} className="flex flex-col items-center gap-2">
-                <div className="text-center mb-1">
-                  <div className="w-12 h-12 rounded-full bg-[#1A4D8F]/10 border-2 border-[#1A4D8F]/20 flex items-center justify-center mx-auto mb-1">
-                    <span className="text-sm font-black text-[#1A4D8F]">{player.username.slice(0, 2).toUpperCase()}</span>
-                  </div>
-                  <p className="text-xs font-bold text-[#1A1A2E] max-w-[80px] truncate">{player.username}</p>
-                  <p className="text-xs text-green-600 font-bold">${player.totalPrize.toFixed(2)}</p>
-                </div>
-                <div className={`w-20 ${hgt} ${bg} rounded-t-xl flex items-start justify-center pt-2`}>
-                  <span className="text-white font-black text-lg">#{realRank}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Full table */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="font-bold text-[#1A1A2E]">Full Rankings — {TAB_LABELS[tab]}</h2>
+        {loading ? (
+          <div className="space-y-3">
+            {Array(5).fill(0).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 animate-pulse h-14" />
+            ))}
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr className="text-xs text-gray-400 font-medium">
-                  <th className="text-left px-5 py-3">Rank</th>
-                  <th className="text-left py-3">Player</th>
-                  <th className="text-right py-3 hidden sm:table-cell">Wins</th>
-                  <th className="text-right py-3 hidden md:table-cell">Win Rate</th>
-                  <th className="text-right py-3 hidden lg:table-cell">Last Win On</th>
-                  <th className="text-right py-3 pr-5">Total Won</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(player => {
-                  const isMe = player.username === myUsername;
+        ) : rows.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 text-center py-16">
+            <FiTrendingUp className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-400 font-medium">No data yet for {TAB_LABELS[tab]}</p>
+          </div>
+        ) : (
+          <>
+            {/* Podium — top 3 */}
+            {top3.length >= 2 && (
+              <div className="flex items-end justify-center gap-4 mb-8">
+                {[top3[1], top3[0], top3[2]].filter(Boolean).map((player, i) => {
+                  const realRank = i === 0 ? 2 : i === 1 ? 1 : 3;
                   return (
-                    <tr key={player.rank}
-                      className={`border-t border-gray-50 transition-colors ${isMe ? 'bg-blue-50/60' : 'hover:bg-gray-50'}`}>
-                      <td className="px-5 py-3.5">
-                        <RankBadge rank={player.rank} />
-                      </td>
-                      <td className="py-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-[#1A4D8F]/10 flex items-center justify-center shrink-0">
-                            <span className="text-xs font-black text-[#1A4D8F]">{player.username.slice(0, 2).toUpperCase()}</span>
-                          </div>
-                          <div>
-                            <p className="font-bold text-[#1A1A2E] text-xs">{player.username}</p>
-                            {isMe && <span className="text-xs text-[#1A4D8F] font-semibold">You</span>}
-                          </div>
+                    <div key={player.username} className="flex flex-col items-center gap-2">
+                      <div className="text-center mb-1">
+                        <div className="w-12 h-12 rounded-full bg-[#1A4D8F]/10 border-2 border-[#1A4D8F]/20 flex items-center justify-center mx-auto mb-1">
+                          <span className="text-sm font-black text-[#1A4D8F]">{player.username.slice(0, 2).toUpperCase()}</span>
                         </div>
-                      </td>
-                      <td className="py-3.5 text-right hidden sm:table-cell">
-                        <span className="text-xs font-bold text-[#1A1A2E]">{player.wins}</span>
-                      </td>
-                      <td className="py-3.5 text-right hidden md:table-cell">
-                        <span className="text-xs text-gray-500">{player.winRate}%</span>
-                      </td>
-                      <td className="py-3.5 text-right hidden lg:table-cell">
-                        <span className="text-xs text-gray-400 truncate max-w-[120px] block">{player.lastWin}</span>
-                      </td>
-                      <td className="py-3.5 pr-5 text-right">
-                        <span className="text-sm font-black text-green-600">${player.totalPrize.toFixed(2)}</span>
-                      </td>
-                    </tr>
+                        <p className="text-xs font-bold text-[#1A1A2E] max-w-[80px] truncate">{player.username}</p>
+                        <p className="text-xs text-green-600 font-bold">${player.totalPrize.toFixed(2)}</p>
+                      </div>
+                      <div className={`w-20 ${podiumHeights[realRank - 1]} ${podiumColors[realRank - 1]} rounded-t-xl flex items-start justify-center pt-2`}>
+                        <span className="text-white font-black text-lg">#{realRank}</span>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              </div>
+            )}
+
+            {/* Full table */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100">
+                <h2 className="font-bold text-[#1A1A2E]">Full Rankings — {TAB_LABELS[tab]}</h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-100">
+                    <tr className="text-xs text-gray-400 font-medium">
+                      <th className="text-left px-5 py-3">Rank</th>
+                      <th className="text-left py-3">Player</th>
+                      <th className="text-right py-3 hidden sm:table-cell">Wins</th>
+                      <th className="text-right py-3 hidden lg:table-cell">Last Win</th>
+                      <th className="text-right py-3 pr-5">Total Won</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map(player => {
+                      const isMe = myUsername && player.username === myUsername;
+                      return (
+                        <tr key={player.rank}
+                          className={`border-t border-gray-50 transition-colors ${isMe ? 'bg-blue-50/60' : 'hover:bg-gray-50'}`}>
+                          <td className="px-5 py-3.5"><RankBadge rank={player.rank} /></td>
+                          <td className="py-3.5">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-[#1A4D8F]/10 flex items-center justify-center shrink-0">
+                                <span className="text-xs font-black text-[#1A4D8F]">{player.username.slice(0, 2).toUpperCase()}</span>
+                              </div>
+                              <div>
+                                <p className="font-bold text-[#1A1A2E] text-xs">{player.username}</p>
+                                {isMe && <span className="text-xs text-[#1A4D8F] font-semibold">You</span>}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3.5 text-right hidden sm:table-cell">
+                            <span className="text-xs font-bold text-[#1A1A2E]">{player.wins}</span>
+                          </td>
+                          <td className="py-3.5 text-right hidden lg:table-cell">
+                            <span className="text-xs text-gray-400">{player.lastWin}</span>
+                          </td>
+                          <td className="py-3.5 pr-5 text-right">
+                            <span className="text-sm font-black text-green-600">${player.totalPrize.toFixed(2)}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
       </section>
 
       {/* CTA */}

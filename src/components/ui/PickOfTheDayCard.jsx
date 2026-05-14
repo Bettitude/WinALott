@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { FiShoppingCart, FiStar } from 'react-icons/fi';
 import { useCart } from '../../hooks/useCart';
 import TeamAvatar from './TeamAvatar';
+import { btpFromDollars } from '../../utils/btp';
 
 export default function PickOfTheDayCard({ match }) {
   const { addToCart } = useCart();
@@ -39,7 +40,7 @@ export default function PickOfTheDayCard({ match }) {
         {/* Teams */}
         <div className="flex items-center gap-3 mb-4">
           <div className="flex flex-col items-center gap-1 flex-1">
-            <TeamAvatar short={match.homeTeam.short} size="lg" />
+            <TeamAvatar short={match.homeTeam.short} logo={match.homeTeam.logo} size="lg" />
             <p className="text-xs font-semibold text-[#1A1A2E] text-center leading-tight">{match.homeTeam.name}</p>
           </div>
           <div className="flex flex-col items-center">
@@ -47,7 +48,7 @@ export default function PickOfTheDayCard({ match }) {
             <span className="text-xs font-bold text-[#1A4D8F] bg-blue-50 px-2 py-0.5 rounded-full">{match.time}</span>
           </div>
           <div className="flex flex-col items-center gap-1 flex-1">
-            <TeamAvatar short={match.awayTeam.short} size="lg" />
+            <TeamAvatar short={match.awayTeam.short} logo={match.awayTeam.logo} size="lg" />
             <p className="text-xs font-semibold text-[#1A1A2E] text-center leading-tight">{match.awayTeam.name}</p>
           </div>
         </div>
@@ -62,9 +63,9 @@ export default function PickOfTheDayCard({ match }) {
         {/* Price */}
         <div className="text-center mb-4">
           <span className="text-2xl font-black text-[#1A4D8F]">
-            ${match.price.toFixed(2)}
+            {btpFromDollars(match.price).toLocaleString()}
           </span>
-          <span className="text-gray-400 text-sm ml-1">/ ticket</span>
+          <span className="text-[#1A4D8F]/60 text-sm ml-1 font-bold">BTP / ticket</span>
         </div>
 
         {/* CTA Buttons */}

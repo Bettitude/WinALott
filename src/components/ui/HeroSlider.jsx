@@ -4,7 +4,7 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
 import PickOfTheDayCard from './PickOfTheDayCard';
-import { mockMatches } from '../../data/mockData';
+import { useMatches } from '../../hooks/useMatches';
 
 const slides = [
   {
@@ -28,7 +28,8 @@ const slides = [
 ];
 
 export default function HeroSlider() {
-  const potd = mockMatches[0];
+  const { matches } = useMatches({ limit: 1 });
+  const potd = matches[0] || null;
 
   return (
     <div className="relative">

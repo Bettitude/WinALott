@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   FiClock, FiMapPin, FiUsers, FiChevronRight, FiZap, FiStar, FiAward,
@@ -6,8 +6,10 @@ import {
   FiActivity, FiGrid, FiWifi, FiTv, FiInfo, FiLock,
   FiAlertCircle, FiSearch,
 } from 'react-icons/fi';
-import { mockMatches, matchTiers } from '../data/mockData';
-import { getMatchDetail } from '../data/matchDetailData';
+import { useMatchDetail } from '../hooks/useMatchDetail';
+import { useMatches } from '../hooks/useMatches';
+import { matchApi } from '../api/matchApi';
+import { normalizeMatch, normalizeMarketToTier } from '../api/normalizers';
 import { useCart } from '../hooks/useCart';
 import TeamAvatar from '../components/ui/TeamAvatar';
 
@@ -39,56 +41,91 @@ function FormPill({ result }) {
 }
 
 function StatRow({ label, homeVal, awayVal }) {
-  const total = (homeVal + awayVal) || 1;
+  const hv    = typeof homeVal === 'number' ? homeVal : parseInt(homeVal) || 0;
+  const av    = typeof awayVal === 'number' ? awayVal : parseInt(awayVal) || 0;
+  const total = (hv + av) || 1;
   return (
     <div className="mb-3">
       <div className="flex justify-between text-xs mb-1">
-        <span className="font-bold text-[#1A4D8F]">{homeVal}</span>
+        <span className="font-bold text-[#1A4D8F]">{homeVal ?? 0}</span>
         <span className="text-gray-400">{label}</span>
-        <span className="font-bold text-red-500">{awayVal}</span>
+        <span className="font-bold text-red-500">{awayVal ?? 0}</span>
       </div>
       <div className="flex h-1.5 rounded-full overflow-hidden bg-gray-100">
-        <div style={{ width: `${(homeVal / total) * 100}%` }} className="bg-[#1A4D8F] transition-all" />
+        <div style={{ width: `${(hv / total) * 100}%` }} className="bg-[#1A4D8F] transition-all" />
         <div className="flex-1 bg-red-400" />
       </div>
     </div>
   );
 }
 
-function EventDot({ type }) {
-  if (type === 'goal')   return <span className="w-5 h-5 rounded-full bg-green-100 border-2 border-green-400 flex items-center justify-center text-[9px] font-black text-green-600">G</span>;
-  if (type === 'yellow') return <span className="w-5 h-5 rounded-sm bg-yellow-400 flex items-center justify-center text-[8px] font-black text-white">Y</span>;
-  if (type === 'red')    return <span className="w-5 h-5 rounded-sm bg-red-500 flex items-center justify-center text-[8px] font-black text-white">R</span>;
+function EventDot({ type, detail }) {
+  const t = type?.toLowerCase() || '';
+  const d = detail?.toLowerCase() || '';
+  if (t === 'goal') return <span className="w-5 h-5 rounded-full bg-green-100 border-2 border-green-400 flex items-center justify-center text-[9px] font-black text-green-600">G</span>;
+  if (t === 'card' && d.includes('yellow')) return <span className="w-5 h-5 rounded-sm bg-yellow-400 flex items-center justify-center text-[8px] font-black text-white">Y</span>;
+  if (t === 'card' && d.includes('red'))    return <span className="w-5 h-5 rounded-sm bg-red-500 flex items-center justify-center text-[8px] font-black text-white">R</span>;
   return <span className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-[9px] text-gray-500">E</span>;
 }
 
 function RatingBadge({ r }) {
   const cls = r >= 7 ? 'bg-green-500 text-white' : r >= 6 ? 'bg-yellow-400 text-white' : 'bg-red-400 text-white';
-  return <span className={`text-[9px] font-black px-1 py-0.5 rounded ${cls}`}>{r.toFixed(1)}</span>;
+  return <span className={`text-[9px] font-black px-1 py-0.5 rounded ${cls}`}>{Number(r).toFixed(1)}</span>;
+}
+
+function NoData({ label }) {
+  return (
+    <div className="py-12 text-center text-gray-400">
+      <p className="text-sm font-medium">{label || 'No data available'}</p>
+      <p className="text-xs mt-1 text-gray-300">Data will appear once the match is active</p>
+    </div>
+  );
 }
 
 // ── Pitch lineup ─────────────────────────────────────────────────────────
-function PitchLineup({ players, side }) {
-  const rows = useMemo(() => {
-    const gk  = players.filter(p => p.pos === 'GK');
-    const def = players.filter(p => ['CB','RB','LB'].includes(p.pos));
-    const mid = players.filter(p => ['DM','CM'].includes(p.pos));
-    const att = players.filter(p => ['RW','LW','AM','ST'].includes(p.pos));
-    return side === 'home' ? [att, mid, def, gk] : [gk, def, mid, att];
-  }, [players, side]);
+function groupByLine(players, side) {
+  const gk  = players.filter(p => ['G','GK'].includes(p.pos));
+  const def = players.filter(p => ['D','CB','RB','LB','RWB','LWB'].includes(p.pos));
+  const mid = players.filter(p => ['M','DM','CM','AM','RM','LM'].includes(p.pos));
+  const att = players.filter(p => ['F','RW','LW','ST','CF','SS'].includes(p.pos));
+  // catch-all for unknown positions
+  const rest = players.filter(p => ![...gk,...def,...mid,...att].includes(p));
+  const lines = [gk, def, mid, att].filter(l => l.length > 0);
+  if (rest.length) lines.splice(lines.length - 1, 0, rest);
+  return side === 'away' ? [...lines].reverse() : lines;
+}
 
+function PitchPlayer({ player, color, textColor }) {
+  const lastName = (player.name || '').split(' ').slice(-1)[0] || player.name || '';
   return (
-    <div className="flex flex-col gap-3 py-2">
-      {rows.map((row, ri) => (
-        <div key={ri} className="flex justify-center gap-2 flex-wrap">
+    <div className="flex flex-col items-center gap-0.5" style={{ minWidth: 44 }}>
+      <div
+        className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black shadow-md border-2 border-white/30 relative"
+        style={{ backgroundColor: color, color: textColor }}
+      >
+        {player.number || '?'}
+        {player.rating && (
+          <span className={`absolute -bottom-1.5 -right-1 text-[8px] font-black px-1 rounded-sm leading-tight ${
+            Number(player.rating) >= 7 ? 'bg-green-400 text-white' :
+            Number(player.rating) >= 6 ? 'bg-yellow-400 text-[#1A1A2E]' : 'bg-red-400 text-white'
+          }`}>
+            {Number(player.rating).toFixed(1)}
+          </span>
+        )}
+      </div>
+      <span className="text-[9px] font-semibold text-white/90 text-center leading-tight max-w-[44px] truncate">{lastName}</span>
+    </div>
+  );
+}
+
+function PitchHalf({ players, side, color, textColor, formation }) {
+  const lines = useMemo(() => groupByLine(players, side), [players, side]);
+  return (
+    <div className="flex flex-col justify-around flex-1 py-2 gap-1">
+      {lines.map((row, ri) => (
+        <div key={ri} className="flex justify-center items-center gap-1 flex-wrap">
           {row.map((p, pi) => (
-            <div key={pi} className="flex flex-col items-center gap-0.5 w-14">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black shadow ${
-                side === 'home' ? 'bg-[#1A4D8F] text-white' : 'bg-red-500 text-white'
-              }`}>{p.num}</div>
-              <span className="text-[9px] text-white/80 text-center leading-tight truncate w-full text-center">{p.name.split(' ').pop()}</span>
-              <RatingBadge r={p.rating} />
-            </div>
+            <PitchPlayer key={pi} player={p} color={color} textColor={textColor} />
           ))}
         </div>
       ))}
@@ -97,46 +134,38 @@ function PitchLineup({ players, side }) {
 }
 
 // ── Tab panels ────────────────────────────────────────────────────────────
-function OverviewTab({ detail, match }) {
+function OverviewTab({ events, fixture, h2h, match }) {
+  // Derive recent form from H2H
+  const homeForm = [];
+  const awayForm = [];
+  if (Array.isArray(h2h)) {
+    h2h.slice(0, 5).forEach(f => {
+      const hw = f.teams?.home?.winner;
+      const aw = f.teams?.away?.winner;
+      const isHomeTeam = f.teams?.home?.name === match.homeTeam.name;
+      if (hw === true) { homeForm.push(isHomeTeam ? 'W' : 'L'); awayForm.push(isHomeTeam ? 'L' : 'W'); }
+      else if (aw === true) { homeForm.push(isHomeTeam ? 'L' : 'W'); awayForm.push(isHomeTeam ? 'W' : 'L'); }
+      else { homeForm.push('D'); awayForm.push('D'); }
+    });
+  }
+
+  const fixtureData = Array.isArray(fixture) ? fixture[0] : fixture;
+  const venue    = fixtureData?.fixture?.venue?.name || match._raw?.stadium || '';
+  const referee  = fixtureData?.fixture?.referee || '';
+  const dateStr  = match.date;
+  const timeStr  = match.time;
+
   return (
     <div className="p-4 space-y-5">
-      <div>
-        <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">Recent Form (last 5)</p>
-        <div className="flex gap-6 flex-wrap">
-          {[['home', match.homeTeam.name], ['away', match.awayTeam.name]].map(([side, name]) => (
-            <div key={side}>
-              <p className="text-xs text-gray-500 mb-1.5">{name}</p>
-              <div className="flex gap-1">
-                {detail.form[side].map((r, i) => <FormPill key={i} result={r} />)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {detail.events.length > 0 && (
+      {(homeForm.length > 0 || awayForm.length > 0) && (
         <div>
-          <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">Match Events</p>
-          <div className="relative pl-8 space-y-3">
-            <div className="absolute left-[14px] top-0 bottom-0 w-px bg-gray-100" />
-            {detail.events.map((ev, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="absolute left-0 w-7 flex justify-end">
-                  <EventDot type={ev.type} />
-                </div>
-                <div className="flex-1 flex items-center justify-between gap-2 bg-gray-50 rounded-xl px-3 py-2">
-                  <div>
-                    <p className="text-xs font-bold text-[#1A1A2E]">{ev.player}</p>
-                    {ev.detail && <p className="text-[10px] text-gray-400">{ev.detail}</p>}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                      ev.team === 'home' ? 'bg-blue-50 text-[#1A4D8F]' : 'bg-red-50 text-red-500'
-                    }`}>
-                      {ev.team === 'home' ? match.homeTeam.short : match.awayTeam.short}
-                    </span>
-                    <span className="text-xs font-black text-gray-500">{ev.min}'</span>
-                  </div>
+          <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">Recent Form (H2H)</p>
+          <div className="flex gap-6 flex-wrap">
+            {[[homeForm, match.homeTeam.name], [awayForm, match.awayTeam.name]].map(([form, name], i) => (
+              <div key={i}>
+                <p className="text-xs text-gray-500 mb-1.5">{name}</p>
+                <div className="flex gap-1">
+                  {form.map((r, j) => <FormPill key={j} result={r} />)}
                 </div>
               </div>
             ))}
@@ -144,10 +173,43 @@ function OverviewTab({ detail, match }) {
         </div>
       )}
 
+      {Array.isArray(events) && events.length > 0 ? (
+        <div>
+          <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">Match Events</p>
+          <div className="relative pl-8 space-y-3">
+            <div className="absolute left-[14px] top-0 bottom-0 w-px bg-gray-100" />
+            {events.map((ev, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="absolute left-0 w-7 flex justify-end">
+                  <EventDot type={ev.type} detail={ev.detail} />
+                </div>
+                <div className="flex-1 flex items-center justify-between gap-2 bg-gray-50 rounded-xl px-3 py-2">
+                  <div>
+                    <p className="text-xs font-bold text-[#1A1A2E]">{ev.player?.name || '—'}</p>
+                    {ev.detail && <p className="text-[10px] text-gray-400">{ev.detail}</p>}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      ev.team?.name === match.homeTeam.name ? 'bg-blue-50 text-[#1A4D8F]' : 'bg-red-50 text-red-500'
+                    }`}>
+                      {ev.team?.name === match.homeTeam.name ? match.homeTeam.short : match.awayTeam.short}
+                    </span>
+                    <span className="text-xs font-black text-gray-500">{ev.time?.elapsed}'</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        events === null && <NoData label="Match events not yet available" />
+      )}
+
       <div>
         <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">Match Facts</p>
         <div className="grid grid-cols-2 gap-2">
-          {[['Venue', detail.venue], ['Referee', detail.referee], ['Attendance', detail.attendance], ['Round', detail.round], ['League', match.league], ['Date', match.date]]
+          {[['Venue', venue], ['Referee', referee], ['League', match.league], ['Date', dateStr + (timeStr ? ' · ' + timeStr : '')]]
+            .filter(([, val]) => val)
             .map(([lbl, val]) => (
               <div key={lbl} className="bg-gray-50 rounded-xl px-3 py-2">
                 <p className="text-[10px] text-gray-400">{lbl}</p>
@@ -160,54 +222,140 @@ function OverviewTab({ detail, match }) {
   );
 }
 
-function LineupsTab({ detail, match }) {
+function LineupsTab({ lineups, match }) {
+  if (!Array.isArray(lineups) || lineups.length < 2) return <NoData label="Lineups not yet available" />;
+
+  const home = lineups.find(l => l.team?.name === match.homeTeam.name) || lineups[0];
+  const away = lineups.find(l => l.team?.name === match.awayTeam.name) || lineups[1];
+
+  const toPlayer = (item) => ({
+    number: item.player?.number,
+    name:   item.player?.name || '',
+    pos:    item.player?.pos  || 'M',
+    rating: item.statistics?.[0]?.games?.rating || null,
+  });
+
+  const homePlayers = (home.startXI || []).map(toPlayer);
+  const awayPlayers = (away.startXI || []).map(toPlayer);
+  const homeBench   = (home.substitutes || []).map(p => p.player?.name).filter(Boolean);
+  const awayBench   = (away.substitutes || []).map(p => p.player?.name).filter(Boolean);
+
   return (
-    <div className="p-4">
-      <div className="bg-green-700 rounded-2xl overflow-hidden">
-        <div className="flex justify-between px-4 pt-3 pb-1">
-          <span className="text-white/70 text-xs font-bold">{match.homeTeam.short} {detail.lineup.formation.home}</span>
-          <span className="text-white/70 text-xs font-bold">{detail.lineup.formation.away} {match.awayTeam.short}</span>
+    <div className="p-3 space-y-3">
+      {/* Formation headers */}
+      <div className="flex justify-between items-center px-1">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-[#1A4D8F]" />
+          <span className="text-xs font-black text-[#1A1A2E]">{match.homeTeam.name}</span>
+          {home.formation && <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{home.formation}</span>}
         </div>
-        <div className="divide-y divide-white/10">
-          <div className="p-3"><PitchLineup players={detail.lineup.home.starting} side="home" /></div>
-          <div className="relative flex items-center justify-center py-1">
-            <div className="absolute inset-x-4 h-px bg-white/20" />
-            <div className="w-16 h-16 rounded-full border border-white/20 z-10" />
+        <div className="flex items-center gap-2">
+          {away.formation && <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{away.formation}</span>}
+          <span className="text-xs font-black text-[#1A1A2E]">{match.awayTeam.name}</span>
+          <div className="w-3 h-3 rounded-full bg-red-500" />
+        </div>
+      </div>
+
+      {/* Full pitch */}
+      <div
+        className="relative rounded-2xl overflow-hidden"
+        style={{
+          background: 'linear-gradient(180deg, #1a6b2a 0%, #1e7a30 25%, #1a6b2a 50%, #1e7a30 75%, #1a6b2a 100%)',
+          minHeight: 480,
+        }}
+      >
+        {/* Pitch markings SVG */}
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 480" preserveAspectRatio="none" fill="none">
+          {/* Outline */}
+          <rect x="10" y="10" width="280" height="460" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
+          {/* Halfway line */}
+          <line x1="10" y1="240" x2="290" y2="240" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
+          {/* Centre circle */}
+          <circle cx="150" cy="240" r="38" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
+          <circle cx="150" cy="240" r="2.5" fill="rgba(255,255,255,0.4)" />
+          {/* Home penalty box (top) */}
+          <rect x="65" y="10" width="170" height="65" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          <rect x="105" y="10" width="90" height="30" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          <circle cx="150" cy="68" r="28" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+          {/* Away penalty box (bottom) */}
+          <rect x="65" y="405" width="170" height="65" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          <rect x="105" y="450" width="90" height="30" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          <circle cx="150" cy="412" r="28" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+          {/* Corner arcs */}
+          <path d="M10,10 Q16,10 16,16" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          <path d="M290,10 Q284,10 284,16" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          <path d="M10,470 Q16,470 16,464" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          <path d="M290,470 Q284,470 284,464" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+        </svg>
+
+        {/* Players: both halves stacked */}
+        <div className="relative z-10 flex flex-col" style={{ minHeight: 480 }}>
+          {/* Home half (top) */}
+          <div className="flex-1 flex flex-col justify-around px-3 pt-3 pb-1">
+            <PitchHalf players={homePlayers} side="home" color="#1A4D8F" textColor="#fff" />
           </div>
-          <div className="p-3"><PitchLineup players={detail.lineup.away.starting} side="away" /></div>
+          {/* Midfield band */}
+          <div className="flex items-center justify-center py-1 gap-3">
+            <div className="h-px flex-1 bg-white/10" />
+            <div className="w-7 h-7 rounded-full border border-white/25 bg-transparent" />
+            <div className="h-px flex-1 bg-white/10" />
+          </div>
+          {/* Away half (bottom) */}
+          <div className="flex-1 flex flex-col justify-around px-3 pt-1 pb-3">
+            <PitchHalf players={awayPlayers} side="away" color="#dc2626" textColor="#fff" />
+          </div>
         </div>
-        <div className="flex justify-between px-4 pb-3 pt-2 border-t border-white/10 gap-4">
-          {[['home', match.homeTeam.name], ['away', match.awayTeam.name]].map(([side, name]) => (
-            <div key={side} className="flex-1">
-              <p className="text-white/50 text-[10px] mb-1">{name} — Bench</p>
+      </div>
+
+      {/* Bench */}
+      <div className="grid grid-cols-2 gap-3">
+        {[[match.homeTeam.name, homeBench, '#1A4D8F'], [match.awayTeam.name, awayBench, '#dc2626']].map(([name, bench, color]) => (
+          bench.length > 0 && (
+            <div key={name} className="bg-gray-50 rounded-xl p-3">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: color }} />
+                {name} — Bench
+              </p>
               <div className="flex flex-wrap gap-1">
-                {detail.lineup[side].bench.map((b, i) => (
-                  <span key={i} className="bg-white/10 text-white text-[10px] px-1.5 py-0.5 rounded">{b}</span>
+                {bench.map((b, i) => (
+                  <span key={i} className="bg-white border border-gray-200 text-gray-600 text-[10px] px-1.5 py-0.5 rounded-lg shadow-sm">
+                    {b.split(' ').slice(-1)[0]}
+                  </span>
                 ))}
               </div>
             </div>
-          ))}
-        </div>
+          )
+        ))}
       </div>
     </div>
   );
 }
 
-function StatsTab({ detail, match }) {
+function StatsTab({ stats, match }) {
+  if (!Array.isArray(stats) || stats.length < 2) return <NoData label="Match stats not yet available" />;
+
+  const home = stats.find(s => s.team?.name === match.homeTeam.name) || stats[0];
+  const away = stats.find(s => s.team?.name === match.awayTeam.name) || stats[1];
+
+  const getStat = (teamStats, type) => {
+    const item = (teamStats?.statistics || []).find(s => s.type === type);
+    return item?.value ?? 0;
+  };
+
   const rows = [
-    ['Possession %',    detail.stats.home.possession, detail.stats.away.possession],
-    ['Total Shots',     detail.stats.home.shots,       detail.stats.away.shots],
-    ['Shots on Target', detail.stats.home.shotsOT,     detail.stats.away.shotsOT],
-    ['Corners',         detail.stats.home.corners,     detail.stats.away.corners],
-    ['Fouls',           detail.stats.home.fouls,       detail.stats.away.fouls],
-    ['Yellow Cards',    detail.stats.home.yellows,     detail.stats.away.yellows],
-    ['Red Cards',       detail.stats.home.reds,        detail.stats.away.reds],
-    ['Offsides',        detail.stats.home.offsides,    detail.stats.away.offsides],
-    ['Passes',          detail.stats.home.passes,      detail.stats.away.passes],
-    ['Pass Accuracy %', detail.stats.home.passAcc,     detail.stats.away.passAcc],
-    ['Tackles',         detail.stats.home.tackles,     detail.stats.away.tackles],
-    ['Saves (GK)',      detail.stats.home.saves,       detail.stats.away.saves],
+    ['Possession %',    getStat(home, 'Ball Possession'),  getStat(away, 'Ball Possession')],
+    ['Total Shots',     getStat(home, 'Total Shots'),      getStat(away, 'Total Shots')],
+    ['Shots on Target', getStat(home, 'Shots on Goal'),    getStat(away, 'Shots on Goal')],
+    ['Corners',         getStat(home, 'Corner Kicks'),     getStat(away, 'Corner Kicks')],
+    ['Fouls',           getStat(home, 'Fouls'),            getStat(away, 'Fouls')],
+    ['Yellow Cards',    getStat(home, 'Yellow Cards'),     getStat(away, 'Yellow Cards')],
+    ['Red Cards',       getStat(home, 'Red Cards'),        getStat(away, 'Red Cards')],
+    ['Offsides',        getStat(home, 'Offsides'),         getStat(away, 'Offsides')],
+    ['Total Passes',    getStat(home, 'Total passes'),     getStat(away, 'Total passes')],
+    ['Tackles',         getStat(home, 'Tackles'),          getStat(away, 'Tackles')],
+    ['GK Saves',        getStat(home, 'Goalkeeper Saves'), getStat(away, 'Goalkeeper Saves')],
   ];
+
   return (
     <div className="p-4">
       <div className="flex justify-between text-xs font-bold mb-4">
@@ -219,51 +367,24 @@ function StatsTab({ detail, match }) {
   );
 }
 
-function StandingsTab({ detail, match }) {
-  return (
-    <div className="p-4">
-      <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">{match.league}</p>
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="text-gray-400 border-b border-gray-100">
-              {['#','Club','P','W','D','L','GF','GA','GD','Pts'].map(h => (
-                <th key={h} className={`py-2 font-medium ${h === 'Club' ? 'text-left pr-2' : 'text-center px-1'}`}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {detail.standings.map(row => (
-              <tr key={row.pos} className={`border-b border-gray-50 ${row.highlight ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
-                <td className="py-2 text-gray-400 text-center">{row.pos}</td>
-                <td className={`py-2 pr-2 font-bold ${row.highlight ? 'text-[#1A4D8F]' : 'text-gray-700'}`}>{row.team}</td>
-                <td className="py-2 text-center text-gray-500">{row.p}</td>
-                <td className="py-2 text-center text-gray-500">{row.w}</td>
-                <td className="py-2 text-center text-gray-500">{row.d}</td>
-                <td className="py-2 text-center text-gray-500">{row.l}</td>
-                <td className="py-2 text-center text-gray-500">{row.gf}</td>
-                <td className="py-2 text-center text-gray-500">{row.ga}</td>
-                <td className="py-2 text-center text-gray-500">{row.gd}</td>
-                <td className="py-2 text-center font-black text-[#1A4D8F]">{row.pts}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+function StandingsTab({ match }) {
+  return <NoData label={`Standings for ${match.league} — coming soon`} />;
 }
 
-function H2HTab({ detail, match }) {
-  const homeWins = detail.h2h.filter(r =>
-    (r.winner === 'home' && r.home === match.homeTeam.name) ||
-    (r.winner === 'away' && r.away === match.homeTeam.name)
-  ).length;
-  const awayWins = detail.h2h.filter(r =>
-    (r.winner === 'home' && r.home === match.awayTeam.name) ||
-    (r.winner === 'away' && r.away === match.awayTeam.name)
-  ).length;
-  const draws = detail.h2h.filter(r => r.winner === 'draw').length;
+function H2HTab({ h2h, match }) {
+  if (!Array.isArray(h2h) || h2h.length === 0) return <NoData label="H2H data not available" />;
+
+  const homeWins = h2h.filter(f => {
+    const hw = f.teams?.home?.winner;
+    const isHome = f.teams?.home?.name === match.homeTeam.name;
+    return (hw === true && isHome) || (hw === false && !isHome);
+  }).length;
+  const awayWins = h2h.filter(f => {
+    const aw = f.teams?.away?.winner;
+    const isAway = f.teams?.away?.name === match.awayTeam.name;
+    return (aw === true && isAway) || (aw === false && !isAway);
+  }).length;
+  const draws = h2h.filter(f => f.teams?.home?.winner === null && f.teams?.away?.winner === null).length;
 
   return (
     <div className="p-4">
@@ -274,17 +395,24 @@ function H2HTab({ detail, match }) {
       </div>
       <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">Recent Meetings</p>
       <div className="space-y-1.5">
-        {detail.h2h.map((r, i) => {
-          const homeIsMatch = r.home === match.homeTeam.name;
-          const resultCls = r.winner === 'draw' ? 'text-gray-500'
-            : (r.winner === 'home' && homeIsMatch) || (r.winner === 'away' && !homeIsMatch)
+        {h2h.slice(0, 10).map((f, i) => {
+          const homeName = f.teams?.home?.name || '';
+          const awayName = f.teams?.away?.name || '';
+          const hg = f.goals?.home ?? '—';
+          const ag = f.goals?.away ?? '—';
+          const score = `${hg} - ${ag}`;
+          const homeIsMatch = homeName === match.homeTeam.name;
+          const hw = f.teams?.home?.winner;
+          const resultCls = hw === null ? 'text-gray-500'
+            : (hw === true && homeIsMatch) || (hw === false && !homeIsMatch)
               ? 'text-[#1A4D8F]' : 'text-red-500';
+          const dateStr = f.fixture?.date ? new Date(f.fixture.date).toLocaleDateString('en-GB', { year: '2-digit', month: 'short', day: 'numeric' }) : '';
           return (
             <div key={i} className="flex items-center text-xs gap-2">
-              <span className="text-gray-300 w-20 shrink-0 text-[10px]">{r.date}</span>
-              <span className="flex-1 text-right font-medium text-gray-700 truncate">{r.home}</span>
-              <span className={`font-black px-2 py-0.5 rounded-lg bg-gray-50 shrink-0 ${resultCls}`}>{r.score}</span>
-              <span className="flex-1 font-medium text-gray-700 truncate">{r.away}</span>
+              <span className="text-gray-300 w-20 shrink-0 text-[10px]">{dateStr}</span>
+              <span className="flex-1 text-right font-medium text-gray-700 truncate">{homeName}</span>
+              <span className={`font-black px-2 py-0.5 rounded-lg bg-gray-50 shrink-0 ${resultCls}`}>{score}</span>
+              <span className="flex-1 font-medium text-gray-700 truncate">{awayName}</span>
             </div>
           );
         })}
@@ -293,10 +421,13 @@ function H2HTab({ detail, match }) {
   );
 }
 
-function OddsTab({ detail, match }) {
-  const bestHome = Math.max(...detail.odds.map(o => o.home));
-  const bestAway = Math.max(...detail.odds.map(o => o.away));
-  const bestDraw = Math.max(...detail.odds.map(o => o.draw));
+function OddsTab({ odds, match }) {
+  if (!Array.isArray(odds) || odds.length === 0) return <NoData label="Odds not available" />;
+
+  const bestHome = Math.max(...odds.map(o => o.home || 0));
+  const bestAway = Math.max(...odds.map(o => o.away || 0));
+  const bestDraw = Math.max(...odds.map(o => o.draw || 0));
+
   return (
     <div className="p-4 space-y-5">
       <div>
@@ -312,28 +443,18 @@ function OddsTab({ detail, match }) {
               </tr>
             </thead>
             <tbody>
-              {detail.odds.map((o, i) => (
+              {odds.map((o, i) => (
                 <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="py-2 pr-3 font-medium text-gray-700">{o.bookmaker}</td>
-                  <td className={`py-2 text-center font-bold rounded ${o.home === bestHome ? 'text-green-600 bg-green-50' : 'text-gray-600'}`}>{o.home.toFixed(2)}</td>
-                  <td className={`py-2 text-center font-bold rounded ${o.draw === bestDraw ? 'text-green-600 bg-green-50' : 'text-gray-600'}`}>{o.draw.toFixed(2)}</td>
-                  <td className={`py-2 text-center font-bold rounded ${o.away === bestAway ? 'text-green-600 bg-green-50' : 'text-gray-600'}`}>{o.away.toFixed(2)}</td>
+                  <td className={`py-2 text-center font-bold rounded ${o.home === bestHome ? 'text-green-600 bg-green-50' : 'text-gray-600'}`}>{Number(o.home || 0).toFixed(2)}</td>
+                  <td className={`py-2 text-center font-bold rounded ${o.draw === bestDraw ? 'text-green-600 bg-green-50' : 'text-gray-600'}`}>{Number(o.draw || 0).toFixed(2)}</td>
+                  <td className={`py-2 text-center font-bold rounded ${o.away === bestAway ? 'text-green-600 bg-green-50' : 'text-gray-600'}`}>{Number(o.away || 0).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         <p className="text-[10px] text-gray-300 mt-2">Odds for reference only. WinALott is not a bookmaker.</p>
-      </div>
-      <div>
-        <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">Where to Watch</p>
-        <div className="flex flex-wrap gap-2">
-          {detail.tv.map(ch => (
-            <span key={ch} className="flex items-center gap-1.5 text-xs bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5 text-gray-600">
-              <FiTv className="w-3 h-3" /> {ch}
-            </span>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -358,13 +479,19 @@ function MediaTab() {
 }
 
 // ── Staking Panel ─────────────────────────────────────────────────────────
-function StakingPanel({ match, tiers }) {
+function StakingPanel({ match, tiers, user }) {
   const { addToCart, items } = useCart();
   const [pick, setPick]         = useState(null);
-  const [selTier, setSelTier]   = useState(tiers[1]?.tier || tiers[0]?.tier);
+  const [selTier, setSelTier]   = useState(null);
   const [qty, setQty]           = useState(1);
   const [payState, setPayState] = useState('idle');
   const [added, setAdded]       = useState(false);
+
+  useEffect(() => {
+    if (tiers.length > 0 && !selTier) {
+      setSelTier(tiers[1]?.tier || tiers[0]?.tier);
+    }
+  }, [tiers, selTier]);
 
   const inCart   = items.some(i => i.matchId === match.id);
   const cartItem = items.find(i => i.matchId === match.id);
@@ -373,7 +500,7 @@ function StakingPanel({ match, tiers }) {
 
   const closesMs  = new Date(`${match.date}T${match.time}:00`).getTime() - Date.now();
   const closesMin = Math.max(0, Math.floor(closesMs / 60000));
-  const closingSoon = closesMin < 15;
+  const closingSoon = closesMin > 0 && closesMin < 15;
 
   const handleAddToCart = () => {
     if (!pick || !chosen || inCart) return;
@@ -381,7 +508,7 @@ function StakingPanel({ match, tiers }) {
       addToCart({ cartId: `${match.id}-${chosen.tier}-${Date.now()}-${i}`, matchId: match.id,
         match: `${match.homeTeam.name} vs ${match.awayTeam.name}`, market: match.market,
         pick: `${match.adminPick} (${pick.toUpperCase()})`, prediction: pick,
-        tier: chosen.tier, price: chosen.price });
+        tier: chosen.tier, price: chosen.price, marketId: chosen.marketId });
     }
     setAdded(true); setTimeout(() => setAdded(false), 2000);
   };
@@ -391,6 +518,14 @@ function StakingPanel({ match, tiers }) {
     setPayState('paying');
     setTimeout(() => setPayState('done'), 1800);
   };
+
+  if (tiers.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 text-center py-8">
+        <p className="text-sm text-gray-400">No active markets for this match</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-4">
@@ -445,7 +580,7 @@ function StakingPanel({ match, tiers }) {
             <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">Select Tier</p>
             <div className="space-y-1.5">
               {tiers.map(t => {
-                const tc = TIER_CFG[t.tier];
+                const tc = TIER_CFG[t.tier] || TIER_CFG.silver;
                 const active = selTier === t.tier;
                 return (
                   <button key={t.tier} onClick={() => !inCart && setSelTier(t.tier)} disabled={inCart}
@@ -517,7 +652,6 @@ function StakingPanel({ match, tiers }) {
                   : 'bg-[#F5C518] hover:bg-yellow-400 text-[#1A1A2E]'
                 }`}>
                 <span>{payState === 'paying' ? 'Processing...' : `Pay with Wallet — $${total.toFixed(2)}`}</span>
-                {payState !== 'paying' && <span className="text-[10px] opacity-60 font-normal">$24.50 available</span>}
               </button>
 
               <button onClick={handleAddToCart} disabled={!pick || !selTier || added}
@@ -557,9 +691,10 @@ function OtherGames({ currentMatchId }) {
   const navigate = useNavigate();
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
+  const { matches } = useMatches({ limit: 30 });
 
   const filtered = useMemo(() => {
-    let list = mockMatches.filter(m => m.id !== currentMatchId);
+    let list = matches.filter(m => m.id !== currentMatchId);
     if (filter === 'Live') list = list.filter(m => m.status === 'live');
     if (filter === 'Today') {
       const today = new Date().toISOString().slice(0, 10);
@@ -572,13 +707,11 @@ function OtherGames({ currentMatchId }) {
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(m =>
-        m.homeTeam.name.toLowerCase().includes(q) ||
-        m.awayTeam.name.toLowerCase().includes(q) ||
-        m.league.toLowerCase().includes(q)
+        `${m.homeTeam?.name} ${m.awayTeam?.name} ${m.league}`.toLowerCase().includes(q)
       );
     }
     return list;
-  }, [currentMatchId, filter, search]);
+  }, [matches, currentMatchId, filter, search]);
 
   return (
     <div className="flex flex-col h-full">
@@ -614,7 +747,7 @@ function OtherGames({ currentMatchId }) {
                 </span>}
               </div>
               <p className="text-[10px] font-bold text-[#1A1A2E] leading-tight">
-                {m.homeTeam.short} <span className="text-gray-400 font-normal">vs</span> {m.awayTeam.short}
+                {m.homeTeam?.short} <span className="text-gray-400 font-normal">vs</span> {m.awayTeam?.short}
               </p>
               <div className="flex items-center justify-between mt-1">
                 <span className={`inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 rounded-full ${tc.badge}`}>
@@ -639,15 +772,44 @@ function OtherGames({ currentMatchId }) {
 export default function MatchDetails() {
   const { matchId } = useParams();
   const navigate    = useNavigate();
-  const match       = useMemo(() => mockMatches.find(m => m.id === matchId), [matchId]);
-  const detail      = useMemo(() => getMatchDetail(matchId, match), [matchId, match]);
-  const tiers       = matchTiers[matchId] || [];
+
+  const { match: rawMatch, fixture, stats, lineups, events, h2h, odds, loading, error } = useMatchDetail(matchId);
+  const [tiers, setTiers] = useState([]);
+
+  useEffect(() => {
+    if (!matchId) return;
+    matchApi.getMarkets({ match_id: matchId, status: 'active' })
+      .then(res => {
+        const markets = res.data?.data?.markets || res.data?.data || [];
+        setTiers(Array.isArray(markets) ? markets.map(normalizeMarketToTier) : []);
+      })
+      .catch(() => {});
+  }, [matchId]);
+
+  const match = useMemo(() => rawMatch ? normalizeMatch(rawMatch) : null, [rawMatch]);
   const [activeTab, setActiveTab] = useState('overview');
 
-  if (!match) {
+  const { matches: otherMatchesMobile } = useMatches({ limit: 4 });
+
+  if (loading) {
+    return (
+      <div className="max-w-[1400px] mx-auto px-3 py-4">
+        <div className="bg-gray-100 rounded-2xl h-48 animate-pulse mb-4" />
+        <div className="flex gap-4">
+          <div className="hidden xl:block w-56 shrink-0">
+            <div className="bg-gray-100 rounded-2xl h-96 animate-pulse" />
+          </div>
+          <div className="flex-1 bg-gray-100 rounded-2xl h-96 animate-pulse" />
+          <div className="hidden xl:block w-[300px] shrink-0 bg-gray-100 rounded-2xl h-96 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!match || error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <p className="text-gray-400 mb-4">Match not found</p>
+        <p className="text-gray-400 mb-4">{error || 'Match not found'}</p>
         <button onClick={() => navigate('/lobby')} className="bg-[#1A4D8F] text-white font-bold px-5 py-2.5 rounded-xl text-sm">
           Back to Lobby
         </button>
@@ -656,17 +818,16 @@ export default function MatchDetails() {
   }
 
   const isLive = match.status === 'live';
+  const fixtureData = Array.isArray(fixture) ? fixture[0] : fixture;
+  const venueStr = fixtureData?.fixture?.venue?.name || match._raw?.stadium || '';
 
   return (
     <div className="max-w-[1400px] mx-auto px-3 py-4">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mb-3 flex-wrap">
         <Link to="/" className="hover:text-[#1A4D8F] transition-colors">Home</Link>
-        {detail.breadcrumb?.map((crumb, i) => (
-          <span key={i} className="flex items-center gap-1.5">
-            <FiChevronRight className="w-3 h-3" /><span>{crumb}</span>
-          </span>
-        ))}
+        <FiChevronRight className="w-3 h-3" />
+        <Link to="/lobby" className="hover:text-[#1A4D8F] transition-colors">Lobby</Link>
         <FiChevronRight className="w-3 h-3" />
         <span className="text-[#1A1A2E] font-bold">{match.homeTeam.short} vs {match.awayTeam.short}</span>
       </div>
@@ -674,9 +835,9 @@ export default function MatchDetails() {
       {/* Hero */}
       <div className="bg-gradient-to-br from-[#0D2B5E] to-[#1A1A2E] rounded-2xl p-5 mb-4 text-white">
         <p className="text-center text-xs text-blue-300 font-medium uppercase tracking-widest mb-0.5">{match.league}</p>
-        {detail.venue && (
+        {venueStr && (
           <p className="text-center text-[10px] text-white/40 mb-4 flex items-center justify-center gap-1">
-            <FiMapPin className="w-3 h-3" />{detail.venue}
+            <FiMapPin className="w-3 h-3" />{venueStr}
           </p>
         )}
         <div className="flex items-center justify-between gap-4">
@@ -735,12 +896,12 @@ export default function MatchDetails() {
                 </button>
               ))}
             </div>
-            {activeTab === 'overview'  && <OverviewTab  detail={detail} match={match} />}
-            {activeTab === 'lineups'   && <LineupsTab   detail={detail} match={match} />}
-            {activeTab === 'stats'     && <StatsTab     detail={detail} match={match} />}
-            {activeTab === 'standings' && <StandingsTab detail={detail} match={match} />}
-            {activeTab === 'h2h'       && <H2HTab       detail={detail} match={match} />}
-            {activeTab === 'odds'      && <OddsTab      detail={detail} match={match} />}
+            {activeTab === 'overview'  && <OverviewTab  events={events} fixture={fixture} h2h={h2h} match={match} />}
+            {activeTab === 'lineups'   && <LineupsTab   lineups={lineups} match={match} />}
+            {activeTab === 'stats'     && <StatsTab     stats={stats} match={match} />}
+            {activeTab === 'standings' && <StandingsTab match={match} />}
+            {activeTab === 'h2h'       && <H2HTab       h2h={h2h} match={match} />}
+            {activeTab === 'odds'      && <OddsTab      odds={odds} match={match} />}
             {activeTab === 'media'     && <MediaTab />}
           </div>
 
@@ -760,25 +921,27 @@ export default function MatchDetails() {
           <div className="border-2 border-dashed border-gray-200 rounded-xl py-16 flex items-center justify-center">
             <p className="text-[10px] text-gray-300 font-medium">Ad Space 300×250</p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">Tier Breakdown</p>
-            <div className="space-y-2">
-              {tiers.map(t => {
-                const tc = TIER_CFG[t.tier];
-                return (
-                  <div key={t.tier} className="flex items-center justify-between text-xs">
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full ${tc.badge}`}>
-                      <tc.Icon className="w-2.5 h-2.5" />{tc.label}
-                    </span>
-                    <div className="flex items-center gap-3 text-gray-500">
-                      <span><FiUsers className="w-3 h-3 inline mr-0.5" />{t.stakers}</span>
-                      <span className="font-bold text-[#1A1A2E]">${t.price.toFixed(2)}</span>
+          {tiers.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+              <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">Tier Breakdown</p>
+              <div className="space-y-2">
+                {tiers.map(t => {
+                  const tc = TIER_CFG[t.tier] || TIER_CFG.silver;
+                  return (
+                    <div key={t.tier} className="flex items-center justify-between text-xs">
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full ${tc.badge}`}>
+                        <tc.Icon className="w-2.5 h-2.5" />{tc.label}
+                      </span>
+                      <div className="flex items-center gap-3 text-gray-500">
+                        <span><FiUsers className="w-3 h-3 inline mr-0.5" />{t.stakers}</span>
+                        <span className="font-bold text-[#1A1A2E]">${t.price.toFixed(2)}</span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </aside>
       </div>
 
@@ -786,13 +949,13 @@ export default function MatchDetails() {
       <div className="xl:hidden mt-6 bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
         <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">More Matches</p>
         <div className="space-y-2">
-          {mockMatches.filter(m => m.id !== matchId).slice(0, 4).map(m => {
+          {otherMatchesMobile.filter(m => m.id !== matchId).slice(0, 4).map(m => {
             const tc = TIER_CFG[m.tier] || TIER_CFG.silver;
             return (
               <button key={m.id} onClick={() => navigate(`/match/${m.id}`)}
                 className="w-full flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 text-left hover:bg-gray-100 transition-colors">
                 <div>
-                  <p className="text-xs font-bold text-[#1A1A2E]">{m.homeTeam.short} vs {m.awayTeam.short}</p>
+                  <p className="text-xs font-bold text-[#1A1A2E]">{m.homeTeam?.short} vs {m.awayTeam?.short}</p>
                   <p className="text-[10px] text-gray-400">{m.league}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">

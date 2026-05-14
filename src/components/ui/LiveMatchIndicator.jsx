@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiZap, FiX } from 'react-icons/fi';
-import { mockMatches } from '../../data/mockData';
+import { useLiveFixtures } from '../../hooks/useLiveFixtures';
 
 export default function LiveMatchIndicator() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const { liveOnly } = useLiveFixtures();
 
-  const liveMatches = mockMatches.filter(m => m.status === 'live');
-  if (liveMatches.length === 0) return null;
+  if (liveOnly.length === 0) return null;
 
   return (
     <div className="fixed top-20 right-3 z-30">
@@ -19,7 +19,7 @@ export default function LiveMatchIndicator() {
       >
         <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
         <FiZap className="w-3 h-3" />
-        {liveMatches.length} LIVE
+        {liveOnly.length} LIVE
       </button>
 
       {/* Mini overlay */}
@@ -37,19 +37,21 @@ export default function LiveMatchIndicator() {
               </button>
             </div>
             <div className="divide-y divide-gray-50">
-              {liveMatches.map(m => (
+              {liveOnly.map(m => (
                 <button
                   key={m.id}
                   onClick={() => { navigate(`/match/${m.id}`); setOpen(false); }}
                   className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 transition-colors text-left"
                 >
                   <div>
-                    <p className="text-xs font-bold text-[#1A1A2E]">{m.homeTeam.short} vs {m.awayTeam.short}</p>
+                    <p className="text-xs font-bold text-[#1A1A2E]">{m.homeTeam.name} vs {m.awayTeam.name}</p>
                     <p className="text-[10px] text-gray-400">{m.league}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-black text-red-600">{m.score?.home} — {m.score?.away}</p>
-                    <p className="text-[10px] text-red-400 font-bold">{m.minute}</p>
+                    {m.score?.home != null && (
+                      <p className="text-sm font-black text-red-600">{m.score.home} — {m.score.away}</p>
+                    )}
+                    {m.minute && <p className="text-[10px] text-red-400 font-bold">{m.minute}</p>}
                   </div>
                 </button>
               ))}

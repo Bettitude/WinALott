@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom';
-import { FiGift, FiCheck } from 'react-icons/fi';
+import { FiGift, FiCheck, FiArrowRight } from 'react-icons/fi';
 import MatchCard from '../components/ui/MatchCard';
-import CountdownTimer from '../components/ui/CountdownTimer';
-import { giveawayMatches } from '../data/mockData';
+import { useMatches } from '../hooks/useMatches';
 
 const rules = [
-  'No purchase required — BTGiveaway tickets are completely free.',
+  'No purchase required — BTGiveaway entries are completely free.',
   'Must have a verified WinALot account to enter.',
   'One free ticket per user per giveaway event.',
   'Your prediction must match the admin\'s pick to enter the draw.',
@@ -13,11 +12,67 @@ const rules = [
   'Must be 18 years or older to participate.',
 ];
 
-const nextDraw = new Date();
-nextDraw.setDate(nextDraw.getDate() + 2);
-nextDraw.setHours(22, 0, 0);
+// Defined prize categories for the giveaway
+const PRIZES = [
+  {
+    icon: '👟',
+    name: 'Soccer Boot Bundle',
+    desc: 'Nike Phantom GX Elite + Adidas Predator Elite — top-of-range boots worth $450+',
+    color: 'from-orange-50 to-amber-50',
+    border: 'border-orange-200',
+    badge: 'bg-orange-100 text-orange-700',
+    tag: 'Most Popular',
+  },
+  {
+    icon: '🏆',
+    name: 'Cash Prize',
+    desc: 'Direct bank transfer or wallet credit — up to $500 per draw',
+    color: 'from-yellow-50 to-green-50',
+    border: 'border-yellow-200',
+    badge: 'bg-yellow-100 text-yellow-700',
+    tag: 'Cash',
+  },
+  {
+    icon: '🎽',
+    name: 'Official Club Jersey',
+    desc: 'Latest season authentic jersey of your favourite club with player name',
+    color: 'from-blue-50 to-indigo-50',
+    border: 'border-blue-200',
+    badge: 'bg-blue-100 text-blue-700',
+    tag: 'Merch',
+  },
+  {
+    icon: '🎟️',
+    name: 'Match Day Tickets',
+    desc: 'Two premium tickets to a Premier League or Champions League fixture',
+    color: 'from-purple-50 to-pink-50',
+    border: 'border-purple-200',
+    badge: 'bg-purple-100 text-purple-700',
+    tag: 'Experience',
+  },
+  {
+    icon: '⌚',
+    name: 'Sports Watch',
+    desc: 'Garmin Forerunner or Apple Watch SE — track your match day performance',
+    color: 'from-gray-50 to-slate-50',
+    border: 'border-gray-200',
+    badge: 'bg-gray-100 text-gray-700',
+    tag: 'Gadget',
+  },
+  {
+    icon: '🎮',
+    name: 'Gaming Bundle',
+    desc: 'EA FC 2025 + FIFA Points + Controller — dominate on and off the pitch',
+    color: 'from-teal-50 to-cyan-50',
+    border: 'border-teal-200',
+    badge: 'bg-teal-100 text-teal-700',
+    tag: 'Gaming',
+  },
+];
 
 export default function BTGiveaway() {
+  const { matches, loading } = useMatches({ tier: 'free', status: 'active' });
+
   return (
     <div>
       {/* Hero */}
@@ -34,9 +89,13 @@ export default function BTGiveaway() {
               <FiGift className="w-10 h-10 text-[#F5C518]" />
             </div>
           </div>
+          <div className="inline-flex items-center gap-2 bg-green-500 text-white text-xs font-black px-3 py-1.5 rounded-full mb-3">
+            <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+            100% FREE — NO PAYMENT REQUIRED
+          </div>
           <h1 className="text-4xl font-black text-white mb-3">BT Giveaway</h1>
           <p className="text-blue-200 text-lg font-medium max-w-lg mx-auto">
-            Your Free Shot at Big Prizes — No Purchase Needed
+            Your Free Shot at Real Prizes — Boots, Cash, Jerseys & More
           </p>
         </div>
       </div>
@@ -47,8 +106,8 @@ export default function BTGiveaway() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {[
             { n: '01', title: 'Pick a Giveaway Match', desc: 'Browse the BTGiveaway matches below — marked with a FREE badge.' },
-            { n: '02', title: 'Make Your Prediction', desc: 'Agree or disagree with the admin\'s prediction. No payment required!' },
-            { n: '03', title: 'Enter the Draw', desc: 'If your prediction is correct, you\'re automatically entered in the prize draw.' },
+            { n: '02', title: 'Make Your Prediction', desc: 'Predict the match result. No payment, no card details — completely free.' },
+            { n: '03', title: 'Win Real Prizes', desc: 'Correct predictors enter the draw. Winners receive boots, cash, jerseys, and more.' },
           ].map(s => (
             <div key={s.n} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 text-center card-hover">
               <div className="w-12 h-12 rounded-full bg-[#F5C518] text-[#1A1A2E] font-black text-lg flex items-center justify-center mx-auto mb-3">
@@ -61,30 +120,61 @@ export default function BTGiveaway() {
         </div>
       </section>
 
-      {/* Next draw countdown */}
-      <section className="bg-[#1A4D8F] py-8 px-4">
-        <div className="max-w-xl mx-auto text-center">
-          <p className="text-blue-200 text-sm font-medium mb-2">Next Giveaway Draw In</p>
-          <div className="flex justify-center">
-            <CountdownTimer targetDate={nextDraw.toISOString()} />
+      {/* Prize showcase */}
+      <section className="bg-gray-50 border-t border-b border-gray-200 py-12 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-black text-[#1A1A2E] mb-2">This Month's Prize Pool</h2>
+            <p className="text-gray-500 text-sm">Prizes rotate every month. Enter free and win real gear.</p>
           </div>
-          <p className="text-blue-300 text-xs mt-3">Winners selected automatically after match result</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {PRIZES.map(p => (
+              <div
+                key={p.name}
+                className={`bg-gradient-to-br ${p.color} border ${p.border} rounded-2xl p-5 card-hover`}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <span className="text-3xl">{p.icon}</span>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${p.badge}`}>{p.tag}</span>
+                </div>
+                <h3 className="font-black text-[#1A1A2E] mb-1.5">{p.name}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{p.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Active giveaway matches */}
       <section className="max-w-5xl mx-auto px-4 py-12">
-        <h2 className="text-2xl font-black text-[#1A1A2E] mb-6">Active Giveaway Matches</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {giveawayMatches.map(m => (
-            <MatchCard key={m.id} match={m} />
-          ))}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-black text-[#1A1A2E]">Active Giveaway Matches</h2>
+          <span className="text-xs font-bold text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
+            FREE ENTRY
+          </span>
         </div>
-        {giveawayMatches.length === 0 && (
+
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array(3).fill(0).map((_, i) => <MatchCard key={i} loading />)}
+          </div>
+        ) : matches.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {matches.map(m => <MatchCard key={m.id} match={m} />)}
+          </div>
+        ) : (
+          /* Show real upcoming matches from lobby as free-entry targets */
           <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
             <FiGift className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400">No active giveaway matches right now.</p>
-            <p className="text-gray-300 text-sm">Check back soon!</p>
+            <p className="text-gray-500 font-semibold mb-1">No dedicated giveaway matches right now.</p>
+            <p className="text-gray-400 text-sm mb-5">Check the Lobby — some matches have free entry tiers.</p>
+            <Link
+              to="/lobby"
+              className="inline-flex items-center gap-2 bg-[#1A4D8F] text-white font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-[#0D2B5E] transition-colors"
+            >
+              Browse Free Games <FiArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         )}
       </section>

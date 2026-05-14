@@ -6,6 +6,8 @@ import CartDrawer from '../ui/CartDrawer';
 import LiveTicker from '../ui/LiveTicker';
 import RadioPlayer from '../ui/RadioPlayer';
 import LiveMatchIndicator from '../ui/LiveMatchIndicator';
+import CookieConsent from '../ui/CookieConsent';
+import SubscribeModal from '../ui/SubscribeModal';
 import { useRadio } from '../../context/RadioContext';
 
 const NO_TICKER = ['/auth/', '/verify'];
@@ -21,7 +23,7 @@ function Inner({ children }) {
   const showTicker = !NO_TICKER.some(p => pathname.startsWith(p));
 
   return (
-    <div className={`min-h-screen flex flex-col bg-[#F5F7FA] ${radioOpen ? 'pb-14' : ''}`}>
+    <div className={`min-h-screen flex flex-col bg-[#F5F7FA] dark:bg-slate-900 ${radioOpen ? 'pb-14' : ''}`}>
       <Navbar />
       {showTicker && <LiveTicker />}
       <main className="flex-1 page-fade pt-16">
@@ -31,6 +33,8 @@ function Inner({ children }) {
       <CartDrawer />
       <LiveMatchIndicator />
       <RadioPlayer />
+      <CookieConsent />
+      <SubscribeModal />
     </div>
   );
 }

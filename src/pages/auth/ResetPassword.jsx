@@ -52,9 +52,9 @@ export default function ResetPassword() {
 
   if (done) {
     return (
-      <div className="min-h-[calc(100vh-64px)] bg-[#F5F7FA] flex items-center justify-center px-4 py-10">
+      <div className="min-h-[calc(100vh-64px)] bg-[#F5F7FA] flex items-center justify-center px-4 py-6 sm:py-10">
         <div className="w-full max-w-md text-center">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-5 sm:p-8">
             <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <FiCheckCircle className="w-8 h-8 text-green-500" />
             </div>

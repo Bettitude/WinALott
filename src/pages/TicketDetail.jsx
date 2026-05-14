@@ -1,36 +1,28 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiAward, FiCalendar, FiCheckCircle, FiXCircle, FiClock, FiShare2, FiCopy, FiCheck, FiArrowLeft } from 'react-icons/fi';
-import { dashboardTickets } from '../data/mockData';
+import { matchApi } from '../api/matchApi';
+import { normalizeTicket } from '../api/normalizers';
 
 const STATUS_CONFIG = {
   won: {
-    label:  'Won',
-    icon:   FiAward,
-    text:   'text-green-700',
-    bg:     'bg-green-50',
-    border: 'border-green-200',
-    bar:    'bg-green-400',
+    label: 'Won', icon: FiAward,
+    text: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200', bar: 'bg-green-400',
   },
   lost: {
-    label:  'Lost',
-    icon:   FiXCircle,
-    text:   'text-red-600',
-    bg:     'bg-red-50',
-    border: 'border-red-200',
-    bar:    'bg-red-400',
+    label: 'Lost', icon: FiXCircle,
+    text: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', bar: 'bg-red-400',
   },
   pending: {
-    label:  'Pending',
-    icon:   FiClock,
-    text:   'text-yellow-700',
-    bg:     'bg-yellow-50',
-    border: 'border-yellow-200',
-    bar:    'bg-yellow-400',
+    label: 'Pending', icon: FiClock,
+    text: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-200', bar: 'bg-yellow-400',
+  },
+  active: {
+    label: 'Active', icon: FiClock,
+    text: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-200', bar: 'bg-yellow-400',
   },
 };
 
-// Simple barcode-like visual
 function FakeBarcode() {
   const bars = Array.from({ length: 40 }, (_, i) => {
     const widths = [1, 2, 1, 3, 1, 2, 2, 1, 3, 1, 2, 1, 1, 2, 3, 1, 1, 2, 1, 2];
@@ -48,16 +40,22 @@ function FakeBarcode() {
 export default function TicketDetail() {
   const { ticketNumber } = useParams();
   const [copied, setCopied] = useState(false);
+  const [ticket, setTicket] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Find ticket by number OR id from mock data
-  const ticket = dashboardTickets.find(
-    t => t.id === ticketNumber || ('WAL-20250415-' + t.id.slice(-5)) === ticketNumber
-  ) || dashboardTickets[0]; // fallback to first for demo
-
-  const status = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.pending;
-  const StatusIcon = status.icon;
-
-  const ticketNum = ticketNumber || `WAL-20250415-00014`;
+  useEffect(() => {
+    if (!ticketNumber) return;
+    setLoading(true);
+    matchApi.getTicketByNumber(ticketNumber)
+      .then(res => {
+        const raw = res.data?.data?.ticket;
+        if (raw) setTicket(normalizeTicket(raw));
+        else setError('Ticket not found');
+      })
+      .catch(() => setError('Ticket not found'))
+      .finally(() => setLoading(false));
+  }, [ticketNumber]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(window.location.href).catch(() => {});
@@ -67,11 +65,37 @@ export default function TicketDetail() {
 
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({ title: `WinALot Ticket ${ticketNum}`, url: window.location.href }).catch(() => {});
+      navigator.share({ title: `WinALot Ticket ${ticketNumber}`, url: window.location.href }).catch(() => {});
     } else {
       handleCopy();
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-100 rounded-xl mb-6 w-40" />
+          <div className="bg-gray-100 rounded-2xl h-80" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !ticket) {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-8 text-center">
+        <FiXCircle className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+        <p className="text-gray-400 font-medium">Ticket not found</p>
+        <Link to="/dashboard/tickets" className="text-[#1A4D8F] text-sm font-medium hover:underline mt-3 inline-block">
+          Back to My Tickets
+        </Link>
+      </div>
+    );
+  }
+
+  const status = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.pending;
+  const StatusIcon = status.icon;
 
   return (
     <div className="max-w-lg mx-auto px-4 py-8">
@@ -81,7 +105,6 @@ export default function TicketDetail() {
 
       {/* Ticket card */}
       <div className={`bg-white rounded-2xl border-2 ${status.border} shadow-lg overflow-hidden mb-4`}>
-        {/* Status bar */}
         <div className={`h-1.5 ${status.bar}`} />
 
         {/* Header */}
@@ -127,7 +150,6 @@ export default function TicketDetail() {
             </div>
           </div>
 
-          {/* Prize */}
           {ticket.prize > 0 && (
             <div className="bg-green-50 border border-green-100 rounded-xl p-4 mb-5 flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
@@ -146,11 +168,11 @@ export default function TicketDetail() {
           </div>
         </div>
 
-        {/* Separator + barcode */}
+        {/* Barcode */}
         <div className="border-t border-dashed border-gray-200 mx-4" />
         <div className="flex flex-col items-center py-4 px-6">
           <FakeBarcode />
-          <p className="font-mono text-xs text-gray-400 tracking-widest mt-1">{ticketNum}</p>
+          <p className="font-mono text-xs text-gray-400 tracking-widest mt-1">{ticket.ticketNumber || ticketNumber}</p>
         </div>
       </div>
 

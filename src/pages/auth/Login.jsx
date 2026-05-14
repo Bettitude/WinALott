@@ -48,10 +48,10 @@ export default function Login() {
       </div>
 
       {/* Right form panel */}
-      <div className="flex-1 flex items-center justify-center bg-[#F5F7FA] px-4 py-10">
+      <div className="flex-1 flex items-center justify-center bg-[#F5F7FA] px-4 py-6 sm:py-10">
         <div className="w-full max-w-md">
           {/* Logo (mobile only) */}
-          <div className="text-center mb-8 lg:hidden">
+          <div className="text-center mb-6 sm:mb-8 lg:hidden">
             <Link to="/" className="inline-flex items-center gap-1 justify-center">
               <span className="text-3xl font-black tracking-tight">
                 <span className="text-[#F5C518]">b</span>
@@ -63,7 +63,7 @@ export default function Login() {
             <p className="text-gray-400 text-sm mt-2">Take a Side. Win the Pride.</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-5 sm:p-8">
             <h2 className="text-xl font-black text-[#1A1A2E] mb-1">Welcome back</h2>
             <p className="text-gray-400 text-sm mb-6">Log in to your WinALot account</p>
             <LoginForm />

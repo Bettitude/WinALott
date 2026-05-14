@@ -1,65 +1,84 @@
 import { createContext, useState, useEffect } from 'react';
+import { authApi } from '../api/authApi';
 
 export const AuthContext = createContext(null);
+
+function normalizeUser(u) {
+  return {
+    id:            u.id,
+    name:          u.full_name  || u.name     || '',
+    username:      u.username   || '',
+    email:         u.email      || '',
+    avatar:        u.avatar_url || null,
+    balance:       (u.wallet_balance || 0) / 100,
+    totalWinnings: 0,
+    winRate:       0,
+    activeTickets: 0,
+    role:          u.role       || 'user',
+  };
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('winalot_user');
-    if (stored) {
-      try { setUser(JSON.parse(stored)); } catch {}
-    }
-    setLoading(false);
+    const token = localStorage.getItem('winalott_token');
+    if (!token) { setLoading(false); return; }
+
+    authApi.me()
+      .then(res => {
+        const u = res.data?.data?.user;
+        if (u) setUser(normalizeUser(u));
+      })
+      .catch(() => {
+        localStorage.removeItem('winalott_token');
+        localStorage.removeItem('winalott_user');
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const login = async (email, password) => {
-    // Stub: simulate API call
-    await new Promise(r => setTimeout(r, 800));
-    const mockUser = {
-      id: 'u1',
-      name: 'John Doe',
-      username: 'johndoe88',
-      email,
-      avatar: null,
-      balance: 42.50,
-      totalWinnings: 54.60,
-      winRate: 63,
-      activeTickets: 3,
-    };
-    setUser(mockUser);
-    localStorage.setItem('winalot_user', JSON.stringify(mockUser));
+    const res = await authApi.login(email, password);
+    const { user: u, session } = res.data?.data || {};
+    if (session?.access_token) {
+      localStorage.setItem('winalott_token', session.access_token);
+    }
+    const normalized = normalizeUser(u);
+    setUser(normalized);
+    localStorage.setItem('winalott_user', JSON.stringify(normalized));
     return { success: true };
   };
 
   const signup = async (data) => {
-    await new Promise(r => setTimeout(r, 1000));
-    const mockUser = {
-      id: 'u2',
-      name: data.fullName,
-      username: data.username,
-      email: data.email,
-      avatar: null,
-      balance: 0,
-      totalWinnings: 0,
-      winRate: 0,
-      activeTickets: 0,
-    };
-    setUser(mockUser);
-    localStorage.setItem('winalot_user', JSON.stringify(mockUser));
+    const res = await authApi.register({
+      full_name: data.fullName,
+      username:  data.username,
+      email:     data.email,
+      phone:     data.phone    || '',
+      password:  data.password,
+    });
+    const { user: u, session } = res.data?.data || {};
+    if (session?.access_token) {
+      localStorage.setItem('winalott_token', session.access_token);
+    }
+    const normalized = normalizeUser(u);
+    setUser(normalized);
+    localStorage.setItem('winalott_user', JSON.stringify(normalized));
     return { success: true };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try { await authApi.logout(); } catch {}
     setUser(null);
-    localStorage.removeItem('winalot_user');
+    localStorage.removeItem('winalott_token');
+    localStorage.removeItem('winalott_user');
   };
 
   const updateProfile = (updates) => {
     const updated = { ...user, ...updates };
     setUser(updated);
-    localStorage.setItem('winalot_user', JSON.stringify(updated));
+    localStorage.setItem('winalott_user', JSON.stringify(updated));
   };
 
   return (
