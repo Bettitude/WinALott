@@ -49,7 +49,7 @@ function LogoItem({ name, url }) {
   return (
     <div
       title={name}
-      className="w-16 h-16 rounded-xl bg-[#F3F4F6] flex items-center justify-center mx-3 shrink-0 shadow-sm hover:shadow-md hover:scale-110 transition-all duration-200 cursor-pointer"
+      className="w-16 h-16 rounded-xl bg-[#F3F4F6] dark:bg-slate-700 flex items-center justify-center mx-3 shrink-0 shadow-sm hover:shadow-md hover:scale-110 transition-all duration-200 cursor-pointer"
     >
       {!imgError && url ? (
         <img
@@ -59,7 +59,7 @@ function LogoItem({ name, url }) {
           onError={() => setImgError(true)}
         />
       ) : (
-        <span className="text-[#0D2B5E] font-black text-sm select-none">{abbr}</span>
+        <span className="text-[#0D2B5E] dark:text-slate-200 font-black text-sm select-none">{abbr}</span>
       )}
     </div>
   );
@@ -87,11 +87,11 @@ export default function LeagueLogoStrip() {
   const [paused, setPaused] = useState(false);
 
   return (
-    <section className="bg-white py-16 px-4">
+    <section className="bg-white dark:bg-slate-900 py-16 px-4">
       {/* Heading */}
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold text-[#0D2B5E]">Diverse League Coverage</h2>
-        <p className="text-[#1A4D8F] text-sm mt-1">A wide variety of leagues for every fan</p>
+        <h2 className="text-3xl font-bold text-[#0D2B5E] dark:text-white">Diverse League Coverage</h2>
+        <p className="text-[#1A4D8F] dark:text-blue-400 text-sm mt-1">A wide variety of leagues for every fan</p>
       </div>
 
       {/* Strip container */}
@@ -101,9 +101,9 @@ export default function LeagueLogoStrip() {
         onMouseLeave={() => setPaused(false)}
       >
         {/* Left fade mask */}
-        <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white dark:from-slate-900 to-transparent z-10 pointer-events-none" />
         {/* Right fade mask */}
-        <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white dark:from-slate-900 to-transparent z-10 pointer-events-none" />
 
         {/* Row 1 — left, 35s */}
         <ScrollRow logos={row1} direction="left"  speed={35} paused={paused} />

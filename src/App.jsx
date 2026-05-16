@@ -38,6 +38,7 @@ import Verify from './pages/Verify';
 import TicketDetail from './pages/TicketDetail';
 import TeamPage from './pages/TeamPage';
 import Team from './pages/Team';
+import TeamHistory from './pages/TeamHistory';
 import ResetPassword from './pages/auth/ResetPassword';
 
 import About from './pages/static/About';
@@ -113,6 +114,7 @@ function AppRoutes() {
           <Route path="/ticket/:ticketNumber" element={<TicketDetail />} />
           <Route path="/team/:slug" element={<TeamPage />} />
           <Route path="/team/:teamSlug" element={<Team />} />
+          <Route path="/match/:matchId/team/:side" element={<TeamHistory />} />
 
           {/* Static */}
           <Route path="/about" element={<About />} />

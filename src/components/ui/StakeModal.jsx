@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FiX, FiStar, FiAward, FiZap, FiUsers, FiShoppingCart, FiCheckCircle, FiLock, FiBarChart2, FiAlertTriangle, FiZap as FiBolt } from 'react-icons/fi';
-import { btpFromDollars } from '../../utils/btp';
+import { Link } from 'react-router-dom';
+import { FiX, FiStar, FiAward, FiZap, FiUsers, FiShoppingCart, FiCheckCircle, FiLock, FiBarChart2, FiAlertTriangle, FiLogIn } from 'react-icons/fi';
+import { formatBTP } from '../../utils/btp';
 import { useCart } from '../../hooks/useCart';
+import { useAuth } from '../../hooks/useAuth';
 import TeamAvatar from './TeamAvatar';
 import { matchApi } from '../../api/matchApi';
 import { normalizeMarketToTier } from '../../api/normalizers';
@@ -102,6 +104,7 @@ function CancelModal({ onConfirm, onCancel }) {
 
 export default function StakeModal({ match, open, onClose }) {
   const { addToCart, items } = useCart();
+  const { isAuthenticated } = useAuth();
   const [pick, setPick]           = useState(null);
   const [selectedTier, setSelectedTier] = useState(null);
   const [added, setAdded]         = useState(false);
@@ -292,7 +295,7 @@ export default function StakeModal({ match, open, onClose }) {
               <div>
                 <p className="text-sm font-bold text-green-700">Already staked on this match</p>
                 <p className="text-xs text-green-600">
-                  {TIER_CONFIG[cartItem.tier]?.label} tier · {cartItem.pick} · {btpFromDollars(cartItem.price ?? 0).toLocaleString()} BTP
+                  {TIER_CONFIG[cartItem.tier]?.label} tier · {cartItem.pick} · {formatBTP(cartItem.price ?? 0)}
                 </p>
               </div>
             </div>
@@ -336,7 +339,7 @@ export default function StakeModal({ match, open, onClose }) {
                         <p className="text-[10px] text-gray-400 leading-relaxed">{cfg.desc}</p>
                         <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
                           <span className="flex items-center gap-1"><FiUsers className="w-3 h-3" />{t.maxWinners} winner{t.maxWinners > 1 ? 's' : ''}</span>
-                          <span className="font-bold text-[#1A1A2E]">Pool: {btpFromDollars(t.prizePool).toLocaleString()} BTP</span>
+                          <span className="font-bold text-[#1A1A2E]">Pool: {formatBTP(t.prizePool)}</span>
                           <span>{t.stakers} staked</span>
                         </div>
                         <div className="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden">
@@ -347,8 +350,7 @@ export default function StakeModal({ match, open, onClose }) {
                       <div className="shrink-0 text-right">
                         <p className={`text-base font-black leading-tight ${
                           t.tier === 'platinum' ? 'text-purple-600' : t.tier === 'gold' ? 'text-[#d97706]' : 'text-gray-600'
-                        }`}>{btpFromDollars(t.price).toLocaleString()}</p>
-                        <p className="text-[10px] text-gray-400 font-bold">BTP</p>
+                        }`}>{formatBTP(t.price)}</p>
                         {(active || isStakedTier) && (
                           <FiCheckCircle className={`w-4 h-4 mt-1 ml-auto ${isStakedTier ? 'text-green-500' : 'text-[#1A4D8F]'}`} />
                         )}
@@ -388,13 +390,20 @@ export default function StakeModal({ match, open, onClose }) {
                       }`}>
                       <FiShoppingCart className="w-4 h-4" /> Cart
                     </button>
-                    <button onClick={handlePayNow} disabled={!pick || !selectedTier}
-                      className={`flex-1 py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-1.5 transition-all ${
-                        !pick || !selectedTier ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-[#F5C518] hover:brightness-105 text-[#1A1A2E]'
-                      }`}>
-                      <span className="font-black text-base leading-none">◈</span>
-                      {chosen ? `${btpFromDollars(chosen.price).toLocaleString()} BTP` : 'Use BTP'}
-                    </button>
+                    {isAuthenticated ? (
+                      <button onClick={handlePayNow} disabled={!pick || !selectedTier}
+                        className={`flex-1 py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-1.5 transition-all ${
+                          !pick || !selectedTier ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-[#F5C518] hover:brightness-105 text-[#1A1A2E]'
+                        }`}>
+                        <span className="font-black text-base leading-none">◈</span>
+                        {chosen ? formatBTP(chosen.price) : 'Use BTP'}
+                      </button>
+                    ) : (
+                      <Link to="/auth/login" onClick={onClose}
+                        className="flex-1 py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-1.5 bg-[#1A4D8F] text-white hover:bg-[#0D2B5E] transition-all">
+                        <FiLogIn className="w-4 h-4" /> Log In to Stake
+                      </Link>
+                    )}
                   </div>
                 )}
               </>

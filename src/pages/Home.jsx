@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   FiArrowRight, FiUsers, FiTrendingUp,
   FiCheckCircle, FiShield, FiZap, FiRadio, FiAward, FiAlertCircle,
 } from 'react-icons/fi';
-import { btpFromDollars } from '../utils/btp';
+import { formatBTP } from '../utils/btp';
 import { useRadio } from '../context/RadioContext';
 import HeroSlider from '../components/ui/HeroSlider';
 import MatchCard from '../components/ui/MatchCard';
@@ -72,6 +72,7 @@ function CountdownUnit({ value, label }) {
 }
 
 export default function Home() {
+  const navigate = useNavigate();
   const [activeMarket, setActiveMarket] = useState('All Markets');
   const [stakingCount, setStakingCount] = useState(842);
   const [newsIdx, setNewsIdx]           = useState(0);
@@ -210,7 +211,10 @@ export default function Home() {
               <h2 className="text-lg font-black text-[#1A1A2E] uppercase tracking-wide">Featured Match</h2>
             </div>
 
-            <div className="bg-gradient-to-r from-[#0D2B5E] to-[#1A4D8F] rounded-2xl overflow-hidden shadow-xl">
+            <div
+              onClick={() => navigate(`/match/${featured.id}`)}
+              className="bg-gradient-to-r from-[#0D2B5E] to-[#1A4D8F] rounded-2xl overflow-hidden shadow-xl cursor-pointer hover:shadow-2xl transition-shadow"
+            >
               <div className="flex flex-col md:flex-row items-center gap-6 p-6 md:p-8">
                 <div className="flex-1 text-white">
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
@@ -255,15 +259,14 @@ export default function Home() {
                     <span className="text-white/30">|</span>
                     <span>Pick: <span className="text-[#F5C518] font-bold">{featured.adminPick}</span></span>
                     <span className="text-white/30">|</span>
-                    <span>Pool: <span className="text-white font-bold">{btpFromDollars(featured.prizePool || 0).toLocaleString()} BTP</span></span>
+                    <span>Pool: <span className="text-white font-bold">{formatBTP(featured.prizePool || 0)}</span></span>
                   </div>
                 </div>
 
-                <div className="flex flex-col items-center gap-3 shrink-0 text-center">
+                <div className="flex flex-col items-center gap-3 shrink-0 text-center" onClick={e => e.stopPropagation()}>
                   <div className="bg-white/10 border border-white/20 rounded-2xl px-5 py-3">
                     <p className="text-xs text-blue-200 mb-1">Entry Fee</p>
-                    <p className="text-2xl font-black text-[#F5C518]">{btpFromDollars(featured.price || 0).toLocaleString()}</p>
-                    <p className="text-xs text-[#F5C518]/70 font-black">BTP</p>
+                    <p className="text-2xl font-black text-[#F5C518]">{formatBTP(featured.price || 0)}</p>
                     <p className="text-xs text-blue-200 mt-1">{featured.maxWinners} winners</p>
                   </div>
                   <Link
@@ -340,28 +343,28 @@ export default function Home() {
       <WhyWinALot />
 
       {/* Winner Showcase */}
-      <section className="py-12 px-4 bg-white">
+      <section className="py-12 px-4 bg-white dark:bg-slate-900">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-black text-[#1A1A2E] mb-1">Recent Winners</h2>
-            <p className="text-gray-500 text-sm">Real payouts. Real players.</p>
+            <h2 className="text-2xl font-black text-[#1A1A2E] dark:text-white mb-1">Recent Winners</h2>
+            <p className="text-gray-500 dark:text-slate-400 text-sm">Real payouts. Real players.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {winners.map(w => (
-              <div key={w.id} className="bg-gradient-to-br from-gray-50 to-white border border-gray-100 rounded-2xl p-4 flex items-center gap-3">
+              <div key={w.id} className="bg-gradient-to-br from-gray-50 to-white dark:from-slate-800 dark:to-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F5C518] to-[#e6a800] flex items-center justify-center shrink-0 shadow-md">
                   <span className="text-sm font-black text-[#1A1A2E]">{(w.username || '?')[0].toUpperCase()}</span>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-[#1A1A2E] truncate">{w.username}</p>
-                  <p className="text-xs text-gray-400 truncate">{w.match}</p>
-                  <p className="text-sm font-black text-green-600 mt-0.5">+${w.prize.toFixed(2)}</p>
+                  <p className="text-sm font-bold text-[#1A1A2E] dark:text-white truncate">{w.username}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500 truncate">{w.match}</p>
+                  <p className="text-sm font-black text-green-600 dark:text-green-400 mt-0.5">+${w.prize.toFixed(2)}</p>
                 </div>
               </div>
             ))}
           </div>
           <div className="mt-5 text-center">
-            <Link to="/leaderboard" className="inline-flex items-center gap-2 text-[#1A4D8F] font-semibold text-sm hover:underline">
+            <Link to="/leaderboard" className="inline-flex items-center gap-2 text-[#1A4D8F] dark:text-blue-400 font-semibold text-sm hover:underline">
               View Leaderboard <FiArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -369,22 +372,22 @@ export default function Home() {
       </section>
 
       {/* Trust Badges */}
-      <section className="py-10 px-4 bg-gray-50 border-t border-b border-gray-100">
+      <section className="py-10 px-4 bg-gray-50 dark:bg-slate-800/50 border-t border-b border-gray-100 dark:border-slate-700">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
           {TRUST_BADGES.map(({ Icon, label, sub }) => (
             <div key={label} className="flex flex-col items-center text-center gap-2 p-4">
-              <div className="w-12 h-12 rounded-2xl bg-[#1A4D8F]/10 flex items-center justify-center">
-                <Icon className="w-6 h-6 text-[#1A4D8F]" />
+              <div className="w-12 h-12 rounded-2xl bg-[#1A4D8F]/10 dark:bg-blue-950/40 flex items-center justify-center">
+                <Icon className="w-6 h-6 text-[#1A4D8F] dark:text-blue-400" />
               </div>
-              <p className="text-sm font-black text-[#1A1A2E]">{label}</p>
-              <p className="text-xs text-gray-400">{sub}</p>
+              <p className="text-sm font-black text-[#1A1A2E] dark:text-white">{label}</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500">{sub}</p>
             </div>
           ))}
         </div>
       </section>
 
       <LeagueLogoStrip />
-      <div className="bg-white pb-10 text-center -mt-6">
+      <div className="bg-white dark:bg-slate-900 pb-10 text-center -mt-6">
         <Link to="/lobby" className="inline-flex items-center gap-2 bg-[#1A4D8F] text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-[#0D2B5E] transition-colors">
           Browse All Leagues <FiArrowRight className="w-4 h-4" />
         </Link>

@@ -138,6 +138,16 @@ body {
 .dark ::-webkit-scrollbar-thumb { background: #475569; }
 .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
+/* ── Section label (TeamHistory tabs) ─────────────────────────────── */
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+}
+
 /* ── Ticker bar ────────────────────────────────────────────────────── */
 .ticker-bar {
   background: #0D2B5E;

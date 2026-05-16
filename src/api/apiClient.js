@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// VITE_API_URL should point to the Bettitude Laravel backend, e.g.:
+//   Development:  http://localhost:8000/api
+//   Production:   https://api.bettitude.com/api
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
   timeout: 15000,
 });
 
@@ -15,11 +18,11 @@ apiClient.interceptors.response.use(
   res => res,
   err => {
     if (err.response?.status === 401) {
+      // Only clear stored credentials — do NOT auto-redirect.
+      // Protected pages (dashboard, checkout) handle their own login gates.
+      // Browsing/public pages must always work without login.
       localStorage.removeItem('winalott_token');
       localStorage.removeItem('winalott_user');
-      if (!window.location.pathname.startsWith('/auth')) {
-        window.location.href = '/auth/login';
-      }
     }
     return Promise.reject(err);
   }

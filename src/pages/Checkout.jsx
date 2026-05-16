@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiCheck, FiCreditCard, FiShoppingBag, FiArrowLeft, FiStar, FiAward, FiZap, FiCopy } from 'react-icons/fi';
+import { FiCheck, FiCreditCard, FiShoppingBag, FiArrowLeft, FiStar, FiAward, FiZap, FiCopy,
+         FiLogIn, FiShoppingCart, FiAlertCircle, FiPlusCircle } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
+import { useAuth } from '../hooks/useAuth';
+import { formatBTP } from '../utils/btp';
 
 const steps = ['Review', 'Payment', 'Confirmation'];
 
@@ -18,10 +21,18 @@ function generateTicketNumber() {
   return `WAL-${date}-${seq}`;
 }
 
+// Admin-set conversion rate: how many BTP per 1 USD
+const BTP_PER_USD = 100;
+
 export default function Checkout() {
   const { items, cartTotal, clearCart } = useCart();
+  const { isAuthenticated, user, updateUser } = useAuth();
+  const balance = user?.balance ?? 0;
+  const hasEnoughBTP = balance >= cartTotal;
+  const shortfall = cartTotal - balance;
+
   const [step, setStep]         = useState(1);
-  const [payMethod, setPayMethod] = useState('card');
+  const [payMethod, setPayMethod] = useState('btp');
   const [card, setCard]         = useState({ name: '', number: '', expiry: '', cvv: '' });
   const [errors, setErrors]     = useState({});
   const [loading, setLoading]   = useState(false);
@@ -71,6 +82,30 @@ export default function Checkout() {
 
   const formatCard   = (v) => v.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim();
   const formatExpiry = (v) => { const r = v.replace(/\D/g,'').slice(0,4); return r.length > 2 ? r.slice(0,2)+'/'+r.slice(2) : r; };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-20 text-center">
+        <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
+          <FiShoppingCart className="w-8 h-8 text-[#1A4D8F]" />
+        </div>
+        <h2 className="text-xl font-black text-[#1A1A2E] dark:text-white mb-2">Log in to checkout</h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">
+          Your cart is saved — log in to complete your purchase and receive your tickets.
+        </p>
+        <Link
+          to="/auth/login"
+          className="inline-flex items-center gap-2 bg-[#1A4D8F] text-white font-black text-sm px-6 py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors"
+        >
+          <FiLogIn className="w-4 h-4" /> Log In to Continue
+        </Link>
+        <p className="text-xs text-gray-400 dark:text-slate-500 mt-4">
+          Don't have an account?{' '}
+          <Link to="/auth/signup" className="text-[#1A4D8F] dark:text-blue-400 font-semibold hover:underline">Sign up free</Link>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -131,16 +166,22 @@ export default function Checkout() {
                         <p className="text-[10px] text-gray-300 font-mono mt-0.5">Match ID: {item.matchId}</p>
                       </div>
                       <span className="font-bold text-[#1A4D8F] text-sm shrink-0">
-                        {item.price === 0 ? 'FREE' : `$${item.price.toFixed(2)}`}
+                        {item.price === 0 ? 'FREE' : formatBTP(item.price)}
                       </span>
                     </div>
                   );
                 })}
               </div>
-              <div className="flex justify-between font-black text-lg mb-6">
+              <div className="flex justify-between font-black text-lg mb-2">
                 <span className="text-[#1A1A2E]">Total</span>
-                <span className="text-[#1A4D8F]">${cartTotal.toFixed(2)}</span>
+                <span className="text-[#1A4D8F] flex items-center gap-1">
+                  <span className="text-[#F5C518]">◈</span>
+                  {cartTotal.toLocaleString()} BTP
+                </span>
               </div>
+              <p className="text-xs text-gray-400 mb-6">
+                ≈ ${(cartTotal / BTP_PER_USD).toFixed(2)} USD at current rate (1 USD = {BTP_PER_USD} BTP)
+              </p>
               <button
                 onClick={() => setStep(2)}
                 className="w-full bg-[#1A4D8F] text-white font-bold py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors text-sm"
@@ -158,85 +199,82 @@ export default function Checkout() {
           <button onClick={() => setStep(1)} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-5">
             <FiArrowLeft className="w-4 h-4" /> Back
           </button>
-          <h2 className="text-xl font-black text-[#1A1A2E] mb-5">Payment</h2>
+          <h2 className="text-xl font-black text-[#1A1A2E] mb-5">Pay with BT Points</h2>
 
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            {[{id:'card',label:'Debit/Credit Card'},{id:'flutterwave',label:'Flutterwave'}].map(m => (
-              <button
-                key={m.id}
-                onClick={() => setPayMethod(m.id)}
-                className={`py-3 px-4 rounded-xl border-2 text-sm font-semibold transition-all ${
-                  payMethod === m.id ? 'border-[#1A4D8F] bg-blue-50 text-[#1A4D8F]' : 'border-gray-200 text-gray-600'
-                }`}
-              >
-                {m.label}
-              </button>
-            ))}
+          {/* BTP Balance status */}
+          <div className={`rounded-2xl p-4 mb-6 border-2 ${hasEnoughBTP ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-black uppercase tracking-wider text-gray-500">Your BTP Balance</p>
+              <span className={`text-base font-black flex items-center gap-1 ${hasEnoughBTP ? 'text-green-700' : 'text-red-600'}`}>
+                <span className="text-[#F5C518]">◈</span>
+                {balance.toLocaleString()} BTP
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-black uppercase tracking-wider text-gray-500">Order Total</p>
+              <span className="text-base font-black text-[#1A4D8F] flex items-center gap-1">
+                <span className="text-[#F5C518]">◈</span>
+                {cartTotal.toLocaleString()} BTP
+              </span>
+            </div>
+            {hasEnoughBTP ? (
+              <div className="mt-3 flex items-center gap-2 text-green-700">
+                <FiCheck className="w-4 h-4 shrink-0" />
+                <p className="text-xs font-semibold">
+                  After payment: <strong>{(balance - cartTotal).toLocaleString()} BTP</strong> remaining
+                </p>
+              </div>
+            ) : (
+              <div className="mt-3 flex items-center gap-2 text-red-600">
+                <FiAlertCircle className="w-4 h-4 shrink-0" />
+                <p className="text-xs font-semibold">
+                  You need <strong>{shortfall.toLocaleString()} more BTP</strong>
+                  {' '}(≈ ${(shortfall / BTP_PER_USD).toFixed(2)} USD)
+                </p>
+              </div>
+            )}
           </div>
 
-          {payMethod === 'card' && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Name on Card</label>
-                <input
-                  value={card.name}
-                  onChange={e => setC('name', e.target.value)}
-                  placeholder="John Doe"
-                  className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] ${errors.name ? 'border-red-400' : 'border-gray-200'}`}
-                />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+          {/* Conversion rate info */}
+          <div className="bg-[#F5C518]/10 border border-[#F5C518]/30 rounded-xl px-4 py-3 mb-6 text-xs text-gray-600">
+            <p className="font-bold text-[#1A1A2E] mb-1">BTP Conversion Rate</p>
+            <p>1 USD = {BTP_PER_USD} BTP &nbsp;·&nbsp; 1 BTP = ${(1 / BTP_PER_USD).toFixed(4)} USD</p>
+            <p className="text-gray-400 mt-0.5">Rate is set by the admin and may change at any time.</p>
+          </div>
+
+          {hasEnoughBTP ? (
+            <button
+              onClick={handlePay}
+              disabled={loading}
+              className="w-full bg-[#F5C518] text-[#1A1A2E] font-black py-3.5 rounded-xl hover:brightness-105 transition-all disabled:opacity-60 text-sm flex items-center justify-center gap-2"
+            >
+              {loading ? 'Processing…' : (
+                <>
+                  <span className="text-lg leading-none">◈</span>
+                  Pay {cartTotal.toLocaleString()} BTP
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-center">
+                <p className="text-red-600 font-bold text-sm mb-1">Insufficient BT Points</p>
+                <p className="text-red-500 text-xs">
+                  You need {shortfall.toLocaleString()} more BTP to complete this order.
+                </p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Card Number</label>
-                <div className="relative">
-                  <FiCreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    value={card.number}
-                    onChange={e => setC('number', formatCard(e.target.value))}
-                    placeholder="1234 5678 9012 3456"
-                    className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] ${errors.number ? 'border-red-400' : 'border-gray-200'}`}
-                  />
-                </div>
-                {errors.number && <p className="text-red-500 text-xs mt-1">{errors.number}</p>}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Expiry</label>
-                  <input
-                    value={card.expiry}
-                    onChange={e => setC('expiry', formatExpiry(e.target.value))}
-                    placeholder="MM/YY"
-                    className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] ${errors.expiry ? 'border-red-400' : 'border-gray-200'}`}
-                  />
-                  {errors.expiry && <p className="text-red-500 text-xs mt-1">{errors.expiry}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">CVV</label>
-                  <input
-                    value={card.cvv}
-                    onChange={e => setC('cvv', e.target.value.slice(0,4))}
-                    placeholder="123"
-                    className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] ${errors.cvv ? 'border-red-400' : 'border-gray-200'}`}
-                  />
-                  {errors.cvv && <p className="text-red-500 text-xs mt-1">{errors.cvv}</p>}
-                </div>
-              </div>
+              <Link
+                to="/dashboard/wallet"
+                className="flex items-center justify-center gap-2 w-full bg-[#1A4D8F] text-white font-black py-3.5 rounded-xl hover:bg-[#0D2B5E] transition-colors text-sm"
+              >
+                <FiPlusCircle className="w-4 h-4" />
+                Buy BT Points
+              </Link>
+              <p className="text-xs text-center text-gray-400">
+                Top up {shortfall.toLocaleString()} BTP (≈ ${(shortfall / BTP_PER_USD).toFixed(2)}) to continue.
+              </p>
             </div>
           )}
-
-          {payMethod === 'flutterwave' && (
-            <div className="bg-orange-50 border border-orange-200 rounded-2xl p-6 text-center">
-              <p className="text-orange-700 font-semibold text-sm">You will be redirected to Flutterwave's secure payment page.</p>
-            </div>
-          )}
-
-          <button
-            onClick={handlePay}
-            disabled={loading}
-            className="w-full mt-6 bg-[#1A4D8F] text-white font-bold py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors disabled:opacity-60 text-sm"
-          >
-            {loading ? 'Processing…' : `Pay $${cartTotal.toFixed(2)}`}
-          </button>
         </div>
       )}
 

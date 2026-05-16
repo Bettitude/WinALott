@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiLock, FiEye, FiEyeOff, FiCheckCircle } from 'react-icons/fi';
+import Logo from '../../components/ui/Logo';
 
 function StrengthBar({ password }) {
   const checks = [
@@ -75,13 +76,8 @@ export default function ResetPassword() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-1 justify-center">
-            <span className="text-3xl font-black tracking-tight">
-              <span className="text-[#F5C518]">b</span>
-              <span className="text-[#0D2B5E]">WinAL</span>
-              <span className="text-[#F5C518] font-black">OTT</span>
-            </span>
-            <span className="w-2 h-2 rounded-full bg-[#F5C518] mt-1.5" />
+          <Link to="/" className="inline-block">
+            <Logo variant="full" height={40} />
           </Link>
           <p className="text-gray-400 text-sm mt-2">Choose a new password</p>
         </div>

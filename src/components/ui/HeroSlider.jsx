@@ -28,8 +28,8 @@ const slides = [
 ];
 
 export default function HeroSlider() {
-  const { matches } = useMatches({ limit: 1 });
-  const potd = matches[0] || null;
+  const { matches } = useMatches({ limit: 3 });
+  const potd = matches;
 
   return (
     <div className="relative">
@@ -39,6 +39,7 @@ export default function HeroSlider() {
         pagination={{ clickable: true }}
         autoplay={{ delay: 5000, disableOnInteraction: false }}
         loop
+        touchStartPreventDefault={false}
         className="w-full"
         style={{ height: '500px' }}
       >
@@ -78,7 +79,7 @@ export default function HeroSlider() {
 
                   {/* Right: Pick of the Day card */}
                   <div className="hidden md:flex justify-center lg:justify-end">
-                    <PickOfTheDayCard match={potd} />
+                    <PickOfTheDayCard matches={potd} />
                   </div>
                 </div>
               </div>

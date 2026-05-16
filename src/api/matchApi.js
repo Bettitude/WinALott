@@ -28,7 +28,8 @@ export const matchApi = {
   withdraw:         (data)               => apiClient.post('/transactions/withdraw', data),
 
   // Public winners feed
-  getWinners:       (limit = 20)         => apiClient.get('/tickets/winners', { params: { limit } }),
+  getWinners:         (limit = 20)         => apiClient.get('/tickets/winners', { params: { limit } }),
+  getGiveawayWinners: (limit = 12)         => apiClient.get('/tickets/winners', { params: { limit, tier: 'free' } }),
 
   // Public leaderboard
   getLeaderboard:   (period = 'weekly')  => apiClient.get('/users/leaderboard', { params: { period } }),
@@ -37,6 +38,10 @@ export const matchApi = {
   getNotifications: (params)             => apiClient.get('/notifications', { params }),
   markNotifRead:    (id)                 => apiClient.put(`/notifications/${id}/read`),
   markAllNotifsRead:()                   => apiClient.put('/notifications/read-all'),
+
+  // Team history (via API-Football proxy)
+  getTeamHistory:   (teamSlug)           => apiClient.get(`/live/team/${teamSlug}/history`),
+  getH2H:           (homeId, awayId)     => apiClient.get('/live/h2h', { params: { home: homeId, away: awayId } }),
 
   // Profile
   updateProfile:    (data)               => apiClient.put('/users/me', data),

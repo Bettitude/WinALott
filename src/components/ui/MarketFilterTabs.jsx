@@ -14,7 +14,7 @@ export default function MarketFilterTabs({ active, onChange }) {
             className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
               active === m
                 ? 'bg-[#1A4D8F] text-white shadow-sm'
-                : 'bg-white text-gray-600 border border-gray-200 hover:border-[#1A4D8F] hover:text-[#1A4D8F]'
+                : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-slate-600 hover:border-[#1A4D8F] hover:text-[#1A4D8F] dark:hover:border-blue-500 dark:hover:text-blue-400'
             }`}
           >
             {m}

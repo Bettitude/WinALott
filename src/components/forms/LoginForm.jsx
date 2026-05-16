@@ -38,8 +38,31 @@ export default function LoginForm() {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  const handleDemoLogin = async () => {
+    setErrors({});
+    setLoading(true);
+    try {
+      const res = await login('demo@winalott.com', 'Demo1234');
+      if (res.success) navigate('/dashboard');
+    } catch {
+      setErrors({ submit: 'Demo login failed. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
+      {/* Demo login shortcut */}
+      <button
+        type="button"
+        onClick={handleDemoLogin}
+        disabled={loading}
+        className="w-full flex items-center justify-center gap-2 bg-[#F5C518]/15 border border-[#F5C518]/40 text-[#1A1A2E] text-xs font-bold py-2.5 rounded-xl hover:bg-[#F5C518]/25 transition-colors disabled:opacity-60"
+      >
+        {loading ? 'Logging in…' : 'Use Demo Account — demo@winalott.com / Demo1234'}
+      </button>
+
       {errors.submit && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
           {errors.submit}

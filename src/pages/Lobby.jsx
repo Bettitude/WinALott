@@ -144,22 +144,22 @@ export default function Lobby() {
       {filterOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/50" onClick={() => setFilterOpen(false)} />
-          <div className="relative bg-white rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <h3 className="font-black text-[#1A1A2E]">Filters &amp; Sort</h3>
-              <button onClick={() => setFilterOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                <FiX className="w-5 h-5 text-gray-400" />
+          <div className="relative bg-white dark:bg-slate-900 rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+              <h3 className="font-black text-[#1A1A2E] dark:text-white">Filters &amp; Sort</h3>
+              <button onClick={() => setFilterOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+                <FiX className="w-5 h-5 text-gray-400 dark:text-slate-400" />
               </button>
             </div>
 
             <div className="overflow-y-auto flex-1 p-5 space-y-6">
               {/* Status filters */}
               <div>
-                <p className="text-[10px] font-black text-[#1A1A2E] uppercase tracking-widest mb-3">Status</p>
+                <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-3">Status</p>
                 <div className="space-y-3">
                   {STATUS_FILTERS.map(s => (
                     <label key={s} className="flex items-center justify-between cursor-pointer">
-                      <span className="text-sm font-medium text-gray-600">{s}</span>
+                      <span className="text-sm font-medium text-gray-600 dark:text-slate-300">{s}</span>
                       <Toggle on={activeStatuses.has(s)} onClick={() => toggleStatus(s)} />
                     </label>
                   ))}
@@ -168,7 +168,7 @@ export default function Lobby() {
 
               {/* Sort */}
               <div>
-                <p className="text-[10px] font-black text-[#1A1A2E] uppercase tracking-widest mb-3">Sort by</p>
+                <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-3">Sort by</p>
                 <div className="grid grid-cols-2 gap-2">
                   {SORT_OPTIONS.map(o => (
                     <button
@@ -177,7 +177,7 @@ export default function Lobby() {
                       className={`px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition-all ${
                         sort === o.key
                           ? 'bg-[#1A4D8F] text-white'
-                          : 'bg-gray-50 text-gray-500 border border-gray-200'
+                          : 'bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-300 border border-gray-200 dark:border-slate-600'
                       }`}
                     >
                       {o.label}
@@ -188,12 +188,14 @@ export default function Lobby() {
 
               {/* Leagues */}
               <div>
-                <p className="text-[10px] font-black text-[#1A1A2E] uppercase tracking-widest mb-3">League</p>
+                <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-3">League</p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => { setSelectedLeague(null); setPage(1); }}
                     className={`px-3 py-2 rounded-xl text-xs font-medium text-left ${
-                      !selectedLeague ? 'bg-blue-50 text-[#1A4D8F] font-bold border border-blue-200' : 'bg-gray-50 text-gray-600 border border-gray-200'
+                      !selectedLeague
+                        ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-800'
+                        : 'bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-slate-600'
                     }`}
                   >
                     All Leagues
@@ -203,7 +205,9 @@ export default function Lobby() {
                       key={i}
                       onClick={() => { setSelectedLeague(l); setPage(1); }}
                       className={`px-3 py-2 rounded-xl text-xs font-medium text-left truncate ${
-                        selectedLeague === l ? 'bg-blue-50 text-[#1A4D8F] font-bold border border-blue-200' : 'bg-gray-50 text-gray-600 border border-gray-200'
+                        selectedLeague === l
+                          ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-800'
+                          : 'bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-slate-600'
                       }`}
                     >
                       {l}
@@ -213,10 +217,10 @@ export default function Lobby() {
               </div>
             </div>
 
-            <div className="p-5 border-t border-gray-100 flex gap-3">
+            <div className="p-5 border-t border-gray-100 dark:border-slate-700 flex gap-3">
               <button
                 onClick={() => { setActiveStatuses(new Set()); setSelectedLeague(null); setSort('newest'); setPage(1); }}
-                className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:border-gray-300 transition-colors"
+                className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:border-gray-300 dark:hover:border-slate-500 transition-colors"
               >
                 Reset
               </button>
@@ -233,8 +237,8 @@ export default function Lobby() {
 
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-black text-[#1A1A2E] mb-1">The Lobby</h1>
-        <p className="text-gray-500 text-sm">Browse all active prediction markets</p>
+        <h1 className="text-3xl font-black text-[#1A1A2E] dark:text-white mb-1">The Lobby</h1>
+        <p className="text-gray-500 dark:text-slate-400 text-sm">Browse all active prediction markets</p>
       </div>
 
       <div className="flex gap-5 items-start">
@@ -251,17 +255,17 @@ export default function Lobby() {
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Search matches…"
-                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] bg-white"
+                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500"
               />
             </div>
 
             {/* Status filters */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-3.5">
-              <p className="text-[10px] font-black text-[#1A1A2E] uppercase tracking-widest mb-3">Filters</p>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
+              <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-3">Filters</p>
               <div className="space-y-2.5">
                 {STATUS_FILTERS.map(s => (
                   <label key={s} className="flex items-center justify-between cursor-pointer gap-2">
-                    <span className="text-xs font-medium text-gray-600">{s}</span>
+                    <span className="text-xs font-medium text-gray-600 dark:text-slate-300">{s}</span>
                     <Toggle on={activeStatuses.has(s)} onClick={() => toggleStatus(s)} />
                   </label>
                 ))}
@@ -269,8 +273,8 @@ export default function Lobby() {
             </div>
 
             {/* Popular league quick-filters */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-3.5">
-              <p className="text-[10px] font-black text-[#1A1A2E] uppercase tracking-widest mb-2.5">Popular Leagues</p>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
+              <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-2.5">Popular Leagues</p>
               <div className="flex flex-wrap gap-1.5">
                 {POPULAR_LEAGUES.filter(l => leagues.includes(l)).map(l => (
                   <button
@@ -279,37 +283,37 @@ export default function Lobby() {
                     className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all ${
                       selectedLeague === l
                         ? 'bg-[#1A4D8F] text-white'
-                        : 'bg-gray-50 text-gray-500 border border-gray-200 hover:border-[#1A4D8F] hover:text-[#1A4D8F]'
+                        : 'bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-slate-300 border border-gray-200 dark:border-slate-600 hover:border-[#1A4D8F] hover:text-[#1A4D8F] dark:hover:border-blue-500 dark:hover:text-blue-400'
                     }`}
                   >
                     {l}
                   </button>
                 ))}
                 {POPULAR_LEAGUES.filter(l => leagues.includes(l)).length === 0 && (
-                  <p className="text-[10px] text-gray-400">Leagues load from live data</p>
+                  <p className="text-[10px] text-gray-400 dark:text-slate-500">Leagues load from live data</p>
                 )}
               </div>
             </div>
 
             {/* League accordion */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
               <button
                 onClick={() => setLeagueOpen(v => !v)}
-                className="w-full flex items-center justify-between px-3.5 py-2.5 text-[10px] font-black text-[#1A1A2E] uppercase tracking-widest"
+                className="w-full flex items-center justify-between px-3.5 py-2.5 text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest"
               >
                 Leagues
                 {leagueOpen
-                  ? <FiChevronUp className="w-3.5 h-3.5 text-gray-400" />
-                  : <FiChevronDown className="w-3.5 h-3.5 text-gray-400" />}
+                  ? <FiChevronUp className="w-3.5 h-3.5 text-gray-400 dark:text-slate-400" />
+                  : <FiChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-slate-400" />}
               </button>
               {leagueOpen && (
-                <div className="border-t border-gray-100 max-h-56 overflow-y-auto">
+                <div className="border-t border-gray-100 dark:border-slate-700 max-h-56 overflow-y-auto">
                   <button
                     onClick={() => { setSelectedLeague(null); setPage(1); }}
-                    className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors border-b border-gray-50 ${
+                    className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors border-b border-gray-50 dark:border-slate-700 ${
                       !selectedLeague
-                        ? 'bg-blue-50 text-[#1A4D8F] font-bold'
-                        : 'text-gray-600 hover:bg-blue-50 hover:text-[#1A4D8F]'
+                        ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400 font-bold'
+                        : 'text-gray-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-[#1A4D8F] dark:hover:text-blue-400'
                     }`}
                   >
                     All Leagues
@@ -318,10 +322,10 @@ export default function Lobby() {
                     <button
                       key={i}
                       onClick={() => { setSelectedLeague(l); setPage(1); }}
-                      className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors border-b border-gray-50 last:border-0 ${
+                      className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors border-b border-gray-50 dark:border-slate-700 last:border-0 ${
                         selectedLeague === l
-                          ? 'bg-blue-50 text-[#1A4D8F] font-bold'
-                          : 'text-gray-600 hover:bg-blue-50 hover:text-[#1A4D8F]'
+                          ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400 font-bold'
+                          : 'text-gray-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-[#1A4D8F] dark:hover:text-blue-400'
                       }`}
                     >
                       {l}
@@ -332,8 +336,8 @@ export default function Lobby() {
             </div>
 
             {/* Sort options */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-3.5">
-              <p className="text-[10px] font-black text-[#1A1A2E] uppercase tracking-widest mb-2.5">Sort by</p>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
+              <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-2.5">Sort by</p>
               <div className="flex flex-col gap-1">
                 {SORT_OPTIONS.map(o => (
                   <button
@@ -342,7 +346,7 @@ export default function Lobby() {
                     className={`text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       sort === o.key
                         ? 'bg-[#1A4D8F] text-white'
-                        : 'text-gray-500 hover:bg-gray-50 hover:text-[#1A4D8F]'
+                        : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400'
                     }`}
                   >
                     {o.label}
@@ -388,7 +392,7 @@ export default function Lobby() {
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Search matches…"
-                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] bg-white"
+                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500"
               />
             </div>
             <button
@@ -396,7 +400,7 @@ export default function Lobby() {
               className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-semibold transition-colors shrink-0 ${
                 activeFilterCount > 0
                   ? 'bg-[#1A4D8F] text-white border-[#1A4D8F]'
-                  : 'bg-white text-gray-600 border-gray-200'
+                  : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-600'
               }`}
             >
               <FiFilter className="w-4 h-4" />
@@ -425,13 +429,13 @@ export default function Lobby() {
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-black whitespace-nowrap transition-all ${
                     active
                       ? `${t.activeBg} ${t.activeText} shadow-md`
-                      : 'bg-white text-gray-500 border border-gray-200 hover:border-gray-300'
+                      : 'bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500'
                   }`}
                 >
                   {t.Icon && <t.Icon className="w-3.5 h-3.5" />}
                   {t.label}
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                    active ? 'bg-white/20' : 'bg-gray-100 text-gray-400'
+                    active ? 'bg-white/20' : 'bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-400'
                   }`}>
                     {count}
                   </span>
@@ -442,7 +446,7 @@ export default function Lobby() {
 
           {/* Results bar */}
           <div className="flex items-center justify-between mb-4">
-            <p className="text-xs text-gray-400 font-medium">
+            <p className="text-xs text-gray-400 dark:text-slate-500 font-medium">
               {filtered.length} market{filtered.length !== 1 ? 's' : ''} found
             </p>
             {hasFilters && (
@@ -461,10 +465,10 @@ export default function Lobby() {
               {paginated.map(m => <MatchCard key={m.id} match={m} />)}
             </div>
           ) : (
-            <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-              <FiFilter className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">No matches found</p>
-              <p className="text-gray-400 text-sm mt-1">Try adjusting your filters</p>
+            <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700">
+              <FiFilter className="w-10 h-10 text-gray-200 dark:text-slate-600 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-slate-400 font-medium">No matches found</p>
+              <p className="text-gray-400 dark:text-slate-500 text-sm mt-1">Try adjusting your filters</p>
             </div>
           )}
 
@@ -473,7 +477,7 @@ export default function Lobby() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#1A4D8F] hover:text-[#1A4D8F] disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white"
+              className="px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-medium text-gray-600 dark:text-slate-300 hover:border-[#1A4D8F] hover:text-[#1A4D8F] dark:hover:border-blue-500 dark:hover:text-blue-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white dark:bg-slate-800"
             >
               Previous
             </button>
@@ -484,7 +488,7 @@ export default function Lobby() {
                 className={`w-9 h-9 rounded-xl text-sm font-semibold transition-all ${
                   p === page
                     ? 'bg-[#1A4D8F] text-white shadow-sm'
-                    : 'border border-gray-200 bg-white text-gray-600 hover:border-[#1A4D8F] hover:text-[#1A4D8F]'
+                    : 'border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:border-[#1A4D8F] hover:text-[#1A4D8F] dark:hover:border-blue-500 dark:hover:text-blue-400'
                 }`}
               >
                 {p}
@@ -493,7 +497,7 @@ export default function Lobby() {
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#1A4D8F] hover:text-[#1A4D8F] disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white"
+              className="px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-medium text-gray-600 dark:text-slate-300 hover:border-[#1A4D8F] hover:text-[#1A4D8F] dark:hover:border-blue-500 dark:hover:text-blue-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white dark:bg-slate-800"
             >
               Next
             </button>
@@ -506,18 +510,18 @@ export default function Lobby() {
           <div className="sticky top-24 flex flex-col gap-4">
 
             {/* Live scores ticker */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
               <div className="flex items-center gap-2 px-3.5 py-2.5 bg-red-500">
                 <FiRadio className="w-3.5 h-3.5 text-white animate-pulse" />
                 <span className="text-xs font-black text-white uppercase tracking-wide">Live Scores</span>
               </div>
-              <div className="divide-y divide-gray-50 max-h-48 overflow-y-auto">
+              <div className="divide-y divide-gray-50 dark:divide-slate-700 max-h-48 overflow-y-auto">
                 {liveOnly.length === 0 ? (
-                  <p className="text-xs text-gray-400 px-3.5 py-3">No live matches right now</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500 px-3.5 py-3">No live matches right now</p>
                 ) : liveOnly.map(f => (
                   <div key={f.id} className="flex items-center gap-2 px-3.5 py-2">
                     <span className="w-1.5 h-1.5 bg-red-400 rounded-full shrink-0 animate-pulse" />
-                    <span className="text-xs text-gray-600 font-medium truncate">
+                    <span className="text-xs text-gray-600 dark:text-slate-300 font-medium truncate">
                       {f.homeTeam.name} {f.score.home ?? 0} - {f.score.away ?? 0} {f.awayTeam.name}
                     </span>
                   </div>
@@ -526,39 +530,39 @@ export default function Lobby() {
             </div>
 
             {/* Biggest pools */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-3.5">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-1.5">
                   <FiTrendingUp className="w-3.5 h-3.5 text-[#1A4D8F]" />
-                  <p className="text-[10px] font-black text-[#1A1A2E] uppercase tracking-widest">Biggest Pools</p>
+                  <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest">Biggest Pools</p>
                 </div>
-                <span className="text-[10px] text-gray-400">Top {showAllPools ? 10 : 5}</span>
+                <span className="text-[10px] text-gray-400 dark:text-slate-500">Top {showAllPools ? 10 : 5}</span>
               </div>
               <div className="space-y-2.5">
                 {(showAllPools ? biggestPools : biggestPools.slice(0, 5)).map((m, i) => (
                   <div key={m.id} className="flex items-center gap-2">
                     <span className={`w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[10px] font-black ${
                       i === 0 ? 'bg-[#F5C518] text-[#1A1A2E]' :
-                      i === 1 ? 'bg-gray-300 text-gray-700' :
-                      i === 2 ? 'bg-orange-200 text-orange-700' :
-                      'bg-gray-100 text-gray-500'
+                      i === 1 ? 'bg-gray-300 dark:bg-slate-500 text-gray-700 dark:text-slate-200' :
+                      i === 2 ? 'bg-orange-200 dark:bg-orange-900/50 text-orange-700 dark:text-orange-400' :
+                      'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'
                     }`}>
                       {i + 1}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-[#1A1A2E] truncate">
+                      <p className="text-xs font-semibold text-[#1A1A2E] dark:text-slate-200 truncate">
                         {m.homeTeam.short} vs {m.awayTeam.short}
                       </p>
-                      <p className="text-[10px] text-gray-400 truncate">{m.market}</p>
+                      <p className="text-[10px] text-gray-400 dark:text-slate-500 truncate">{m.market}</p>
                     </div>
-                    <span className="text-xs font-black text-green-600 shrink-0">${m.prizePool.toFixed(0)}</span>
+                    <span className="text-xs font-black text-green-600 dark:text-green-400 shrink-0">${m.prizePool.toFixed(0)}</span>
                   </div>
                 ))}
               </div>
               {biggestPools.length > 5 && (
                 <button
                   onClick={() => setShowAllPools(v => !v)}
-                  className="w-full mt-3 py-1.5 rounded-xl border border-gray-200 text-[10px] font-bold text-[#1A4D8F] hover:bg-blue-50 transition-colors"
+                  className="w-full mt-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-600 text-[10px] font-bold text-[#1A4D8F] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
                 >
                   {showAllPools ? 'Show less' : `See all top 10`}
                 </button>
@@ -566,14 +570,14 @@ export default function Lobby() {
             </div>
 
             {/* Recent winners */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-3.5">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
               <div className="flex items-center gap-1.5 mb-3">
                 <FiUsers className="w-3.5 h-3.5 text-[#1A4D8F]" />
-                <p className="text-[10px] font-black text-[#1A1A2E] uppercase tracking-widest">Recent Winners</p>
+                <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest">Recent Winners</p>
               </div>
               <div className="space-y-2.5">
                 {recentWinners.length === 0 ? (
-                  <p className="text-xs text-gray-400">No winners yet</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500">No winners yet</p>
                 ) : recentWinners.map(w => (
                   <div key={w.id} className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#F5C518] to-[#e6a800] flex items-center justify-center shrink-0">
@@ -582,10 +586,10 @@ export default function Lobby() {
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-[#1A1A2E]">{w.username}</p>
-                      <p className="text-[10px] text-gray-400 truncate">{w.market}</p>
+                      <p className="text-xs font-semibold text-[#1A1A2E] dark:text-slate-200">{w.username}</p>
+                      <p className="text-[10px] text-gray-400 dark:text-slate-500 truncate">{w.market}</p>
                     </div>
-                    <span className="text-xs font-black text-[#1A4D8F] shrink-0">+${w.prize.toFixed(2)}</span>
+                    <span className="text-xs font-black text-[#1A4D8F] dark:text-blue-400 shrink-0">+${w.prize.toFixed(2)}</span>
                   </div>
                 ))}
               </div>

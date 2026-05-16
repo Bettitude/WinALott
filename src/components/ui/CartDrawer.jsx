@@ -1,6 +1,7 @@
 import { FiX, FiShoppingCart, FiTrash2, FiArrowRight } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
+import { formatBTP } from '../../utils/btp';
 
 export default function CartDrawer() {
   const { items, isOpen, setIsOpen, removeFromCart, cartTotal, clearCart } = useCart();
@@ -64,7 +65,7 @@ export default function CartDrawer() {
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <span className="font-bold text-[#1A4D8F]">
-                      {item.price === 0 ? 'FREE' : `$${item.price.toFixed(2)}`}
+                      {item.price === 0 ? 'FREE' : formatBTP(item.price)}
                     </span>
                     <button
                       onClick={() => removeFromCart(item.cartId)}
@@ -84,7 +85,10 @@ export default function CartDrawer() {
           <div className="p-4 border-t border-gray-100 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-gray-500 text-sm">Total</span>
-              <span className="font-black text-lg text-[#1A1A2E]">${cartTotal.toFixed(2)}</span>
+              <span className="font-black text-lg text-[#1A4D8F] flex items-center gap-1">
+                <span className="text-[#F5C518]">◈</span>
+                {cartTotal.toLocaleString()} BTP
+              </span>
             </div>
             <Link
               to="/checkout"

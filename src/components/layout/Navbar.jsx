@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { FiShoppingCart, FiMenu, FiX, FiChevronDown, FiUser, FiLogOut, FiList,
-         FiBell, FiTrendingUp, FiGift, FiSun, FiMoon } from 'react-icons/fi';
+         FiBell, FiTrendingUp, FiGift, FiSun, FiMoon, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
 import { useTheme } from '../../context/ThemeContext';
-import { btpFromCents } from '../../utils/btp';
+import { formatBTP } from '../../utils/btp';
+import Logo from '../ui/Logo';
 
 const navLinks = [
   { to: '/lobby',         label: 'Lobby' },
@@ -16,9 +17,10 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled]       = useState(false);
+  const [mobileOpen, setMobileOpen]   = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showBTP, setShowBTP]         = useState(() => localStorage.getItem('btp_visible') !== 'false');
   const { isAuthenticated, user, logout } = useAuth();
   const { cartCount, setIsOpen } = useCart();
   const { isDark, toggleTheme } = useTheme();
@@ -41,6 +43,14 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  const toggleBTP = (e) => {
+    e.preventDefault();
+    setShowBTP(v => {
+      localStorage.setItem('btp_visible', String(!v));
+      return !v;
+    });
+  };
+
   const handleLogout = () => {
     logout();
     setDropdownOpen(false);
@@ -53,13 +63,8 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-1 shrink-0">
-            <span className="text-2xl font-black tracking-tight select-none">
-              <span className="text-[#F5C518]">b</span>
-              <span className="text-[#0D2B5E] dark:text-white">WinAL</span>
-              <span className="text-[#F5C518] font-black">OTT</span>
-            </span>
-            <span className="w-2 h-2 rounded-full bg-[#F5C518] mt-1 -ml-0.5" />
+          <Link to="/" className="shrink-0">
+            <Logo variant="full" height={36} className="dark:brightness-90" />
           </Link>
 
           {/* Center nav links (desktop) */}
@@ -113,11 +118,25 @@ export default function Navbar() {
             {/* Auth section */}
             {isAuthenticated ? (
               <div className="relative" ref={dropRef}>
-                <Link to="/dashboard/wallet"
-                  className="hidden sm:flex items-center gap-1.5 bg-[#F5C518]/10 dark:bg-[#F5C518]/10 border border-[#F5C518]/30 text-[#b89300] dark:text-[#F5C518] text-xs font-bold px-2.5 py-1.5 rounded-lg hover:bg-[#F5C518]/20 transition-colors mr-1">
-                  <span className="font-black text-[#F5C518]">◈</span>
-                  {btpFromCents(user?.walletBalance ?? 7443).toLocaleString()} BTP
-                </Link>
+                {/* BTP balance pill with show/hide toggle */}
+                <div className="hidden sm:flex items-center gap-0 bg-[#F5C518]/10 dark:bg-[#F5C518]/10 border border-[#F5C518]/30 rounded-lg mr-1 overflow-hidden">
+                  <Link to="/dashboard/wallet"
+                    className="flex items-center gap-1.5 text-[#b89300] dark:text-[#F5C518] text-xs font-bold px-2.5 py-1.5 hover:bg-[#F5C518]/20 transition-colors">
+                    <span className="font-black text-[#F5C518]">◈</span>
+                    {showBTP
+                      ? formatBTP(user?.balance ?? 0)
+                      : <span className="tracking-widest text-[#F5C518]/60 font-black">•••••</span>
+                    }
+                  </Link>
+                  <button onClick={toggleBTP}
+                    className="px-2 py-1.5 text-[#F5C518]/70 hover:text-[#F5C518] hover:bg-[#F5C518]/20 transition-colors border-l border-[#F5C518]/20"
+                    title={showBTP ? 'Hide balance' : 'Show balance'}>
+                    {showBTP
+                      ? <FiEyeOff className="w-3 h-3" />
+                      : <FiEye className="w-3 h-3" />
+                    }
+                  </button>
+                </div>
 
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}

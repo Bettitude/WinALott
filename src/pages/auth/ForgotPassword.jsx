@@ -1,18 +1,14 @@
 import { Link } from 'react-router-dom';
 import ForgotPasswordForm from '../../components/forms/ForgotPasswordForm';
+import Logo from '../../components/ui/Logo';
 
 export default function ForgotPassword() {
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[#F5F7FA] flex items-center justify-center px-4 py-6 sm:py-10">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-1 justify-center">
-            <span className="text-3xl font-black tracking-tight">
-              <span className="text-[#F5C518]">b</span>
-              <span className="text-[#0D2B5E]">WinAL</span>
-              <span className="text-[#F5C518] font-black">OTT</span>
-            </span>
-            <span className="w-2 h-2 rounded-full bg-[#F5C518] mt-1.5" />
+          <Link to="/" className="inline-block">
+            <Logo variant="full" height={40} />
           </Link>
         </div>
 

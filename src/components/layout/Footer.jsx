@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { FiShield, FiExternalLink } from 'react-icons/fi';
+import Logo from '../ui/Logo';
 
 const productLinks = [
   { label: 'Bettitude.com',    href: '#' },
@@ -39,60 +40,63 @@ function GamBadge({ href, label, sub, bg, text }) {
 export default function Footer() {
   return (
     <footer>
-      {/* Responsible Gambling Bar — prominent, full-width */}
-      <div className="bg-[#1A1A2E] border-t-4 border-[#F5C518] py-4 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 flex-wrap">
-          <p className="text-white/70 text-xs font-medium text-center sm:text-left">
-            Gambling can be addictive. Play responsibly. Must be 18 or older.{' '}
-            <Link to="/responsible-gambling" className="text-[#F5C518] underline hover:no-underline">
-              Get Help
-            </Link>
-          </p>
-
-          {/* Responsible gambling logos */}
-          <div className="flex items-center gap-2 flex-wrap justify-center">
-            {/* 18+ */}
-            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center shrink-0 border-2 border-[#1A4D8F]">
-              <span className="text-[10px] font-black text-[#1A4D8F] leading-none">18+</span>
+      {/* Responsible Gambling — full-width prominent banner */}
+      <div className="w-full bg-[#1A1A2E] border-t-4 border-[#F5C518]">
+        <div className="w-full px-6 py-10">
+          {/* Top warning row */}
+          <div className="flex flex-col items-center text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-14 h-14 rounded-full bg-[#F5C518] flex items-center justify-center shrink-0">
+                <span className="text-[#1A1A2E] text-xl font-black leading-none">18+</span>
+              </div>
+              <div className="h-10 w-px bg-white/20" />
+              <FiShield className="w-8 h-8 text-[#F5C518]" />
             </div>
+            <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-wide">
+              Beware — Gamble Responsibly
+            </h3>
+            <p className="text-white/60 text-sm max-w-2xl leading-relaxed">
+              Gambling can be addictive and harmful. WinALot is a sweepstakes and prediction platform
+              for entertainment purposes only. You must be <strong className="text-[#F5C518]">18 years or older</strong> to
+              participate. If gambling is affecting your life, seek help immediately.
+            </p>
+          </div>
 
-            {/* GamStop */}
-            <GamBadge
-              href="https://www.gamstop.co.uk"
-              label="GamStop"
-              sub="Self-Exclusion"
-              bg="bg-white"
-              text="text-[#003087]"
-            />
+          {/* Divider */}
+          <div className="border-t border-white/10 mb-8" />
 
-            {/* GambleAware */}
-            <GamBadge
-              href="https://www.begambleaware.org"
-              label="BeGambleAware"
-              sub="org"
-              bg="bg-[#00a651]"
-              text="text-white"
-            />
-
-            {/* GamCare */}
-            <GamBadge
-              href="https://www.gamcare.org.uk"
-              label="GamCare"
-              sub="Support"
-              bg="bg-white"
-              text="text-[#e63329]"
-            />
-
-            {/* Gambling Therapy */}
-            <a
-              href="https://www.gamblingtherapy.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-gray-200 hover:opacity-80 transition-opacity text-[10px] font-black text-[#1a1a2e]"
-            >
-              <FiShield className="w-3 h-3 text-[#1A4D8F]" />
-              Gambling Therapy
+          {/* Help organisations — full-width grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <a href="https://www.gamstop.co.uk" target="_blank" rel="noopener noreferrer"
+              className="flex flex-col items-center justify-center gap-2 bg-white rounded-xl py-5 px-4 hover:opacity-90 transition-opacity">
+              <span className="text-base font-black text-[#003087]">GamStop</span>
+              <span className="text-[11px] text-[#003087]/70 font-semibold">Self-Exclusion</span>
             </a>
+            <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer"
+              className="flex flex-col items-center justify-center gap-2 bg-[#00a651] rounded-xl py-5 px-4 hover:opacity-90 transition-opacity">
+              <span className="text-base font-black text-white">BeGambleAware</span>
+              <span className="text-[11px] text-white/80 font-semibold">begambleaware.org</span>
+            </a>
+            <a href="https://www.gamcare.org.uk" target="_blank" rel="noopener noreferrer"
+              className="flex flex-col items-center justify-center gap-2 bg-white rounded-xl py-5 px-4 hover:opacity-90 transition-opacity">
+              <span className="text-base font-black text-[#e63329]">GamCare</span>
+              <span className="text-[11px] text-[#e63329]/70 font-semibold">Counselling &amp; Support</span>
+            </a>
+            <a href="https://www.gamblingtherapy.org" target="_blank" rel="noopener noreferrer"
+              className="flex flex-col items-center justify-center gap-2 bg-white rounded-xl py-5 px-4 hover:opacity-90 transition-opacity">
+              <FiShield className="w-5 h-5 text-[#1A4D8F]" />
+              <span className="text-base font-black text-[#1A4D8F]">Gambling Therapy</span>
+              <span className="text-[11px] text-[#1A4D8F]/70 font-semibold">Free global support</span>
+            </a>
+          </div>
+
+          {/* Bottom disclaimer */}
+          <div className="text-center">
+            <Link to="/responsible-gambling"
+              className="inline-flex items-center gap-2 bg-[#F5C518] hover:brightness-110 text-[#0D2B5E] font-black px-8 py-3 rounded-xl text-sm transition-all">
+              <FiShield className="w-4 h-4" />
+              Read Our Responsible Gambling Policy
+            </Link>
           </div>
         </div>
       </div>
@@ -100,6 +104,12 @@ export default function Footer() {
       {/* Main footer */}
       <div className="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Logo row */}
+          <div className="mb-8">
+            <Link to="/">
+              <Logo variant="full" height={36} className="dark:brightness-90" />
+            </Link>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Responsible gambling disclaimer */}
             <div className="sm:col-span-2 lg:col-span-1">

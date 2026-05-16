@@ -1,75 +1,128 @@
-import { Link } from 'react-router-dom';
-import { FiShoppingCart, FiStar } from 'react-icons/fi';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { FiShoppingCart, FiStar, FiChevronRight, FiChevronLeft } from 'react-icons/fi';
 import { useCart } from '../../hooks/useCart';
 import TeamAvatar from './TeamAvatar';
-import { btpFromDollars } from '../../utils/btp';
+import { formatBTP } from '../../utils/btp';
 
-export default function PickOfTheDayCard({ match }) {
+export default function PickOfTheDayCard({ matches = [] }) {
+  const navigate = useNavigate();
   const { addToCart } = useCart();
+  const [idx, setIdx] = useState(0);
+  const [fade, setFade] = useState(true);
 
-  if (!match) return null;
+  const list = Array.isArray(matches) ? matches.filter(Boolean) : [];
+  const match = list[idx] || null;
 
-  const handleAddToCart = () => {
+  // Auto-cycle every 6 seconds when there are multiple picks
+  useEffect(() => {
+    if (list.length <= 1) return;
+    const id = setInterval(() => {
+      setFade(false);
+      setTimeout(() => {
+        setIdx(i => (i + 1) % list.length);
+        setFade(true);
+      }, 250);
+    }, 6000);
+    return () => clearInterval(id);
+  }, [list.length]);
+
+  const goTo = (dir, e) => {
+    e.stopPropagation();
+    setFade(false);
+    setTimeout(() => {
+      setIdx(i => (i + dir + list.length) % list.length);
+      setFade(true);
+    }, 200);
+  };
+
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
+    if (!match) return;
     addToCart({
-      cartId: `potd-${match.id}-${Date.now()}`,
+      cartId:  `potd-${match.id}-${Date.now()}`,
       matchId: match.id,
-      match: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
-      market: match.market,
-      pick: `${match.adminPick} (${match.adminPickValue})`,
-      price: match.price,
+      match:   `${match.homeTeam.name} vs ${match.awayTeam.name}`,
+      market:  match.market,
+      pick:    `${match.adminPick}`,
+      price:   match.price,
+      tier:    match.tier || 'silver',
     });
   };
 
+  if (!match) return null;
+
   return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-sm">
-      {/* Blue top accent */}
-      <div className="h-1.5 bg-[#1A4D8F] rounded-t-2xl" />
+    <div
+      onClick={() => navigate(`/match/${match.id}`)}
+      className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-sm cursor-pointer hover:shadow-2xl transition-shadow"
+    >
+      {/* Gold top accent */}
+      <div className="h-1.5 bg-gradient-to-r from-[#1A4D8F] to-[#F5C518]" />
 
       <div className="p-5">
-        {/* Title */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="bg-[#F5C518] p-1.5 rounded-lg">
-            <FiStar className="w-4 h-4 text-[#1A1A2E]" />
+        {/* Header row */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="bg-[#F5C518] p-1.5 rounded-lg">
+              <FiStar className="w-4 h-4 text-[#1A1A2E]" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Pick of the Day</p>
+              <p className="text-xs text-gray-500 truncate max-w-[160px]">{match.league}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Pick of the Day</p>
-            <p className="text-xs text-gray-500">{match.league}</p>
-          </div>
+
+          {/* Cycle controls (only when multiple) */}
+          {list.length > 1 && (
+            <div className="flex items-center gap-1">
+              <button onClick={e => goTo(-1, e)}
+                className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                <FiChevronLeft className="w-3.5 h-3.5 text-gray-500" />
+              </button>
+              <span className="text-[10px] font-bold text-gray-400">{idx + 1}/{list.length}</span>
+              <button onClick={e => goTo(1, e)}
+                className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                <FiChevronRight className="w-3.5 h-3.5 text-gray-500" />
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Teams */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex flex-col items-center gap-1 flex-1">
-            <TeamAvatar short={match.homeTeam.short} logo={match.homeTeam.logo} size="lg" />
-            <p className="text-xs font-semibold text-[#1A1A2E] text-center leading-tight">{match.homeTeam.name}</p>
+        {/* Animated content */}
+        <div style={{ opacity: fade ? 1 : 0, transition: 'opacity 0.25s ease' }}>
+          {/* Teams */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex flex-col items-center gap-1 flex-1">
+              <TeamAvatar short={match.homeTeam.short} logo={match.homeTeam.logo} size="lg" />
+              <p className="text-xs font-semibold text-[#1A1A2E] text-center leading-tight">{match.homeTeam.name}</p>
+            </div>
+            <div className="flex flex-col items-center shrink-0">
+              <span className="text-lg font-black text-gray-300">VS</span>
+              <span className="text-xs font-bold text-[#1A4D8F] bg-blue-50 px-2 py-0.5 rounded-full">{match.time}</span>
+            </div>
+            <div className="flex flex-col items-center gap-1 flex-1">
+              <TeamAvatar short={match.awayTeam.short} logo={match.awayTeam.logo} size="lg" />
+              <p className="text-xs font-semibold text-[#1A1A2E] text-center leading-tight">{match.awayTeam.name}</p>
+            </div>
           </div>
-          <div className="flex flex-col items-center">
-            <span className="text-lg font-black text-gray-300">VS</span>
-            <span className="text-xs font-bold text-[#1A4D8F] bg-blue-50 px-2 py-0.5 rounded-full">{match.time}</span>
-          </div>
-          <div className="flex flex-col items-center gap-1 flex-1">
-            <TeamAvatar short={match.awayTeam.short} logo={match.awayTeam.logo} size="lg" />
-            <p className="text-xs font-semibold text-[#1A1A2E] text-center leading-tight">{match.awayTeam.name}</p>
-          </div>
-        </div>
 
-        {/* Prediction */}
-        <div className="bg-blue-50 rounded-xl px-3 py-2 mb-4 text-center">
-          <p className="text-xs text-gray-500">Admin Predicts:</p>
-          <p className="text-sm font-bold text-[#1A4D8F]">{match.adminPick}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{match.market} Market</p>
-        </div>
+          {/* Prediction */}
+          <div className="bg-blue-50 rounded-xl px-3 py-2 mb-4 text-center">
+            <p className="text-xs text-gray-500">Admin Predicts</p>
+            <p className="text-sm font-bold text-[#1A4D8F]">{match.adminPick}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{match.market} Market</p>
+          </div>
 
-        {/* Price */}
-        <div className="text-center mb-4">
-          <span className="text-2xl font-black text-[#1A4D8F]">
-            {btpFromDollars(match.price).toLocaleString()}
-          </span>
-          <span className="text-[#1A4D8F]/60 text-sm ml-1 font-bold">BTP / ticket</span>
+          {/* Price */}
+          <div className="text-center mb-4">
+            <span className="text-2xl font-black text-[#1A4D8F]">{formatBTP(match.price)}</span>
+            <span className="text-gray-400 text-xs ml-1">/ ticket</span>
+          </div>
         </div>
 
         {/* CTA Buttons */}
-        <div className="flex gap-2">
+        <div className="flex gap-2" onClick={e => e.stopPropagation()}>
           <Link
             to={`/match/${match.id}`}
             className="flex-1 bg-[#1A4D8F] text-white font-semibold py-2.5 rounded-lg text-center text-sm hover:bg-[#0D2B5E] transition-colors"
@@ -84,6 +137,17 @@ export default function PickOfTheDayCard({ match }) {
             Cart
           </button>
         </div>
+
+        {/* Dot indicators */}
+        {list.length > 1 && (
+          <div className="flex justify-center gap-1 mt-3">
+            {list.map((_, i) => (
+              <button key={i} onClick={e => { e.stopPropagation(); setFade(false); setTimeout(() => { setIdx(i); setFade(true); }, 200); }}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${i === idx ? 'bg-[#1A4D8F] w-3' : 'bg-gray-300'}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

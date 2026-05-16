@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { FiAward, FiCalendar, FiCheckCircle, FiXCircle, FiClock, FiShare2, FiCopy, FiCheck, FiArrowLeft } from 'react-icons/fi';
 import { matchApi } from '../api/matchApi';
 import { normalizeTicket } from '../api/normalizers';
+import Logo from '../components/ui/Logo';
 
 const STATUS_CONFIG = {
   won: {
@@ -111,11 +112,8 @@ export default function TicketDetail() {
         <div className="px-6 pt-5 pb-4 border-b border-dashed border-gray-200">
           <div className="flex items-start justify-between">
             <div>
-              <div className="flex items-center gap-1 mb-1">
-                <span className="text-[#F5C518] text-xl font-black">b</span>
-                <span className="text-[#0D2B5E] font-black">WinAL</span>
-                <span className="text-[#F5C518] font-black">OTT</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#F5C518]" />
+              <div className="mb-1">
+                <Logo variant="full" height={24} />
               </div>
               <p className="text-xs text-gray-400">Prediction Ticket</p>
             </div>

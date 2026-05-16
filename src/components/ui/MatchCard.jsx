@@ -5,7 +5,7 @@ import { FiShoppingCart, FiUsers, FiZap, FiAward, FiStar, FiClock, FiCheckCircle
 import TeamAvatar from './TeamAvatar';
 import StakeModal from './StakeModal';
 import { useCart } from '../../hooks/useCart';
-import { btpFromDollars } from '../../utils/btp';
+import { formatBTP } from '../../utils/btp';
 
 const TIER = {
   silver: {
@@ -37,9 +37,6 @@ const TIER = {
   },
 };
 
-function slugify(name) {
-  return (name || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-}
 
 export default function MatchCard({ match, loading = false, homeMode = false }) {
   const navigate = useNavigate();
@@ -82,12 +79,12 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
   const almostFull  = (match.fillPercent ?? 0) >= 80;
   const ticketsLeft = Math.max(0, Math.round(100 * (1 - (match.fillPercent ?? 0) / 100)));
 
-  const openStakeModal = (e) => { e.stopPropagation(); setModalOpen(true); };
-  const handleCardClick = homeMode ? undefined : () => navigate(`/match/${match.id}`);
+  const openStakeModal  = (e) => { e.stopPropagation(); setModalOpen(true); };
+  const handleCardClick = () => navigate(`/match/${match.id}`);
 
-  const goToTeam = (team, e) => {
+  const openTeamPage = (side, e) => {
     e.stopPropagation();
-    navigate(`/team/${slugify(team.name)}`, { state: { team, league: match.league } });
+    navigate(`/match/${match.id}/team/${side}`);
   };
 
   const px  = homeMode ? 'px-3' : 'px-4';
@@ -98,7 +95,7 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
     <>
       <div
         onClick={handleCardClick}
-        className={`bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-md ${tier.shadow} card-hover flex flex-col overflow-hidden border-l-4 ${tier.border} ${homeMode ? '' : 'cursor-pointer'}`}
+        className={`bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-md ${tier.shadow} card-hover flex flex-col overflow-hidden border-l-4 ${tier.border} cursor-pointer`}
       >
         {/* Header row */}
         <div className={`flex items-center justify-between ${px} ${homeMode ? 'pt-2.5 pb-1.5' : 'pt-3.5 pb-2'}`}>
@@ -146,12 +143,12 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
 
           {/* Teams */}
           <div className={`flex items-center justify-between gap-2 ${gap}`}>
-            {/* Home team — logo navigates to team page */}
+            {/* Home team — logo opens inline team history panel */}
             <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
               <button
-                onClick={(e) => goToTeam(match.homeTeam, e)}
+                onClick={(e) => openTeamPage('home', e)}
                 className="rounded-full hover:ring-2 hover:ring-[#1A4D8F]/40 transition-all"
-                title={`View ${match.homeTeam.name}`}
+                title={`View ${match.homeTeam.name} stats`}
               >
                 <TeamAvatar short={match.homeTeam.short} logo={match.homeTeam.logo} size={homeMode ? 'sm' : 'md'} />
               </button>
@@ -170,12 +167,12 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
               )}
             </div>
 
-            {/* Away team — logo navigates to team page */}
+            {/* Away team — logo opens inline team history panel */}
             <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
               <button
-                onClick={(e) => goToTeam(match.awayTeam, e)}
+                onClick={(e) => openTeamPage('away', e)}
                 className="rounded-full hover:ring-2 hover:ring-[#1A4D8F]/40 transition-all"
-                title={`View ${match.awayTeam.name}`}
+                title={`View ${match.awayTeam.name} stats`}
               >
                 <TeamAvatar short={match.awayTeam.short} logo={match.awayTeam.logo} size={homeMode ? 'sm' : 'md'} />
               </button>
@@ -196,10 +193,10 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
               {match.maxWinners}W
             </span>
             <span className="font-bold text-[#1A1A2E] dark:text-slate-200">
-              {btpFromDollars(match.prizePool).toLocaleString()} BTP
+              {formatBTP(match.prizePool)}
             </span>
             <span className="ml-auto font-black text-xs" style={{ color: match.tier === 'platinum' ? '#7C3AED' : match.tier === 'gold' ? '#d97706' : '#6b7280' }}>
-              {isFree ? 'FREE' : `${btpFromDollars(match.price)} BTP`}
+              {isFree ? 'FREE' : formatBTP(match.price)}
             </span>
           </div>
 

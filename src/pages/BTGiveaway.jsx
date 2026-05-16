@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiGift, FiCheck, FiArrowRight } from 'react-icons/fi';
+import { FiGift, FiCheck, FiArrowRight, FiDollarSign, FiCalendar, FiClock, FiMonitor, FiStar, FiShield, FiAward, FiTag, FiUser } from 'react-icons/fi';
 import MatchCard from '../components/ui/MatchCard';
 import { useMatches } from '../hooks/useMatches';
+import { matchApi } from '../api/matchApi';
 
 const rules = [
   'No purchase required — BTGiveaway entries are completely free.',
@@ -12,10 +14,10 @@ const rules = [
   'Must be 18 years or older to participate.',
 ];
 
-// Defined prize categories for the giveaway
 const PRIZES = [
   {
-    icon: '👟',
+    Icon: FiStar,
+    iconColor: 'text-orange-500',
     name: 'Soccer Boot Bundle',
     desc: 'Nike Phantom GX Elite + Adidas Predator Elite — top-of-range boots worth $450+',
     color: 'from-orange-50 to-amber-50',
@@ -24,7 +26,8 @@ const PRIZES = [
     tag: 'Most Popular',
   },
   {
-    icon: '🏆',
+    Icon: FiDollarSign,
+    iconColor: 'text-yellow-600',
     name: 'Cash Prize',
     desc: 'Direct bank transfer or wallet credit — up to $500 per draw',
     color: 'from-yellow-50 to-green-50',
@@ -33,7 +36,8 @@ const PRIZES = [
     tag: 'Cash',
   },
   {
-    icon: '🎽',
+    Icon: FiShield,
+    iconColor: 'text-blue-600',
     name: 'Official Club Jersey',
     desc: 'Latest season authentic jersey of your favourite club with player name',
     color: 'from-blue-50 to-indigo-50',
@@ -42,7 +46,8 @@ const PRIZES = [
     tag: 'Merch',
   },
   {
-    icon: '🎟️',
+    Icon: FiCalendar,
+    iconColor: 'text-purple-600',
     name: 'Match Day Tickets',
     desc: 'Two premium tickets to a Premier League or Champions League fixture',
     color: 'from-purple-50 to-pink-50',
@@ -51,7 +56,8 @@ const PRIZES = [
     tag: 'Experience',
   },
   {
-    icon: '⌚',
+    Icon: FiClock,
+    iconColor: 'text-gray-600',
     name: 'Sports Watch',
     desc: 'Garmin Forerunner or Apple Watch SE — track your match day performance',
     color: 'from-gray-50 to-slate-50',
@@ -60,7 +66,8 @@ const PRIZES = [
     tag: 'Gadget',
   },
   {
-    icon: '🎮',
+    Icon: FiMonitor,
+    iconColor: 'text-teal-600',
     name: 'Gaming Bundle',
     desc: 'EA FC 2025 + FIFA Points + Controller — dominate on and off the pitch',
     color: 'from-teal-50 to-cyan-50',
@@ -72,6 +79,16 @@ const PRIZES = [
 
 export default function BTGiveaway() {
   const { matches, loading } = useMatches({ tier: 'free', status: 'active' });
+
+  const [winners, setWinners]           = useState([]);
+  const [winnersLoading, setWinnersLoading] = useState(true);
+
+  useEffect(() => {
+    matchApi.getGiveawayWinners(12)
+      .then(res => setWinners(res.data?.data?.winners || res.data?.winners || []))
+      .catch(() => setWinners([]))
+      .finally(() => setWinnersLoading(false));
+  }, []);
 
   return (
     <div>
@@ -135,7 +152,7 @@ export default function BTGiveaway() {
                 className={`bg-gradient-to-br ${p.color} border ${p.border} rounded-2xl p-5 card-hover`}
               >
                 <div className="flex items-start justify-between mb-3">
-                  <span className="text-3xl">{p.icon}</span>
+                  <p.Icon className={`w-7 h-7 ${p.iconColor}`} />
                   <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${p.badge}`}>{p.tag}</span>
                 </div>
                 <h3 className="font-black text-[#1A1A2E] mb-1.5">{p.name}</h3>
@@ -179,8 +196,98 @@ export default function BTGiveaway() {
         )}
       </section>
 
+      {/* Giveaway Winners */}
+      <section className="bg-[#0D2B5E] py-14 px-4">
+        <div className="max-w-5xl mx-auto">
+          {/* Heading */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#F5C518]/20 flex items-center justify-center">
+                <FiAward className="w-5 h-5 text-[#F5C518]" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-white">Giveaway Winners</h2>
+                <p className="text-blue-300 text-sm">Real winners from past BTGiveaway draws</p>
+              </div>
+            </div>
+            <span className="flex items-center gap-1.5 text-xs text-green-400 font-semibold bg-green-400/10 border border-green-400/20 px-3 py-1.5 rounded-full">
+              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+              Updated after each draw
+            </span>
+          </div>
+
+          {winnersLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array(6).fill(0).map((_, i) => (
+                <div key={i} className="bg-white/5 rounded-2xl h-24 animate-pulse" />
+              ))}
+            </div>
+          ) : winners.length === 0 ? (
+            <div className="bg-white/5 border border-white/10 rounded-2xl py-16 text-center">
+              <FiGift className="w-10 h-10 text-white/20 mx-auto mb-3" />
+              <p className="text-white/50 font-semibold">No giveaway winners yet</p>
+              <p className="text-white/30 text-sm mt-1">Be the first — enter a free match above!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {winners.map((w, i) => (
+                <div key={w.id || i}
+                  className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:bg-white/10 transition-colors">
+                  {/* Gold top strip */}
+                  <div className="h-1 bg-gradient-to-r from-[#F5C518] to-[#1A4D8F]" />
+                  <div className="p-4 flex items-center gap-3">
+                    {/* Avatar */}
+                    <div className="w-11 h-11 rounded-xl bg-[#F5C518]/20 border border-[#F5C518]/30 flex items-center justify-center shrink-0">
+                      <FiUser className="w-5 h-5 text-[#F5C518]" />
+                    </div>
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="font-bold text-white text-sm truncate">
+                          {w.username || 'Anonymous'}
+                        </span>
+                        <span className="font-black text-[#F5C518] text-sm shrink-0 whitespace-nowrap">
+                          {w.prize ? `+$${Number(w.prize).toFixed(2)}` : 'Prize Won'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-blue-300 truncate mb-1.5 leading-tight">
+                        {w.match || w.market || '—'}
+                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {w.market && (
+                          <span className="inline-flex items-center gap-1 text-[10px] bg-[#1A4D8F]/60 text-blue-200 px-2 py-0.5 rounded-full font-medium">
+                            <FiTag className="w-2.5 h-2.5" />
+                            {w.market}
+                          </span>
+                        )}
+                        {w.date && (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-white/40">
+                            <FiCalendar className="w-2.5 h-2.5" />
+                            {w.date}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* CTA */}
+          {winners.length > 0 && (
+            <div className="text-center mt-8">
+              <Link to="/winners"
+                className="inline-flex items-center gap-2 border border-white/20 text-white hover:bg-white/10 font-semibold px-6 py-2.5 rounded-xl text-sm transition-colors">
+                View All Winners <FiArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Entry rules */}
-      <section className="max-w-2xl mx-auto px-4 pb-14">
+      <section className="max-w-2xl mx-auto px-4 pt-12 pb-14">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
           <h3 className="font-bold text-[#1A1A2E] mb-4">Entry Rules</h3>
           <ul className="space-y-3">
