@@ -122,7 +122,7 @@ export default function Navbar() {
                 <div className="hidden sm:flex items-center gap-0 bg-[#F5C518]/10 dark:bg-[#F5C518]/10 border border-[#F5C518]/30 rounded-lg mr-1 overflow-hidden">
                   <Link to="/dashboard/wallet"
                     className="flex items-center gap-1.5 text-[#b89300] dark:text-[#F5C518] text-xs font-bold px-2.5 py-1.5 hover:bg-[#F5C518]/20 transition-colors">
-                    <span className="font-black text-[#F5C518]">◈</span>
+                    <span className="text-[10px] font-black text-[#F5C518] leading-none">BTP</span>
                     {showBTP
                       ? formatBTP(user?.balance ?? 0)
                       : <span className="tracking-widest text-[#F5C518]/60 font-black">•••••</span>
@@ -159,7 +159,7 @@ export default function Navbar() {
                     </Link>
                     <Link to="/dashboard/wallet" onClick={() => setDropdownOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
-                      <span className="text-[#F5C518] font-black text-base leading-none">◈</span> My Wallet
+                      My Wallet
                     </Link>
                     <Link to="/dashboard/tickets" onClick={() => setDropdownOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">

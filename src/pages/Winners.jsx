@@ -7,10 +7,10 @@ export default function Winners() {
   const { winners, loading } = useWinners(30);
 
   const stats = [
-    { icon: FiDollarSign, label: 'Total Paid Out',      value: '$48,250', color: 'text-green-600', bg: 'bg-green-50', border: 'border-l-green-400' },
-    { icon: FiUsers,      label: 'Winners This Month',  value: '312',     color: 'text-[#1A4D8F]', bg: 'bg-blue-50',  border: 'border-l-[#1A4D8F]' },
-    { icon: FiAward,      label: 'Biggest Prize',       value: '$125.00', color: 'text-[#F5C518]',  bg: 'bg-yellow-50', border: 'border-l-yellow-400' },
-    { icon: FiTrendingUp, label: 'Avg Win Rate',        value: '62%',     color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-l-purple-400' },
+    { icon: FiDollarSign, label: 'Total Paid Out',      value: '$48,250', color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/30', border: 'border-l-green-400' },
+    { icon: FiUsers,      label: 'Winners This Month',  value: '312',     color: 'text-[#1A4D8F] dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30',  border: 'border-l-[#1A4D8F]' },
+    { icon: FiAward,      label: 'Biggest Prize',       value: '$125.00', color: 'text-[#F5C518]',  bg: 'bg-yellow-50 dark:bg-yellow-900/30', border: 'border-l-yellow-400' },
+    { icon: FiTrendingUp, label: 'Avg Win Rate',        value: '62%',     color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/30', border: 'border-l-purple-400' },
   ];
 
   return (
@@ -40,13 +40,13 @@ export default function Winners() {
       <section className="max-w-5xl mx-auto px-4 py-10">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {stats.map(s => (
-            <div key={s.label} className={`bg-white rounded-xl border border-gray-200 shadow-sm p-3 border-l-4 ${s.border} flex items-center gap-3`}>
+            <div key={s.label} className={`bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm p-3 border-l-4 ${s.border} flex items-center gap-3`}>
               <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center shrink-0`}>
                 <s.icon className={`w-3.5 h-3.5 ${s.color}`} />
               </div>
               <div className="min-w-0">
                 <p className={`text-base font-black ${s.color} leading-none`}>{s.value}</p>
-                <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">{s.label}</p>
+                <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5 leading-tight">{s.label}</p>
               </div>
             </div>
           ))}
@@ -56,8 +56,8 @@ export default function Winners() {
       {/* Winners feed */}
       <section className="max-w-2xl mx-auto px-4 pb-14">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-black text-[#1A1A2E]">Recent Winners</h2>
-          <span className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded-full">
+          <h2 className="text-xl font-black text-[#1A1A2E] dark:text-white">Recent Winners</h2>
+          <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full">
             <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
             Live Feed
           </span>
@@ -66,14 +66,14 @@ export default function Winners() {
         {loading ? (
           <div className="space-y-3">
             {Array(6).fill(0).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 animate-pulse h-20" />
+              <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-4 animate-pulse h-20" />
             ))}
           </div>
         ) : winners.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-200 text-center py-16">
-            <FiAward className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 font-medium">No winners yet</p>
-            <p className="text-gray-300 text-sm">Be the first one!</p>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 text-center py-16">
+            <FiAward className="w-10 h-10 text-gray-200 dark:text-slate-600 mx-auto mb-3" />
+            <p className="text-gray-400 dark:text-slate-500 font-medium">No winners yet</p>
+            <p className="text-gray-300 dark:text-slate-600 text-sm">Be the first one!</p>
           </div>
         ) : (
           <div className="space-y-3">

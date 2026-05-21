@@ -49,7 +49,7 @@ export default function HowToPlay() {
 
       {/* Steps */}
       <section className="max-w-3xl mx-auto px-4 py-14">
-        <h2 className="text-2xl font-black text-[#1A1A2E] text-center mb-10">Your 7-Step Guide</h2>
+        <h2 className="text-2xl font-black text-[#1A1A2E] dark:text-white text-center mb-10">Your 7-Step Guide</h2>
         <div className="relative">
           {/* Vertical line */}
           <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#1A4D8F] to-[#F5C518] hidden md:block" />
@@ -60,9 +60,9 @@ export default function HowToPlay() {
                 <div className="shrink-0 w-10 h-10 rounded-full bg-[#1A4D8F] text-white font-black flex items-center justify-center z-10 shadow-md">
                   {step.n}
                 </div>
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex-1 card-hover">
-                  <h3 className="font-bold text-[#1A1A2E] mb-1">{step.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-4 flex-1 card-hover">
+                  <h3 className="font-bold text-[#1A1A2E] dark:text-white mb-1">{step.title}</h3>
+                  <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">{step.desc}</p>
                 </div>
               </div>
             ))}
@@ -92,23 +92,23 @@ export default function HowToPlay() {
 
       {/* FAQ */}
       <section className="max-w-2xl mx-auto px-4 py-14">
-        <h2 className="text-2xl font-black text-[#1A1A2E] text-center mb-8">Frequently Asked Questions</h2>
+        <h2 className="text-2xl font-black text-[#1A1A2E] dark:text-white text-center mb-8">Frequently Asked Questions</h2>
         <div className="space-y-3">
           {faqItems.map((item, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
               <button
                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
                 className="w-full flex items-center justify-between px-5 py-4 text-left"
               >
-                <span className="font-semibold text-[#1A1A2E] text-sm pr-4">{item.q}</span>
+                <span className="font-semibold text-[#1A1A2E] dark:text-white text-sm pr-4">{item.q}</span>
                 {openFaq === i
                   ? <FiChevronUp className="w-4 h-4 text-[#1A4D8F] shrink-0" />
-                  : <FiChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+                  : <FiChevronDown className="w-4 h-4 text-gray-400 dark:text-slate-500 shrink-0" />
                 }
               </button>
               {openFaq === i && (
-                <div className="px-5 pb-4 border-t border-gray-50">
-                  <p className="text-sm text-gray-500 leading-relaxed pt-3">{item.a}</p>
+                <div className="px-5 pb-4 border-t border-gray-50 dark:border-slate-700">
+                  <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed pt-3">{item.a}</p>
                 </div>
               )}
             </div>
@@ -117,16 +117,16 @@ export default function HowToPlay() {
       </section>
 
       {/* CTA */}
-      <section className="bg-[#F5F7FA] border-t border-gray-200 py-12 px-4 text-center">
-        <h2 className="text-2xl font-black text-[#1A1A2E] mb-3">Ready? Start Predicting</h2>
-        <p className="text-gray-500 mb-6">Join thousands of players on WinALot today.</p>
+      <section className="bg-[#F5F7FA] dark:bg-slate-800/50 border-t border-gray-200 dark:border-slate-700 py-12 px-4 text-center">
+        <h2 className="text-2xl font-black text-[#1A1A2E] dark:text-white mb-3">Ready? Start Predicting</h2>
+        <p className="text-gray-500 dark:text-slate-400 mb-6">Join thousands of players on WinALot today.</p>
         <div className="flex gap-3 justify-center flex-wrap">
           <Link to="/auth/signup"
             className="bg-[#1A4D8F] text-white font-bold px-6 py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors text-sm">
             Create Account
           </Link>
           <Link to="/lobby"
-            className="border border-[#1A4D8F] text-[#1A4D8F] font-semibold px-6 py-3 rounded-xl hover:bg-blue-50 transition-colors text-sm">
+            className="border border-[#1A4D8F] text-[#1A4D8F] font-semibold px-6 py-3 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm">
             Browse Lobby
           </Link>
         </div>

@@ -9,7 +9,7 @@ const TAB_LABELS = { weekly: 'This Week', monthly: 'This Month', allTime: 'All T
 
 const RANK_STYLES = {
   1: { bg: 'bg-yellow-400', text: 'text-[#1A1A2E]', ring: 'ring-2 ring-yellow-300' },
-  2: { bg: 'bg-gray-300',   text: 'text-gray-700',  ring: 'ring-2 ring-gray-200'  },
+  2: { bg: 'bg-gray-300 dark:bg-gray-600',   text: 'text-gray-700 dark:text-gray-200',  ring: 'ring-2 ring-gray-200 dark:ring-gray-500'  },
   3: { bg: 'bg-orange-400', text: 'text-white',      ring: 'ring-2 ring-orange-200' },
 };
 
@@ -23,7 +23,7 @@ function RankBadge({ rank }) {
     );
   }
   return (
-    <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center font-bold text-xs text-gray-500 shrink-0">
+    <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center font-bold text-xs text-gray-500 dark:text-slate-400 shrink-0">
       {rank}
     </div>
   );
@@ -42,10 +42,10 @@ export default function Leaderboard() {
   const myUsername = user?.username || '';
 
   const stats = [
-    { icon: FiUsers,      label: 'Total Players',    value: '12,480', color: 'text-[#1A4D8F]',  bg: 'bg-blue-50',   border: 'border-l-[#1A4D8F]' },
-    { icon: FiAward,      label: 'Winners This Week', value: rows.length || '—', color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-l-yellow-400' },
-    { icon: FiDollarSign, label: 'Total Paid Out',   value: '$48.2K',  color: 'text-green-600',  bg: 'bg-green-50',  border: 'border-l-green-400' },
-    { icon: FiTrendingUp, label: 'Avg Win Rate',     value: '64%',     color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-l-purple-400' },
+    { icon: FiUsers,      label: 'Total Players',    value: '12,480', color: 'text-[#1A4D8F] dark:text-blue-400',  bg: 'bg-blue-50 dark:bg-blue-900/30',   border: 'border-l-[#1A4D8F]' },
+    { icon: FiAward,      label: 'Winners This Week', value: rows.length || '—', color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/30', border: 'border-l-yellow-400' },
+    { icon: FiDollarSign, label: 'Total Paid Out',   value: '$48.2K',  color: 'text-green-600 dark:text-green-400',  bg: 'bg-green-50 dark:bg-green-900/30',  border: 'border-l-green-400' },
+    { icon: FiTrendingUp, label: 'Avg Win Rate',     value: '64%',     color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/30', border: 'border-l-purple-400' },
   ];
 
   return (
@@ -73,13 +73,13 @@ export default function Leaderboard() {
       <section className="max-w-5xl mx-auto px-4 py-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
           {stats.map(s => (
-            <div key={s.label} className={`bg-white rounded-xl border border-gray-200 shadow-sm p-3 border-l-4 ${s.border} flex items-center gap-3`}>
+            <div key={s.label} className={`bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm p-3 border-l-4 ${s.border} flex items-center gap-3`}>
               <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center shrink-0`}>
                 <s.icon className={`w-3.5 h-3.5 ${s.color}`} />
               </div>
               <div className="min-w-0">
                 <p className={`text-base font-black ${s.color} leading-none`}>{s.value}</p>
-                <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">{s.label}</p>
+                <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5 leading-tight">{s.label}</p>
               </div>
             </div>
           ))}
@@ -90,7 +90,7 @@ export default function Leaderboard() {
           {TABS.map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                tab === t ? 'bg-[#1A4D8F] text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:border-[#1A4D8F] hover:text-[#1A4D8F]'
+                tab === t ? 'bg-[#1A4D8F] text-white shadow-sm' : 'bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-[#1A4D8F] hover:text-[#1A4D8F]'
               }`}>
               {TAB_LABELS[t]}
             </button>
@@ -100,13 +100,13 @@ export default function Leaderboard() {
         {loading ? (
           <div className="space-y-3">
             {Array(5).fill(0).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 animate-pulse h-14" />
+              <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-4 animate-pulse h-14" />
             ))}
           </div>
         ) : rows.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-200 text-center py-16">
-            <FiTrendingUp className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 font-medium">No data yet for {TAB_LABELS[tab]}</p>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 text-center py-16">
+            <FiTrendingUp className="w-10 h-10 text-gray-200 dark:text-slate-600 mx-auto mb-3" />
+            <p className="text-gray-400 dark:text-slate-500 font-medium">No data yet for {TAB_LABELS[tab]}</p>
           </div>
         ) : (
           <>
@@ -118,11 +118,11 @@ export default function Leaderboard() {
                   return (
                     <div key={player.username} className="flex flex-col items-center gap-2">
                       <div className="text-center mb-1">
-                        <div className="w-12 h-12 rounded-full bg-[#1A4D8F]/10 border-2 border-[#1A4D8F]/20 flex items-center justify-center mx-auto mb-1">
-                          <span className="text-sm font-black text-[#1A4D8F]">{player.username.slice(0, 2).toUpperCase()}</span>
+                        <div className="w-12 h-12 rounded-full bg-[#1A4D8F]/10 dark:bg-blue-900/40 border-2 border-[#1A4D8F]/20 dark:border-blue-700/40 flex items-center justify-center mx-auto mb-1">
+                          <span className="text-sm font-black text-[#1A4D8F] dark:text-blue-400">{player.username.slice(0, 2).toUpperCase()}</span>
                         </div>
-                        <p className="text-xs font-bold text-[#1A1A2E] max-w-[80px] truncate">{player.username}</p>
-                        <p className="text-xs text-green-600 font-bold">${player.totalPrize.toFixed(2)}</p>
+                        <p className="text-xs font-bold text-[#1A1A2E] dark:text-white max-w-[80px] truncate">{player.username}</p>
+                        <p className="text-xs text-green-600 dark:text-green-400 font-bold">${player.totalPrize.toFixed(2)}</p>
                       </div>
                       <div className={`w-20 ${podiumHeights[realRank - 1]} ${podiumColors[realRank - 1]} rounded-t-xl flex items-start justify-center pt-2`}>
                         <span className="text-white font-black text-lg">#{realRank}</span>
@@ -134,14 +134,14 @@ export default function Leaderboard() {
             )}
 
             {/* Full table */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100">
-                <h2 className="font-bold text-[#1A1A2E]">Full Rankings — {TAB_LABELS[tab]}</h2>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+                <h2 className="font-bold text-[#1A1A2E] dark:text-white">Full Rankings — {TAB_LABELS[tab]}</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-100">
-                    <tr className="text-xs text-gray-400 font-medium">
+                  <thead className="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-100 dark:border-slate-700">
+                    <tr className="text-xs text-gray-400 dark:text-slate-500 font-medium">
                       <th className="text-left px-5 py-3">Rank</th>
                       <th className="text-left py-3">Player</th>
                       <th className="text-right py-3 hidden sm:table-cell">Wins</th>
@@ -154,27 +154,27 @@ export default function Leaderboard() {
                       const isMe = myUsername && player.username === myUsername;
                       return (
                         <tr key={player.rank}
-                          className={`border-t border-gray-50 transition-colors ${isMe ? 'bg-blue-50/60' : 'hover:bg-gray-50'}`}>
+                          className={`border-t border-gray-50 dark:border-slate-700 transition-colors ${isMe ? 'bg-blue-50/60 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}>
                           <td className="px-5 py-3.5"><RankBadge rank={player.rank} /></td>
                           <td className="py-3.5">
                             <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-full bg-[#1A4D8F]/10 flex items-center justify-center shrink-0">
-                                <span className="text-xs font-black text-[#1A4D8F]">{player.username.slice(0, 2).toUpperCase()}</span>
+                              <div className="w-8 h-8 rounded-full bg-[#1A4D8F]/10 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
+                                <span className="text-xs font-black text-[#1A4D8F] dark:text-blue-400">{player.username.slice(0, 2).toUpperCase()}</span>
                               </div>
                               <div>
-                                <p className="font-bold text-[#1A1A2E] text-xs">{player.username}</p>
-                                {isMe && <span className="text-xs text-[#1A4D8F] font-semibold">You</span>}
+                                <p className="font-bold text-[#1A1A2E] dark:text-white text-xs">{player.username}</p>
+                                {isMe && <span className="text-xs text-[#1A4D8F] dark:text-blue-400 font-semibold">You</span>}
                               </div>
                             </div>
                           </td>
                           <td className="py-3.5 text-right hidden sm:table-cell">
-                            <span className="text-xs font-bold text-[#1A1A2E]">{player.wins}</span>
+                            <span className="text-xs font-bold text-[#1A1A2E] dark:text-white">{player.wins}</span>
                           </td>
                           <td className="py-3.5 text-right hidden lg:table-cell">
-                            <span className="text-xs text-gray-400">{player.lastWin}</span>
+                            <span className="text-xs text-gray-400 dark:text-slate-500">{player.lastWin}</span>
                           </td>
                           <td className="py-3.5 pr-5 text-right">
-                            <span className="text-sm font-black text-green-600">${player.totalPrize.toFixed(2)}</span>
+                            <span className="text-sm font-black text-green-600 dark:text-green-400">${player.totalPrize.toFixed(2)}</span>
                           </td>
                         </tr>
                       );

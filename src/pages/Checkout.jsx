@@ -174,8 +174,7 @@ export default function Checkout() {
               </div>
               <div className="flex justify-between font-black text-lg mb-2">
                 <span className="text-[#1A1A2E]">Total</span>
-                <span className="text-[#1A4D8F] flex items-center gap-1">
-                  <span className="text-[#F5C518]">◈</span>
+                <span className="text-[#1A4D8F]">
                   {cartTotal.toLocaleString()} BTP
                 </span>
               </div>
@@ -205,15 +204,13 @@ export default function Checkout() {
           <div className={`rounded-2xl p-4 mb-6 border-2 ${hasEnoughBTP ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-black uppercase tracking-wider text-gray-500">Your BTP Balance</p>
-              <span className={`text-base font-black flex items-center gap-1 ${hasEnoughBTP ? 'text-green-700' : 'text-red-600'}`}>
-                <span className="text-[#F5C518]">◈</span>
+              <span className={`text-base font-black ${hasEnoughBTP ? 'text-green-700' : 'text-red-600'}`}>
                 {balance.toLocaleString()} BTP
               </span>
             </div>
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-wider text-gray-500">Order Total</p>
-              <span className="text-base font-black text-[#1A4D8F] flex items-center gap-1">
-                <span className="text-[#F5C518]">◈</span>
+              <span className="text-base font-black text-[#1A4D8F]">
                 {cartTotal.toLocaleString()} BTP
               </span>
             </div>
@@ -248,12 +245,7 @@ export default function Checkout() {
               disabled={loading}
               className="w-full bg-[#F5C518] text-[#1A1A2E] font-black py-3.5 rounded-xl hover:brightness-105 transition-all disabled:opacity-60 text-sm flex items-center justify-center gap-2"
             >
-              {loading ? 'Processing…' : (
-                <>
-                  <span className="text-lg leading-none">◈</span>
-                  Pay {cartTotal.toLocaleString()} BTP
-                </>
-              )}
+              {loading ? 'Processing…' : `Pay ${cartTotal.toLocaleString()} BTP`}
             </button>
           ) : (
             <div className="space-y-3">

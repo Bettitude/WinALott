@@ -2,7 +2,7 @@
 // Admin sets the USD rate (e.g. 1 BTP = $0.01).
 // All prices and balances are stored/sent as plain BTP numbers (decimals allowed).
 
-export const BTP_SYMBOL = '◈';
+export const BTP_SYMBOL = 'BTP';
 export const BTP_LABEL  = 'BTP';
 
 // Format with up to 2 decimal places, dropping trailing zeros (55.40 → "55.4", 100 → "100")

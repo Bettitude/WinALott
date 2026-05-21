@@ -395,7 +395,6 @@ export default function StakeModal({ match, open, onClose }) {
                         className={`flex-1 py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-1.5 transition-all ${
                           !pick || !selectedTier ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-[#F5C518] hover:brightness-105 text-[#1A1A2E]'
                         }`}>
-                        <span className="font-black text-base leading-none">◈</span>
                         {chosen ? formatBTP(chosen.price) : 'Use BTP'}
                       </button>
                     ) : (

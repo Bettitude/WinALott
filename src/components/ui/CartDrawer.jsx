@@ -85,8 +85,7 @@ export default function CartDrawer() {
           <div className="p-4 border-t border-gray-100 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-gray-500 text-sm">Total</span>
-              <span className="font-black text-lg text-[#1A4D8F] flex items-center gap-1">
-                <span className="text-[#F5C518]">◈</span>
+              <span className="font-black text-lg text-[#1A4D8F]">
                 {cartTotal.toLocaleString()} BTP
               </span>
             </div>
