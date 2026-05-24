@@ -1,16 +1,17 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   FiClock, FiMapPin, FiUsers, FiChevronRight, FiZap, FiStar, FiAward,
   FiCheckCircle, FiShoppingCart, FiTrendingUp, FiBarChart2, FiList,
   FiActivity, FiGrid, FiWifi, FiTv, FiInfo, FiLock,
-  FiAlertCircle, FiSearch,
+  FiAlertCircle, FiSearch, FiTag, FiPlay,
 } from 'react-icons/fi';
 import { useMatchDetail } from '../hooks/useMatchDetail';
 import { useMatches } from '../hooks/useMatches';
 import { matchApi } from '../api/matchApi';
-import { normalizeMatch, normalizeMarketToTier } from '../api/normalizers';
+import { normalizeMatch, normalizeMarketToTier, normalizeTicket } from '../api/normalizers';
 import { useCart } from '../hooks/useCart';
+import { AuthContext } from '../context/AuthContext';
 import TeamAvatar from '../components/ui/TeamAvatar';
 
 // ── Constants ─────────────────────────────────────────────────────────────
@@ -404,6 +405,43 @@ function H2HTab({ h2h, match }) {
   );
 }
 
+function OddsStrip({ odds, match }) {
+  if (!Array.isArray(odds) || odds.length === 0) return null;
+
+  const bestHome = Math.max(...odds.map(o => Number(o.home) || 0));
+  const bestDraw = Math.max(...odds.map(o => Number(o.draw) || 0));
+  const bestAway = Math.max(...odds.map(o => Number(o.away) || 0));
+
+  return (
+    <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-4 mb-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-slate-500 flex items-center gap-1.5">
+          <FiTrendingUp className="w-3 h-3" /> Best Available Odds
+        </p>
+        <span className="text-[10px] text-gray-400 dark:text-slate-500">{odds.length} bookmaker{odds.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="flex flex-col items-center bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 rounded-xl py-2.5 px-1">
+          <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 mb-0.5 truncate max-w-full text-center">{match.homeTeam.short}</span>
+          <span className="text-xl font-black text-[#1A4D8F] dark:text-blue-400 tabular-nums">{bestHome > 0 ? bestHome.toFixed(2) : '—'}</span>
+          <span className="text-[9px] font-black text-blue-300 dark:text-blue-600 mt-0.5">HOME</span>
+        </div>
+        <div className="flex flex-col items-center bg-gray-50 dark:bg-slate-700/60 border border-gray-100 dark:border-slate-600 rounded-xl py-2.5 px-1">
+          <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 mb-0.5">Draw</span>
+          <span className="text-xl font-black text-gray-700 dark:text-slate-200 tabular-nums">{bestDraw > 0 ? bestDraw.toFixed(2) : '—'}</span>
+          <span className="text-[9px] font-black text-gray-400 dark:text-slate-500 mt-0.5">DRAW</span>
+        </div>
+        <div className="flex flex-col items-center bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/40 rounded-xl py-2.5 px-1">
+          <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 mb-0.5 truncate max-w-full text-center">{match.awayTeam.short}</span>
+          <span className="text-xl font-black text-red-500 dark:text-red-400 tabular-nums">{bestAway > 0 ? bestAway.toFixed(2) : '—'}</span>
+          <span className="text-[9px] font-black text-red-300 dark:text-red-600 mt-0.5">AWAY</span>
+        </div>
+      </div>
+      <p className="text-[9px] text-gray-300 dark:text-slate-600 text-center mt-2">For reference only — bWinALOTT is not a bookmaker</p>
+    </div>
+  );
+}
+
 function OddsTab({ odds, match }) {
   if (!Array.isArray(odds) || odds.length === 0) return <NoData label="Odds not available" />;
 
@@ -663,6 +701,103 @@ function StakingPanel({ match, tiers }) {
   );
 }
 
+// ── My Stakes Panel ───────────────────────────────────────────────────────
+const STAKE_STATUS = {
+  pending: 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+  active:  'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+  won:     'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  lost:    'bg-red-50 text-red-500 dark:bg-red-900/30 dark:text-red-400',
+  voided:  'bg-gray-50 text-gray-500 dark:bg-slate-700 dark:text-slate-400',
+};
+
+function MyStakesPanel({ matchId, isLive, onWatchLive }) {
+  const { isAuthenticated } = useContext(AuthContext);
+  const [stakes,  setStakes]  = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated || !matchId) return;
+    setLoading(true);
+    matchApi.getMyTickets({ match_id: matchId })
+      .then(res => setStakes((res.data?.data?.tickets || []).map(normalizeTicket)))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [matchId, isAuthenticated]);
+
+  if (!isAuthenticated) return null;
+  if (!loading && stakes.length === 0) return null;
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-black uppercase tracking-wider text-gray-400 dark:text-slate-500 flex items-center gap-1.5">
+          <FiTag className="w-3.5 h-3.5" /> My Stakes
+        </p>
+        {stakes.length > 0 && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-[#1A4D8F] dark:text-blue-400">
+            {stakes.length} ticket{stakes.length !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="space-y-2 animate-pulse">
+          {[1,2].map(n => <div key={n} className="h-16 bg-gray-100 dark:bg-slate-700 rounded-xl" />)}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {stakes.map(s => (
+            <div key={s.id} className="bg-gray-50 dark:bg-slate-700/60 rounded-xl px-3 py-2.5 border border-gray-100 dark:border-slate-600">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-mono text-gray-400 dark:text-slate-500 tracking-tight">{s.ticketNumber}</span>
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${STAKE_STATUS[s.status] || STAKE_STATUS.pending}`}>
+                  {s.status.toUpperCase()}
+                </span>
+              </div>
+              <div className="flex items-end justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold text-[#1A1A2E] dark:text-slate-200 truncate">{s.market || 'Market'}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-slate-400 mt-0.5">
+                    Your pick: <span className="font-black text-[#1A4D8F] dark:text-blue-400">{s.myPick}</span>
+                    {s.adminPick && s.adminPick !== '—' && (
+                      <> · Admin: <span className="font-bold">{s.adminPick}</span></>
+                    )}
+                  </p>
+                </div>
+                <p className="text-sm font-black text-[#1A1A2E] dark:text-slate-200 shrink-0">${s.entryFee.toFixed(2)}</p>
+              </div>
+              {s.status === 'won' && s.prize > 0 && (
+                <div className="mt-1.5 flex items-center gap-1 text-[10px] font-black text-green-600 dark:text-green-400">
+                  <FiCheckCircle className="w-3 h-3" /> Won ${s.prize.toFixed(2)}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isLive && (
+        <button
+          onClick={onWatchLive}
+          className="mt-3 w-full py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white transition-colors"
+        >
+          <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0" />
+          Watch Live
+        </button>
+      )}
+      {!isLive && stakes.some(s => s.status === 'pending' || s.status === 'active') && (
+        <button
+          onClick={onWatchLive}
+          className="mt-3 w-full py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-2 bg-[#1A4D8F] hover:bg-[#0D2B5E] text-white transition-colors"
+        >
+          <FiPlay className="w-3.5 h-3.5" />
+          Follow Match
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── Left sidebar — Other Games ────────────────────────────────────────────
 function OtherGames({ currentMatchId }) {
   const navigate = useNavigate();
@@ -766,18 +901,85 @@ export default function MatchDetails() {
   const match = useMemo(() => rawMatch ? normalizeMatch(rawMatch) : null, [rawMatch]);
   const [activeTab, setActiveTab] = useState('overview');
 
+  const handleWatchLive = () => {
+    setActiveTab('overview');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const { matches: otherMatchesMobile } = useMatches({ limit: 4 });
 
   if (loading) {
     return (
-      <div className="max-w-[1400px] mx-auto px-3 py-4">
-        <div className="bg-gray-100 dark:bg-slate-800 rounded-2xl h-48 animate-pulse mb-4" />
-        <div className="flex gap-4">
-          <div className="hidden xl:block w-56 shrink-0">
-            <div className="bg-gray-100 dark:bg-slate-800 rounded-2xl h-96 animate-pulse" />
+      <div className="max-w-[1400px] mx-auto px-3 py-4 animate-pulse">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-1.5 mb-3">
+          <div className="h-2.5 w-10 bg-gray-200 dark:bg-slate-700 rounded-full" />
+          <div className="h-2 w-2 bg-gray-200 dark:bg-slate-700 rounded-full" />
+          <div className="h-2.5 w-12 bg-gray-200 dark:bg-slate-700 rounded-full" />
+          <div className="h-2 w-2 bg-gray-200 dark:bg-slate-700 rounded-full" />
+          <div className="h-2.5 w-28 bg-gray-200 dark:bg-slate-700 rounded-full" />
+        </div>
+        {/* Hero */}
+        <div className="bg-gradient-to-br from-[#0D2B5E] to-[#1A1A2E] rounded-2xl p-5 mb-4">
+          <div className="h-2.5 w-28 bg-white/20 rounded-full mx-auto mb-4" />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col items-center gap-2 flex-1">
+              <div className="w-14 h-14 rounded-full bg-white/20" />
+              <div className="h-3 w-20 bg-white/20 rounded-full" />
+            </div>
+            <div className="flex flex-col items-center gap-3 shrink-0">
+              <div className="h-6 w-24 bg-white/20 rounded-full" />
+              <div className="h-8 w-16 bg-white/10 rounded-lg" />
+            </div>
+            <div className="flex flex-col items-center gap-2 flex-1">
+              <div className="w-14 h-14 rounded-full bg-white/20" />
+              <div className="h-3 w-20 bg-white/20 rounded-full" />
+            </div>
           </div>
-          <div className="flex-1 bg-gray-100 dark:bg-slate-800 rounded-2xl h-96 animate-pulse" />
-          <div className="hidden xl:block w-[300px] shrink-0 bg-gray-100 dark:bg-slate-800 rounded-2xl h-96 animate-pulse" />
+        </div>
+        {/* Odds strip placeholder */}
+        <div className="h-24 bg-gray-100 dark:bg-slate-800 rounded-2xl mb-4" />
+        {/* 3-column */}
+        <div className="flex gap-4">
+          <div className="hidden xl:flex flex-col w-56 shrink-0 gap-2">
+            <div className="h-4 w-24 bg-gray-200 dark:bg-slate-700 rounded-full mb-1" />
+            {[1,2,3,4,5].map(n => (
+              <div key={n} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-2.5 space-y-1.5">
+                <div className="h-2.5 w-full bg-gray-100 dark:bg-slate-700 rounded-full" />
+                <div className="h-2.5 w-3/4 bg-gray-100 dark:bg-slate-700 rounded-full" />
+                <div className="flex justify-between mt-1">
+                  <div className="h-4 w-12 bg-gray-100 dark:bg-slate-700 rounded-full" />
+                  <div className="h-4 w-8 bg-gray-100 dark:bg-slate-700 rounded-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden">
+              <div className="flex gap-1 px-3 py-2 border-b border-gray-100 dark:border-slate-700">
+                {[80,60,52,72,40,48,52].map((w,n) => (
+                  <div key={n} className={`h-7 w-${w === 80 ? 20 : w === 72 ? 20 : 16} bg-gray-100 dark:bg-slate-700 rounded-full`} style={{ width: w }} />
+                ))}
+              </div>
+              <div className="p-4 space-y-4">
+                <div className="h-3 w-32 bg-gray-100 dark:bg-slate-700 rounded-full" />
+                <div className="grid grid-cols-2 gap-2">
+                  {[1,2,3,4].map(n => <div key={n} className="h-12 bg-gray-100 dark:bg-slate-700 rounded-xl" />)}
+                </div>
+                <div className="h-3 w-24 bg-gray-100 dark:bg-slate-700 rounded-full" />
+                {[1,2,3].map(n => <div key={n} className="h-14 bg-gray-100 dark:bg-slate-700 rounded-xl" />)}
+              </div>
+            </div>
+          </div>
+          <div className="hidden xl:block w-[300px] shrink-0">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 space-y-3">
+              <div className="h-3 w-28 bg-gray-100 dark:bg-slate-700 rounded-full" />
+              {[1,2,3].map(n => <div key={n} className="h-10 bg-gray-100 dark:bg-slate-700 rounded-xl" />)}
+              <div className="h-12 bg-[#F5C518]/20 rounded-xl" />
+              <div className="h-10 bg-gray-100 dark:bg-slate-700 rounded-xl" />
+              <div className="h-3 w-40 bg-gray-100 dark:bg-slate-700 rounded-full mx-auto" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -853,6 +1055,9 @@ export default function MatchDetails() {
         </div>
       </div>
 
+      {/* Odds strip — always visible below hero */}
+      <OddsStrip odds={odds} match={match} />
+
       {/* 3-column */}
       <div className="flex gap-4 items-start">
         {/* Left */}
@@ -886,15 +1091,17 @@ export default function MatchDetails() {
             <p className="text-[10px] text-gray-300 dark:text-slate-600 font-medium">Ad Space 728×90</p>
           </div>
 
-          {/* Mobile staking panel */}
-          <div className="xl:hidden">
+          {/* Mobile staking panel + stakes */}
+          <div className="xl:hidden space-y-4">
             <StakingPanel match={match} tiers={tiers} />
+            <MyStakesPanel matchId={matchId} isLive={isLive} onWatchLive={handleWatchLive} />
           </div>
         </main>
 
         {/* Right */}
         <aside className="hidden xl:block w-[300px] shrink-0 sticky top-28 space-y-4">
           <StakingPanel match={match} tiers={tiers} />
+          <MyStakesPanel matchId={matchId} isLive={isLive} onWatchLive={handleWatchLive} />
           <div className="border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl py-16 flex items-center justify-center">
             <p className="text-[10px] text-gray-300 dark:text-slate-600 font-medium">Ad Space 300×250</p>
           </div>
