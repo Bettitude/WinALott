@@ -39,10 +39,10 @@ const legalLinks = [
 ];
 
 const productLinks = [
-  { label: 'Bettitude.com',     href: '#' },
-  { label: 'BettiSports Blog',  href: '#' },
-  { label: 'Probetpicks',       href: '#' },
-  { label: 'Live Scores',       href: '#' },
+  { label: 'Bettitude.com',     href: 'https://bettitude.com' },
+  { label: 'ProBetPicks',       href: 'https://probetpicks.com' },
+  { label: 'BettiScores',       href: 'https://bettiscores.com' },
+  { label: 'BettiSports Blog',  href: 'https://bettisportsblog.com' },
 ];
 
 const socials = [
@@ -237,7 +237,7 @@ export default function Footer() {
               <div>
                 <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-3 font-bold">Accepted Payments</p>
                 <div className="flex items-center gap-3 flex-wrap">
-                  {['Visa', 'Mastercard', 'Flutterwave', 'Bank Transfer'].map(m => (
+                  {['PayPal', 'Stripe', 'Flutterwave', 'Bank Transfer'].map(m => (
                     <span key={m}
                       className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[11px] font-bold text-slate-300">
                       {m}
@@ -280,7 +280,7 @@ export default function Footer() {
             <span className="text-slate-600 text-[10px]">|</span>
             <span className="text-[10px] text-slate-500 font-semibold">18+ Only</span>
             <span className="text-slate-600 text-[10px]">|</span>
-            <span className="text-[10px] text-slate-500">Nigeria · Ghana · Kenya · South Africa</span>
+            <span className="text-[10px] text-slate-500">Australia</span>
           </div>
         </div>
       </div>

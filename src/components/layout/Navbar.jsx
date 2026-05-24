@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { FiShoppingCart, FiMenu, FiX, FiChevronDown, FiUser, FiLogOut, FiList,
-         FiBell, FiTrendingUp, FiGift, FiSun, FiMoon, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiShoppingCart, FiChevronDown, FiUser, FiLogOut, FiList,
+         FiBell, FiTrendingUp, FiGift, FiSun, FiMoon, FiEye, FiEyeOff,
+         FiHome, FiGrid, FiTag, FiDollarSign } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
 import { useTheme } from '../../context/ThemeContext';
-import { formatBTP } from '../../utils/btp';
 import Logo from '../ui/Logo';
 
 const navLinks = [
@@ -16,11 +16,18 @@ const navLinks = [
   { to: '/btgiveaway',    label: 'BTGiveaway' },
 ];
 
+const bottomNavItems = [
+  { to: '/',                  Icon: FiHome,       label: 'Home',    end: true  },
+  { to: '/lobby',             Icon: FiGrid,       label: 'Lobby',   end: false },
+  { to: '/dashboard/tickets', Icon: FiTag,        label: 'Tickets', end: false },
+  { to: '/dashboard/wallet',  Icon: FiDollarSign, label: 'Wallet',  end: false },
+  { to: '/dashboard',         Icon: FiUser,       label: 'Profile', end: true  },
+];
+
 export default function Navbar() {
-  const [scrolled, setScrolled]       = useState(false);
-  const [mobileOpen, setMobileOpen]   = useState(false);
+  const [scrolled, setScrolled]         = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [showBTP, setShowBTP]         = useState(() => localStorage.getItem('btp_visible') !== 'false');
+  const [showBTP, setShowBTP]           = useState(() => localStorage.getItem('btp_visible') !== 'false');
   const { isAuthenticated, user, logout } = useAuth();
   const { cartCount, setIsOpen } = useCart();
   const { isDark, toggleTheme } = useTheme();
@@ -58,209 +65,182 @@ export default function Navbar() {
   };
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 transition-shadow duration-300 ${scrolled ? 'shadow-md dark:shadow-slate-800/60' : 'shadow-sm'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <>
+      {/* ── Top bar ─────────────────────────────────────────────────────── */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 transition-shadow duration-300 ${scrolled ? 'shadow-md dark:shadow-slate-800/60' : 'shadow-sm'}`}>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14 sm:h-16">
 
-          {/* Logo */}
-          <Link to="/" className="shrink-0">
-            <Logo variant="full" height={36} className="dark:brightness-90" />
-          </Link>
+            {/* Logo */}
+            <Link to="/" className="shrink-0">
+              <Logo variant="full" height={30} className="dark:brightness-90 sm:h-9" />
+            </Link>
 
-          {/* Center nav links (desktop) */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map(link => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                className={({ isActive }) =>
-                  `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'text-[#1A4D8F] bg-blue-50 dark:text-blue-400 dark:bg-blue-950/50'
-                      : 'text-[#374151] dark:text-slate-300 hover:text-[#1A4D8F] hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-950/50'
-                  }`
-                }
-              >
-                {link.label}
-              </NavLink>
-            ))}
-          </div>
-
-          {/* Right section */}
-          <div className="flex items-center gap-2">
-
-            {/* Dark mode toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {isDark
-                ? <FiSun className="w-5 h-5 text-[#F5C518]" />
-                : <FiMoon className="w-5 h-5 text-slate-500" />
-              }
-            </button>
-
-            {/* Cart icon */}
-            <button
-              onClick={() => setIsOpen(true)}
-              className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Open cart"
-            >
-              <FiShoppingCart className="w-5 h-5 text-[#1A1A2E] dark:text-slate-200" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#F5C518] text-[#1A1A2E] text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center leading-none">
-                  {cartCount > 9 ? '9+' : cartCount}
-                </span>
-              )}
-            </button>
-
-            {/* Auth section */}
-            {isAuthenticated ? (
-              <div className="relative" ref={dropRef}>
-                {/* BTP balance pill with show/hide toggle */}
-                <div className="hidden sm:flex items-center gap-0 bg-[#F5C518]/10 dark:bg-[#F5C518]/10 border border-[#F5C518]/30 rounded-lg mr-1 overflow-hidden">
-                  <Link to="/dashboard/wallet"
-                    className="flex items-center gap-1.5 text-[#b89300] dark:text-[#F5C518] text-xs font-bold px-2.5 py-1.5 hover:bg-[#F5C518]/20 transition-colors">
-                    <span className="text-[10px] font-black text-[#F5C518] leading-none">BTP</span>
-                    {showBTP
-                      ? formatBTP(user?.balance ?? 0)
-                      : <span className="tracking-widest text-[#F5C518]/60 font-black">•••••</span>
-                    }
-                  </Link>
-                  <button onClick={toggleBTP}
-                    className="px-2 py-1.5 text-[#F5C518]/70 hover:text-[#F5C518] hover:bg-[#F5C518]/20 transition-colors border-l border-[#F5C518]/20"
-                    title={showBTP ? 'Hide balance' : 'Show balance'}>
-                    {showBTP
-                      ? <FiEyeOff className="w-3 h-3" />
-                      : <FiEye className="w-3 h-3" />
-                    }
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+            {/* Center nav links — desktop only */}
+            <div className="hidden md:flex items-center gap-1">
+              {navLinks.map(link => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  className={({ isActive }) =>
+                    `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'text-[#1A4D8F] bg-blue-50 dark:text-blue-400 dark:bg-blue-950/50'
+                        : 'text-[#374151] dark:text-slate-300 hover:text-[#1A4D8F] hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-950/50'
+                    }`
+                  }
                 >
-                  <div className="w-8 h-8 rounded-full bg-[#1A4D8F] flex items-center justify-center text-white font-semibold text-sm">
-                    {user?.name?.[0]?.toUpperCase() || 'U'}
-                  </div>
-                  <span className="hidden sm:block text-sm font-medium text-[#1A1A2E] dark:text-slate-200 max-w-[100px] truncate">
-                    {user?.username || 'User'}
-                  </span>
-                  <FiChevronDown className={`w-4 h-4 text-gray-500 dark:text-slate-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
+                  {link.label}
+                </NavLink>
+              ))}
+            </div>
 
-                {dropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-700 py-2 z-50">
-                    <Link to="/dashboard" onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
-                      <FiUser className="w-4 h-4" /> Dashboard
+            {/* Right section */}
+            <div className="flex items-center gap-1 sm:gap-2">
+
+              {/* Dark mode toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDark
+                  ? <FiSun className="w-4 h-4 sm:w-5 sm:h-5 text-[#F5C518]" />
+                  : <FiMoon className="w-4 h-4 sm:w-5 sm:h-5 text-slate-500" />
+                }
+              </button>
+
+              {/* Cart */}
+              <button
+                onClick={() => setIsOpen(true)}
+                className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Open cart"
+              >
+                <FiShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-[#1A1A2E] dark:text-slate-200" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#F5C518] text-[#1A1A2E] text-[10px] font-bold rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center leading-none">
+                    {cartCount > 9 ? '9+' : cartCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Auth section */}
+              {isAuthenticated ? (
+                <div className="flex items-center gap-1">
+
+                  {/* BTP balance pill — always visible on all screen sizes */}
+                  <div className="flex items-center gap-0 bg-[#F5C518]/10 dark:bg-[#F5C518]/10 border border-[#F5C518]/30 rounded-lg overflow-hidden">
+                    <Link
+                      to="/dashboard/wallet"
+                      className="flex items-center gap-1 whitespace-nowrap text-[#b89300] dark:text-[#F5C518] text-xs font-bold px-2 py-1.5 hover:bg-[#F5C518]/20 transition-colors"
+                    >
+                      <span className="text-[10px] font-black text-[#F5C518] leading-none">BTP</span>
+                      {showBTP
+                        ? <span className="tabular-nums">{(user?.balance ?? 0).toLocaleString()}</span>
+                        : <span className="tracking-widest text-[#F5C518]/60 font-black text-[10px]">•••</span>
+                      }
                     </Link>
-                    <Link to="/dashboard/wallet" onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
-                      My Wallet
-                    </Link>
-                    <Link to="/dashboard/tickets" onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
-                      <FiList className="w-4 h-4" /> My Tickets
-                    </Link>
-                    <Link to="/dashboard/winnings" onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
-                      <FiTrendingUp className="w-4 h-4" /> My Winnings
-                    </Link>
-                    <Link to="/dashboard/referrals" onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
-                      <FiGift className="w-4 h-4" /> Referrals
-                    </Link>
-                    <Link to="/dashboard/notifications" onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
-                      <FiBell className="w-4 h-4" /> Notifications
-                    </Link>
-                    <hr className="my-1 border-gray-100 dark:border-slate-700" />
-                    <button onClick={handleLogout}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 w-full text-left transition-colors">
-                      <FiLogOut className="w-4 h-4" /> Log Out
+                    <button
+                      onClick={toggleBTP}
+                      className="px-1.5 py-1.5 text-[#F5C518]/70 hover:text-[#F5C518] hover:bg-[#F5C518]/20 transition-colors border-l border-[#F5C518]/20"
+                      title={showBTP ? 'Hide balance' : 'Show balance'}
+                    >
+                      {showBTP
+                        ? <FiEyeOff className="w-3 h-3" />
+                        : <FiEye className="w-3 h-3" />
+                      }
                     </button>
                   </div>
-                )}
-              </div>
-            ) : (
-              <Link
-                to="/auth/login"
-                className="hidden sm:block bg-[#1A4D8F] text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-[#0D2B5E] transition-colors"
-              >
-                Log In
-              </Link>
-            )}
 
-            {/* Hamburger (mobile) */}
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Toggle menu"
-            >
-              {mobileOpen
-                ? <FiX className="w-5 h-5 dark:text-slate-200" />
-                : <FiMenu className="w-5 h-5 dark:text-slate-200" />
+                  {/* User dropdown trigger */}
+                  <div className="relative" ref={dropRef}>
+                    <button
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                      className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1A4D8F] flex items-center justify-center text-white font-semibold text-xs sm:text-sm shrink-0">
+                        {user?.name?.[0]?.toUpperCase() || user?.username?.[0]?.toUpperCase() || 'U'}
+                      </div>
+                      <span className="hidden sm:block text-sm font-medium text-[#1A1A2E] dark:text-slate-200 max-w-[80px] truncate">
+                        {user?.username || 'User'}
+                      </span>
+                      <FiChevronDown className={`hidden sm:block w-4 h-4 text-gray-500 dark:text-slate-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {dropdownOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-700 py-2 z-50">
+                        <div className="px-4 py-2.5 border-b border-gray-100 dark:border-slate-700 mb-1">
+                          <p className="text-sm font-bold text-[#1A1A2E] dark:text-white truncate">{user?.username || 'User'}</p>
+                          <p className="text-xs text-gray-400 dark:text-slate-400 truncate">{user?.email || ''}</p>
+                        </div>
+                        <Link to="/dashboard" onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
+                          <FiUser className="w-4 h-4" /> Dashboard
+                        </Link>
+                        <Link to="/dashboard/wallet" onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
+                          My Wallet
+                        </Link>
+                        <Link to="/dashboard/tickets" onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
+                          <FiList className="w-4 h-4" /> My Tickets
+                        </Link>
+                        <Link to="/dashboard/winnings" onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
+                          <FiTrendingUp className="w-4 h-4" /> My Winnings
+                        </Link>
+                        <Link to="/dashboard/referrals" onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
+                          <FiGift className="w-4 h-4" /> Referrals
+                        </Link>
+                        <Link to="/dashboard/notifications" onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
+                          <FiBell className="w-4 h-4" /> Notifications
+                        </Link>
+                        <hr className="my-1 border-gray-100 dark:border-slate-700" />
+                        <button onClick={handleLogout}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 w-full text-left transition-colors">
+                          <FiLogOut className="w-4 h-4" /> Log Out
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  to="/auth/login"
+                  className="bg-[#1A4D8F] text-white text-xs sm:text-sm font-medium px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-[#0D2B5E] transition-colors whitespace-nowrap"
+                >
+                  Log In
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* ── Bottom navigation — mobile only ────────────────────────────── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
+        <div className="flex items-stretch h-16">
+          {bottomNavItems.map(({ to, Icon, label, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors ${
+                  isActive
+                    ? 'text-[#1A4D8F] dark:text-blue-400'
+                    : 'text-gray-400 dark:text-slate-500'
+                }`
               }
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 shadow-lg">
-          <div className="px-4 py-3 space-y-1">
-            {navLinks.map(link => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                onClick={() => setMobileOpen(false)}
-                className={({ isActive }) =>
-                  `block px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400'
-                      : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800'
-                  }`
-                }
-              >
-                {link.label}
-              </NavLink>
-            ))}
-
-            {/* Dark mode toggle in mobile menu */}
-            <button
-              onClick={() => { toggleTheme(); setMobileOpen(false); }}
-              className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
             >
-              {isDark ? <FiSun className="w-4 h-4 text-[#F5C518]" /> : <FiMoon className="w-4 h-4" />}
-              {isDark ? 'Light Mode' : 'Dark Mode'}
-            </button>
-
-            {!isAuthenticated && (
-              <Link
-                to="/auth/login"
-                onClick={() => setMobileOpen(false)}
-                className="block bg-[#1A4D8F] text-white text-sm font-medium px-4 py-2.5 rounded-xl text-center mt-2"
-              >
-                Log In
-              </Link>
-            )}
-            {isAuthenticated && (
-              <>
-                <hr className="border-gray-100 dark:border-slate-700 my-1" />
-                <Link to="/dashboard" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-xl text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800">Dashboard</Link>
-                <Link to="/dashboard/wallet" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-xl text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800">My Wallet</Link>
-                <Link to="/dashboard/tickets" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-xl text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800">My Tickets</Link>
-                <Link to="/dashboard/referrals" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-xl text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800">Referrals</Link>
-                <button onClick={() => { handleLogout(); setMobileOpen(false); }} className="block w-full text-left px-4 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30">Log Out</button>
-              </>
-            )}
-          </div>
+              <Icon className="w-5 h-5" />
+              {label}
+            </NavLink>
+          ))}
         </div>
-      )}
-    </nav>
+      </nav>
+    </>
   );
 }

@@ -26,7 +26,7 @@ function Inner({ children }) {
     <div className={`min-h-screen flex flex-col bg-[#F5F7FA] dark:bg-slate-900 ${radioOpen ? 'pb-14' : ''}`}>
       <Navbar />
       {showTicker && <LiveTicker />}
-      <main className="flex-1 page-fade pt-16">
+      <main className="flex-1 page-fade pt-14 sm:pt-16 pb-16 md:pb-0">
         {children}
       </main>
       <Footer />

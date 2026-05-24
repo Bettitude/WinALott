@@ -3,7 +3,7 @@ export default function About() {
     <div>
       <div className="bg-gradient-to-br from-[#0D2B5E] to-[#1A4D8F] py-14 px-4 text-white text-center">
         <h1 className="text-4xl font-black mb-3">About WinALot</h1>
-        <p className="text-blue-200 max-w-lg mx-auto">Part of the Bettitude ecosystem — Africa's growing sports intelligence platform.</p>
+        <p className="text-blue-200 max-w-lg mx-auto">Part of the Bettitude ecosystem — Australia's leading football sweepstakes platform.</p>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-12 space-y-8">

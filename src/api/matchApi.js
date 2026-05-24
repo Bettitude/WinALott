@@ -11,8 +11,8 @@ export const matchApi = {
   getMarketById:    (id)                 => apiClient.get(`/markets/${id}`),
 
   // Tickets (auth required)
-  purchaseTicket:   (marketId, prediction) =>
-    apiClient.post('/tickets', { market_id: marketId, user_prediction: prediction }),
+  purchaseTicket:   (marketId, matchId, prediction) =>
+    apiClient.post('/tickets', { market_id: marketId, match_id: matchId, user_prediction: prediction }),
   getMyTickets:     (params)             => apiClient.get('/tickets', { params }),
   getTicketByNumber:(number)             => apiClient.get(`/tickets/by-number/${number}`),
 
@@ -45,4 +45,7 @@ export const matchApi = {
 
   // Profile
   updateProfile:    (data)               => apiClient.put('/users/me', data),
+
+  // Self-exclusion
+  requestSelfExclusion: (data)           => apiClient.post('/users/me/self-exclusion', data),
 };

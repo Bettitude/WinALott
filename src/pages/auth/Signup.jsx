@@ -9,7 +9,7 @@ const PERKS = [
   { Icon: FiUsers,       text: 'Join 12,400+ active players worldwide' },
 ];
 
-const PRODUCTS = ['WinALot', 'Bettitude.com', 'ProBetPicks', 'LiveScores'];
+const PRODUCTS = ['Bettitude.com', 'ProBetPicks', 'BettiScores', 'BettiSports Blog'];
 
 export default function Signup() {
   return (

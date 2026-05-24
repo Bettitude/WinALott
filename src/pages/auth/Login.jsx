@@ -9,7 +9,7 @@ const PERKS = [
   { Icon: FiAward,  text: 'Silver, Gold & Platinum prediction tiers' },
 ];
 
-const PRODUCTS = ['WinALot', 'Bettitude.com', 'ProBetPicks', 'LiveScores'];
+const PRODUCTS = ['Bettitude.com', 'ProBetPicks', 'BettiScores', 'BettiSports Blog'];
 
 export default function Login() {
   return (

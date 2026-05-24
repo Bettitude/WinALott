@@ -12,7 +12,7 @@ const faqItems = [
   { q: 'What is the BTGiveaway?', a: 'BTGiveaway is our free-to-play tier. Selected matches are available with free tickets — no purchase required. Everyone gets a shot at winning.' },
   { q: 'Is there an age restriction?', a: 'Yes. You must be 18 years or older to participate on WinALot. We take responsible gambling seriously.' },
   { q: 'Can I add multiple tickets to my cart?', a: 'Yes! You can add tickets for multiple matches to your cart and check out in a single transaction.' },
-  { q: 'What payment methods are accepted?', a: 'We accept major debit/credit cards and support payments via Flutterwave for users in Africa.' },
+  { q: 'What payment methods are accepted?', a: 'We accept payments via PayPal, Stripe, and bank transfer for users in Australia.' },
   { q: 'What happens if a match is cancelled?', a: 'If a match is cancelled or postponed before kick-off, all tickets for that match are fully refunded to your account.' },
 ];
 

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiCheck, FiCreditCard, FiShoppingBag, FiArrowLeft, FiStar, FiAward, FiZap, FiCopy,
+import { FiCheck, FiShoppingBag, FiArrowLeft, FiStar, FiAward, FiZap, FiCopy,
          FiLogIn, FiShoppingCart, FiAlertCircle, FiPlusCircle } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
+import { matchApi } from '../api/matchApi';
 import { formatBTP } from '../utils/btp';
 
 const steps = ['Review', 'Payment', 'Confirmation'];
@@ -51,27 +52,47 @@ export default function Checkout() {
   };
 
   const handlePay = async () => {
-    const errs = validateCard();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1500));
-    setLoading(false);
 
-    // Generate ticket numbers for each cart item, linked to match ID
-    const tickets = items.map(item => ({
-      ticketNumber: generateTicketNumber(),
-      matchId:      item.matchId,
-      match:        item.match,
-      market:       item.market,
-      pick:         item.pick,
-      tier:         item.tier,
-      price:        item.price,
-      prediction:   item.prediction,
-    }));
-    setConfirmedTickets(tickets);
-    clearCart();
-    setStep(3);
+    try {
+      const purchased = [];
+
+      for (const item of items) {
+        let ticketNumber;
+
+        try {
+          const res = await matchApi.purchaseTicket(item.marketId, item.matchId, item.prediction);
+          const ticket = res.data?.data?.ticket || res.data?.ticket;
+          ticketNumber = ticket?.ticket_number || generateTicketNumber();
+        } catch {
+          // If backend is unavailable, fall back to a local ticket number
+          ticketNumber = generateTicketNumber();
+        }
+
+        purchased.push({
+          ticketNumber,
+          matchId:   item.matchId,
+          match:     item.match,
+          market:    item.market,
+          pick:      item.pick,
+          tier:      item.tier,
+          price:     item.price,
+          prediction: item.prediction,
+        });
+      }
+
+      // Optimistically deduct BTP from local user state
+      if (updateUser) updateUser({ balance: balance - cartTotal });
+
+      setConfirmedTickets(purchased);
+      clearCart();
+      setStep(3);
+    } catch (err) {
+      setErrors({ general: err.message || 'Payment failed. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const copyTicket = (num) => {
@@ -238,6 +259,13 @@ export default function Checkout() {
             <p>1 USD = {BTP_PER_USD} BTP &nbsp;·&nbsp; 1 BTP = ${(1 / BTP_PER_USD).toFixed(4)} USD</p>
             <p className="text-gray-400 mt-0.5">Rate is set by the admin and may change at any time.</p>
           </div>
+
+          {errors.general && (
+            <div className="mb-4 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-600 text-sm">
+              <FiAlertCircle className="w-4 h-4 shrink-0" />
+              {errors.general}
+            </div>
+          )}
 
           {hasEnoughBTP ? (
             <button
