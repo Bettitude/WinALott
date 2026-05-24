@@ -15,7 +15,7 @@ const TIER = {
     badge: 'bg-gradient-to-r from-gray-400 to-gray-500 text-white',
     bar: 'bg-gray-400',
     btnBg: 'bg-gray-500 hover:bg-gray-600',
-    shadow: '',
+    accentText: 'text-gray-500',
   },
   gold: {
     label: 'Gold',
@@ -24,7 +24,7 @@ const TIER = {
     badge: 'bg-gradient-to-r from-[#F5C518] to-[#e6a800] text-[#1A1A2E]',
     bar: 'bg-[#F5C518]',
     btnBg: 'bg-[#1A4D8F] hover:bg-[#0D2B5E]',
-    shadow: '',
+    accentText: 'text-[#d97706]',
   },
   platinum: {
     label: 'Platinum',
@@ -33,10 +33,9 @@ const TIER = {
     badge: 'bg-gradient-to-r from-purple-600 to-violet-500 text-white',
     bar: 'bg-purple-500',
     btnBg: 'bg-purple-600 hover:bg-purple-700',
-    shadow: 'shadow-purple-100',
+    accentText: 'text-purple-600',
   },
 };
-
 
 export default function MatchCard({ match, loading = false, homeMode = false }) {
   const navigate = useNavigate();
@@ -58,7 +57,7 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
             <div className="skeleton h-4 w-16" />
             <div className="skeleton w-10 h-10 rounded-full shrink-0" />
           </div>
-          <div className="skeleton h-16 rounded-xl" />
+          <div className="skeleton h-14 rounded-xl" />
           <div className="skeleton h-10 rounded-xl" />
         </div>
       </div>
@@ -75,7 +74,6 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
   const closesMs    = new Date(`${match.date}T${match.time}:00`).getTime() - Date.now();
   const closesMin   = Math.floor(closesMs / 60000);
   const closingSoon = closesMin > 0 && closesMin < 15;
-  const viewing     = 30 + (parseInt(match.id, 10) * 17) % 80;
   const almostFull  = (match.fillPercent ?? 0) >= 80;
   const ticketsLeft = Math.max(0, Math.round(100 * (1 - (match.fillPercent ?? 0) / 100)));
 
@@ -87,78 +85,75 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
     navigate(`/match/${match.id}/team/${side}`);
   };
 
-  const px  = homeMode ? 'px-3' : 'px-4';
-  const pb  = homeMode ? 'pb-3' : 'pb-4';
-  const gap = homeMode ? 'mb-2' : 'mb-3';
-
   return (
     <>
       <div
         onClick={handleCardClick}
-        className={`bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-md ${tier.shadow} card-hover flex flex-col overflow-hidden border-l-4 ${tier.border} cursor-pointer`}
+        className={`bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-md card-hover flex flex-col overflow-hidden border-l-4 ${tier.border} cursor-pointer`}
       >
-        {/* Header row */}
-        <div className={`flex items-center justify-between ${px} ${homeMode ? 'pt-2.5 pb-1.5' : 'pt-3.5 pb-2'}`}>
+        {/* ── Header row ───────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between px-3 sm:px-4 pt-3 sm:pt-3.5 pb-1.5 sm:pb-2">
           <div className="flex items-center gap-1 flex-wrap">
-            <span className={`inline-flex items-center gap-1 text-xs font-black px-2 py-0.5 rounded-full ${tier.badge}`}>
-              <TierIcon className="w-3 h-3" />
+            <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full ${tier.badge}`}>
+              <TierIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
               {tier.label}
             </span>
             {isPlatinum && (
-              <span className="text-[10px] font-black text-purple-600 bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 px-1.5 py-0.5 rounded-full">
+              <span className="text-[9px] sm:text-[10px] font-black text-purple-600 bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 px-1.5 py-0.5 rounded-full">
                 HIGH ROLLER
               </span>
             )}
             {!homeMode && isHot && !closingSoon && (
-              <span className="flex items-center gap-1 text-xs font-black text-orange-600 bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800 px-2 py-0.5 rounded-full">
+              <span className="hidden sm:inline-flex items-center gap-1 text-xs font-black text-orange-600 bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800 px-2 py-0.5 rounded-full">
                 <FiTrendingUp className="w-3 h-3" /> HOT
               </span>
             )}
             {!homeMode && closingSoon && (
-              <span className="flex items-center gap-1 text-xs font-black text-amber-600 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-full">
-                <FiClock className="w-3 h-3" /> CLOSING SOON
+              <span className="inline-flex items-center gap-1 text-[9px] sm:text-xs font-black text-amber-600 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 px-1.5 sm:px-2 py-0.5 rounded-full">
+                <FiClock className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> SOON
               </span>
             )}
           </div>
 
           {isLive ? (
-            <span className="flex items-center gap-1 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shrink-0">
+            <span className="flex items-center gap-1 bg-red-500 text-white text-[9px] sm:text-[10px] font-black px-1.5 sm:px-2 py-0.5 rounded-full shrink-0">
               <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
               LIVE {match.minute}
             </span>
           ) : match.status === 'finished' ? (
-            <span className="flex items-center gap-1 bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">
-              <FiCheckCircle className="w-3 h-3" /> FT
+            <span className="flex items-center gap-1 bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 rounded-full shrink-0">
+              <FiCheckCircle className="w-2.5 h-2.5" /> FT
             </span>
           ) : (
-            <span className="flex items-center gap-1 text-gray-500 dark:text-slate-400 text-[10px] font-semibold bg-gray-50 dark:bg-slate-700 px-2 py-0.5 rounded-full shrink-0">
-              <FiClock className="w-3 h-3" /> {match.time}
+            <span className="flex items-center gap-1 text-gray-500 dark:text-slate-400 text-[9px] sm:text-[10px] font-semibold bg-gray-50 dark:bg-slate-700 px-1.5 sm:px-2 py-0.5 rounded-full shrink-0">
+              <FiClock className="w-2.5 h-2.5" /> {match.time}
             </span>
           )}
         </div>
 
-        <div className={`${px} ${pb} flex flex-col flex-1`}>
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4 flex flex-col flex-1">
           {/* League */}
-          <p className={`text-[10px] text-gray-400 dark:text-slate-500 font-medium ${gap} truncate`}>{match.league}</p>
+          <p className="text-[10px] text-gray-400 dark:text-slate-500 font-medium mb-2 truncate">{match.league}</p>
 
-          {/* Teams */}
-          <div className={`flex items-center justify-between gap-2 ${gap}`}>
-            {/* Home team — logo opens inline team history panel */}
-            <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
-              <button
-                onClick={(e) => openTeamPage('home', e)}
-                className="rounded-full hover:ring-2 hover:ring-[#1A4D8F]/40 transition-all"
-                title={`View ${match.homeTeam.name} stats`}
-              >
-                <TeamAvatar short={match.homeTeam.short} logo={match.homeTeam.logo} size={homeMode ? 'sm' : 'md'} />
-              </button>
-              <p className="text-[10px] font-bold text-[#1A1A2E] dark:text-slate-200 text-center leading-tight truncate w-full">{match.homeTeam.name}</p>
-            </div>
+          {/* ── Teams row ────────────────────────────────────────────── */}
+          <div className="flex items-center justify-between gap-1 mb-3">
+            {/* Home */}
+            <button
+              onClick={(e) => openTeamPage('home', e)}
+              className="flex flex-col items-center gap-1 flex-1 min-w-0 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700/50 px-1 py-1 transition-colors"
+              title={`View ${match.homeTeam.name} stats`}
+            >
+              <TeamAvatar short={match.homeTeam.short} logo={match.homeTeam.logo} size={homeMode ? 'sm' : 'md'} />
+              <p className="text-[10px] sm:text-xs font-bold text-[#1A1A2E] dark:text-slate-200 text-center leading-tight truncate w-full">
+                {match.homeTeam.name}
+              </p>
+            </button>
 
-            <div className="shrink-0 text-center px-1">
+            {/* Score or VS */}
+            <div className="shrink-0 px-1 text-center">
               {isLive ? (
                 <div className="bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-800 rounded-xl px-2 py-1">
-                  <span className={`${homeMode ? 'text-sm' : 'text-lg'} font-black text-red-600 dark:text-red-400 tabular-nums`}>
+                  <span className={`${homeMode ? 'text-sm' : 'text-base sm:text-lg'} font-black text-red-600 dark:text-red-400 tabular-nums`}>
                     {match.score?.home} - {match.score?.away}
                   </span>
                 </div>
@@ -167,58 +162,71 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
               )}
             </div>
 
-            {/* Away team — logo opens inline team history panel */}
-            <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
-              <button
-                onClick={(e) => openTeamPage('away', e)}
-                className="rounded-full hover:ring-2 hover:ring-[#1A4D8F]/40 transition-all"
-                title={`View ${match.awayTeam.name} stats`}
-              >
-                <TeamAvatar short={match.awayTeam.short} logo={match.awayTeam.logo} size={homeMode ? 'sm' : 'md'} />
-              </button>
-              <p className="text-[10px] font-bold text-[#1A1A2E] dark:text-slate-200 text-center leading-tight truncate w-full">{match.awayTeam.name}</p>
+            {/* Away */}
+            <button
+              onClick={(e) => openTeamPage('away', e)}
+              className="flex flex-col items-center gap-1 flex-1 min-w-0 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700/50 px-1 py-1 transition-colors"
+              title={`View ${match.awayTeam.name} stats`}
+            >
+              <TeamAvatar short={match.awayTeam.short} logo={match.awayTeam.logo} size={homeMode ? 'sm' : 'md'} />
+              <p className="text-[10px] sm:text-xs font-bold text-[#1A1A2E] dark:text-slate-200 text-center leading-tight truncate w-full">
+                {match.awayTeam.name}
+              </p>
+            </button>
+          </div>
+
+          {/* ── Market + Pick ─────────────────────────────────────────── */}
+          <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-xl px-3 py-2 mb-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[10px] text-gray-400 dark:text-slate-500 leading-none mb-0.5">Market</p>
+                <p className="text-xs font-bold text-[#1A4D8F] dark:text-blue-400 truncate">{match.market}</p>
+              </div>
+              {match.adminPick && (
+                <div className="shrink-0 text-right">
+                  <p className="text-[10px] text-gray-400 dark:text-slate-500 leading-none mb-0.5">Pick</p>
+                  <p className="text-xs font-bold text-[#1A1A2E] dark:text-slate-200">{match.adminPick}</p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Market + admin pick */}
-          <div className={`bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-xl px-2.5 ${homeMode ? 'py-1.5' : 'py-2.5'} ${gap}`}>
-            <p className="text-[10px] text-gray-400 dark:text-slate-500">Market — Pick</p>
-            <p className="text-xs font-bold text-[#1A4D8F] dark:text-blue-400 leading-tight truncate">{match.market}: <span>{match.adminPick}</span></p>
+          {/* ── Stats grid ────────────────────────────────────────────── */}
+          <div className="grid grid-cols-3 gap-1.5 mb-3">
+            <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl px-2 py-1.5 text-center">
+              <p className="text-[9px] sm:text-[10px] text-gray-400 dark:text-slate-500 leading-none mb-0.5">Pool</p>
+              <p className="text-xs sm:text-sm font-black text-[#1A1A2E] dark:text-slate-100 tabular-nums truncate">
+                {formatBTP(match.prizePool)}
+              </p>
+            </div>
+            <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl px-2 py-1.5 text-center">
+              <p className="text-[9px] sm:text-[10px] text-gray-400 dark:text-slate-500 leading-none mb-0.5">Entry Fee</p>
+              <p className={`text-xs sm:text-sm font-black tabular-nums truncate ${tier.accentText}`}>
+                {isFree ? 'FREE' : formatBTP(match.price)}
+              </p>
+            </div>
+            <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl px-2 py-1.5 text-center">
+              <p className="text-[9px] sm:text-[10px] text-gray-400 dark:text-slate-500 leading-none mb-0.5">Winners</p>
+              <p className="text-xs sm:text-sm font-black text-[#1A1A2E] dark:text-slate-100 flex items-center justify-center gap-0.5">
+                <FiUsers className="w-2.5 h-2.5 sm:w-3 sm:h-3" />{match.maxWinners}
+              </p>
+            </div>
           </div>
 
-          {/* Stats row */}
-          <div className={`flex items-center gap-2 text-[10px] text-gray-500 dark:text-slate-400 ${gap} flex-wrap`}>
-            <span className="flex items-center gap-1">
-              <FiUsers className="w-3 h-3" />
-              {match.maxWinners}W
-            </span>
-            <span className="font-bold text-[#1A1A2E] dark:text-slate-200">
-              {formatBTP(match.prizePool)}
-            </span>
-            <span className="ml-auto font-black text-xs" style={{ color: match.tier === 'platinum' ? '#7C3AED' : match.tier === 'gold' ? '#d97706' : '#6b7280' }}>
-              {isFree ? 'FREE' : formatBTP(match.price)}
-            </span>
-          </div>
-
-          {/* Micro-details — lobby/detail pages only */}
-          {!homeMode && (
-            <div className="flex items-center gap-2 text-[10px] text-gray-400 dark:text-slate-500 mb-3 flex-wrap">
-              <span>{viewing} viewing</span>
-              {almostFull && (
-                <span className="flex items-center gap-0.5 text-orange-500 font-bold">
-                  <FiAlertCircle className="w-3 h-3" />{ticketsLeft} tickets left
-                </span>
-              )}
+          {/* Micro-detail (lobby only) */}
+          {!homeMode && almostFull && (
+            <div className="flex items-center gap-1 text-[10px] text-orange-500 font-bold mb-2">
+              <FiAlertCircle className="w-3 h-3" />{ticketsLeft} tickets left
             </div>
           )}
 
-          {/* Pool fill progress bar */}
-          <div className={homeMode ? 'mb-2.5' : 'mb-4'}>
+          {/* ── Pool fill bar ──────────────────────────────────────────── */}
+          <div className="mb-3">
             <div className="flex items-center justify-between text-[10px] text-gray-400 dark:text-slate-500 mb-1">
-              <span>Pool</span>
-              <span className="font-bold text-[#1A1A2E] dark:text-slate-200">{match.fillPercent ?? 0}%</span>
+              <span>Pool {match.fillPercent ?? 0}% full</span>
+              {!homeMode && <span className="text-gray-300 dark:text-slate-600">Click card for details</span>}
             </div>
-            <div className="h-1 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${tier.bar}`}
                 style={{ width: `${match.fillPercent ?? 0}%` }}
@@ -226,25 +234,25 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-1.5 mt-auto" onClick={e => e.stopPropagation()}>
+          {/* ── Actions ───────────────────────────────────────────────── */}
+          <div className="flex gap-2 mt-auto" onClick={e => e.stopPropagation()}>
             {inCart ? (
-              <div className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-50 dark:bg-green-950/40 border-2 border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 text-xs font-black">
+              <div className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-50 dark:bg-green-950/40 border-2 border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 text-xs font-black">
                 <FiCheckCircle className="w-3.5 h-3.5" />
                 In Cart
               </div>
             ) : (
               <button
                 onClick={openStakeModal}
-                className={`flex-1 text-white text-xs font-black py-2 rounded-xl text-center transition-colors ${tier.btnBg}`}
+                className={`flex-1 text-white text-xs sm:text-sm font-black py-2.5 rounded-xl text-center transition-colors ${tier.btnBg}`}
               >
-                {isFree ? 'Enter Free' : 'Stake Now'}
+                {isFree ? 'Enter Free' : 'Enter Now'}
               </button>
             )}
             <button
               onClick={inCart ? undefined : openStakeModal}
               disabled={inCart}
-              className={`flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-all ${
+              className={`flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl text-xs font-semibold border-2 transition-all ${
                 inCart
                   ? 'border-green-200 dark:border-green-800 text-green-400 cursor-not-allowed bg-green-50 dark:bg-green-950/40'
                   : 'border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-[#1A4D8F] hover:text-[#1A4D8F] dark:hover:border-blue-600 dark:hover:text-blue-400'
@@ -253,12 +261,6 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
               <FiShoppingCart className="w-3.5 h-3.5" />
             </button>
           </div>
-
-          {!homeMode && (
-            <p className="text-xs text-center text-gray-400 dark:text-slate-500 mt-2">
-              {inCart ? 'Remove from cart to change your stake' : 'Click card to view details'}
-            </p>
-          )}
         </div>
       </div>
 

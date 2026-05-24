@@ -27,7 +27,7 @@ export default function Dashboard() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Welcome banner */}
-      <div className="bg-gradient-to-br from-[#0D2B5E] to-[#1A4D8F] rounded-2xl p-4 sm:p-6 text-white mb-6 sm:mb-8 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-[#0D2B5E] to-[#1A4D8F] rounded-2xl p-3.5 sm:p-6 text-white mb-4 sm:mb-8 relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-32 opacity-10">
           <div className="w-full h-full bg-[#F5C518] rounded-l-full" />
         </div>
@@ -37,36 +37,36 @@ export default function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-6 sm:mb-8">
         {stats.map(s => (
-          <div key={s.label} className={`bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-4 border-l-4 ${s.border}`}>
-            <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
-              <s.icon className={`w-4 h-4 ${s.color}`} />
+          <div key={s.label} className={`bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3 sm:p-4 border-l-4 ${s.border}`}>
+            <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl ${s.bg} flex items-center justify-center mb-2 sm:mb-3`}>
+              <s.icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${s.color}`} />
             </div>
-            <p className={`text-xl font-black ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{s.label}</p>
+            <p className={`text-lg sm:text-xl font-black ${s.color} leading-tight`}>{s.value}</p>
+            <p className="text-[10px] sm:text-xs text-gray-400 dark:text-slate-500 mt-0.5 leading-tight">{s.label}</p>
           </div>
         ))}
       </div>
 
       {/* Quick links */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-6 sm:mb-8">
         {[
           { to: '/lobby',               label: 'Buy Tickets',    desc: 'Browse active markets',     icon: FiList,       bg: 'bg-[#1A4D8F]'  },
-          { to: '/dashboard/wallet',    label: 'My Wallet',      desc: 'Deposit or withdraw funds', icon: FiDollarSign, bg: 'bg-green-600' },
+          { to: '/dashboard/wallet',    label: 'My Wallet',      desc: 'Deposit or withdraw',       icon: FiDollarSign, bg: 'bg-green-600' },
           { to: '/dashboard/winnings',  label: 'My Winnings',    desc: 'Check your prizes',         icon: FiTrendingUp, bg: 'bg-purple-600' },
-          { to: '/dashboard/referrals', label: 'Refer a Friend', desc: 'Earn $0.50 per referral',   icon: FiGift,       bg: 'bg-orange-500' },
+          { to: '/dashboard/referrals', label: 'Refer a Friend', desc: 'Earn per referral',         icon: FiGift,       bg: 'bg-orange-500' },
         ].map(q => (
           <Link key={q.to} to={q.to}
-            className="flex items-center gap-4 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-4 hover:shadow-md transition-shadow card-hover">
-            <div className={`${q.bg} w-10 h-10 rounded-xl flex items-center justify-center shrink-0`}>
-              <q.icon className="w-5 h-5 text-white" />
+            className="flex items-center gap-2.5 sm:gap-4 bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3 sm:p-4 hover:shadow-md transition-shadow card-hover">
+            <div className={`${q.bg} w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0`}>
+              <q.icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <div>
-              <p className="font-bold text-[#1A1A2E] dark:text-slate-100 text-sm">{q.label}</p>
-              <p className="text-xs text-gray-400 dark:text-slate-500">{q.desc}</p>
+            <div className="min-w-0">
+              <p className="font-bold text-[#1A1A2E] dark:text-slate-100 text-xs sm:text-sm leading-tight">{q.label}</p>
+              <p className="text-[10px] sm:text-xs text-gray-400 dark:text-slate-500 truncate">{q.desc}</p>
             </div>
-            <FiArrowRight className="w-4 h-4 text-gray-300 dark:text-slate-600 ml-auto" />
+            <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-300 dark:text-slate-600 ml-auto shrink-0" />
           </Link>
         ))}
       </div>
