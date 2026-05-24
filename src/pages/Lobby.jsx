@@ -31,7 +31,7 @@ const SORT_OPTIONS = [
   { key: 'soonest',    label: 'Soonest' },
 ];
 
-const STATUS_FILTERS = ['Live', 'Upcoming', 'Finished', 'Free'];
+const STATUS_FILTERS = ['Live', 'Upcoming', 'Free'];
 
 function Toggle({ on, onClick }) {
   return (
@@ -77,7 +77,8 @@ export default function Lobby() {
   };
 
   const filtered = useMemo(() => {
-    let list = [...allMatches];
+    // Always hide finished games — only live + upcoming belong in the lobby
+    let list = allMatches.filter(m => m.status !== 'finished');
 
     if (tierTab === 'free') {
       list = list.filter(m => m.price === 0 || (m._raw?.markets || []).some(mk => mk.ticket_price === 0));
@@ -102,7 +103,6 @@ export default function Lobby() {
       list = list.filter(m => {
         if (activeStatuses.has('Live')     && m.status === 'live')     return true;
         if (activeStatuses.has('Upcoming') && m.status === 'upcoming') return true;
-        if (activeStatuses.has('Finished') && m.status === 'finished') return true;
         if (activeStatuses.has('Free')     && m.price  === 0)          return true;
         return false;
       });
@@ -128,11 +128,12 @@ export default function Lobby() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paginated  = filtered.slice((page - 1) * perPage, page * perPage);
 
-  const liveCount  = allMatches.filter(m => m.status === 'live').length;
-  const totalPool  = allMatches.reduce((sum, m) => sum + m.prizePool, 0);
+  const activeMatches = useMemo(() => allMatches.filter(m => m.status !== 'finished'), [allMatches]);
+  const liveCount  = activeMatches.filter(m => m.status === 'live').length;
+  const totalPool  = activeMatches.reduce((sum, m) => sum + m.prizePool, 0);
   const biggestPools = useMemo(() =>
-    [...allMatches].sort((a, b) => b.prizePool - a.prizePool).slice(0, 10),
-  [allMatches]);
+    [...activeMatches].sort((a, b) => b.prizePool - a.prizePool).slice(0, 10),
+  [activeMatches]);
 
   const hasFilters = activeStatuses.size > 0 || selectedLeague || search.trim();
   const activeFilterCount = activeStatuses.size + (selectedLeague ? 1 : 0) + (sort !== 'newest' ? 1 : 0);
@@ -372,7 +373,7 @@ export default function Lobby() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-white/70">Open markets</span>
-                  <span className="text-xs font-black">{allMatches.length}</span>
+                  <span className="text-xs font-black">{activeMatches.length}</span>
                 </div>
               </div>
             </div>
@@ -418,10 +419,10 @@ export default function Lobby() {
             {TIER_TABS.map(t => {
               const active = tierTab === t.key;
               const count  = t.key === 'all'
-                ? allMatches.length
+                ? activeMatches.length
                 : t.key === 'free'
-                  ? allMatches.filter(m => m.price === 0).length
-                  : allMatches.filter(m => m.tier === t.key).length;
+                  ? activeMatches.filter(m => m.price === 0).length
+                  : activeMatches.filter(m => m.tier === t.key).length;
               return (
                 <button
                   key={t.key}

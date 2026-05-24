@@ -710,7 +710,7 @@ const STAKE_STATUS = {
   voided:  'bg-gray-50 text-gray-500 dark:bg-slate-700 dark:text-slate-400',
 };
 
-function MyStakesPanel({ matchId, isLive, onWatchLive }) {
+function MyStakesPanel({ matchId, matchStatus, onWatchLive }) {
   const { isAuthenticated } = useContext(AuthContext);
   const [stakes,  setStakes]  = useState([]);
   const [loading, setLoading] = useState(false);
@@ -727,11 +727,16 @@ function MyStakesPanel({ matchId, isLive, onWatchLive }) {
   if (!isAuthenticated) return null;
   if (!loading && stakes.length === 0) return null;
 
+  const isLive     = matchStatus === 'live';
+  const isFinished = matchStatus === 'finished';
+  const hasActive  = stakes.some(s => s.status === 'pending' || s.status === 'active');
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-4">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-black uppercase tracking-wider text-gray-400 dark:text-slate-500 flex items-center gap-1.5">
-          <FiTag className="w-3.5 h-3.5" /> My Stakes
+          <FiTag className="w-3.5 h-3.5" />
+          {isFinished ? 'My Stakes — Ended' : 'My Stakes'}
         </p>
         {stakes.length > 0 && (
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-[#1A4D8F] dark:text-blue-400">
@@ -776,22 +781,26 @@ function MyStakesPanel({ matchId, isLive, onWatchLive }) {
         </div>
       )}
 
+      {/* Action button — changes based on match state */}
       {isLive && (
-        <button
-          onClick={onWatchLive}
-          className="mt-3 w-full py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white transition-colors"
-        >
+        <button onClick={onWatchLive}
+          className="mt-3 w-full py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white transition-colors">
           <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0" />
           Watch Live
         </button>
       )}
-      {!isLive && stakes.some(s => s.status === 'pending' || s.status === 'active') && (
-        <button
-          onClick={onWatchLive}
-          className="mt-3 w-full py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-2 bg-[#1A4D8F] hover:bg-[#0D2B5E] text-white transition-colors"
-        >
+      {!isLive && !isFinished && hasActive && (
+        <button onClick={onWatchLive}
+          className="mt-3 w-full py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-2 bg-[#1A4D8F] hover:bg-[#0D2B5E] text-white transition-colors">
           <FiPlay className="w-3.5 h-3.5" />
           Follow Match
+        </button>
+      )}
+      {isFinished && (
+        <button onClick={onWatchLive}
+          className="mt-3 w-full py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition-colors border border-slate-200 dark:border-slate-600">
+          <FiActivity className="w-3.5 h-3.5" />
+          View Match History
         </button>
       )}
     </div>
@@ -806,7 +815,7 @@ function OtherGames({ currentMatchId }) {
   const { matches } = useMatches({ limit: 30 });
 
   const filtered = useMemo(() => {
-    let list = matches.filter(m => m.id !== currentMatchId);
+    let list = matches.filter(m => m.id !== currentMatchId && m.status !== 'finished');
     if (filter === 'Live') list = list.filter(m => m.status === 'live');
     if (filter === 'Today') {
       const today = new Date().toISOString().slice(0, 10);
@@ -1094,14 +1103,14 @@ export default function MatchDetails() {
           {/* Mobile staking panel + stakes */}
           <div className="xl:hidden space-y-4">
             <StakingPanel match={match} tiers={tiers} />
-            <MyStakesPanel matchId={matchId} isLive={isLive} onWatchLive={handleWatchLive} />
+            <MyStakesPanel matchId={matchId} matchStatus={match.status} onWatchLive={handleWatchLive} />
           </div>
         </main>
 
         {/* Right */}
         <aside className="hidden xl:block w-[300px] shrink-0 sticky top-28 space-y-4">
           <StakingPanel match={match} tiers={tiers} />
-          <MyStakesPanel matchId={matchId} isLive={isLive} onWatchLive={handleWatchLive} />
+          <MyStakesPanel matchId={matchId} matchStatus={match.status} onWatchLive={handleWatchLive} />
           <div className="border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl py-16 flex items-center justify-center">
             <p className="text-[10px] text-gray-300 dark:text-slate-600 font-medium">Ad Space 300×250</p>
           </div>
