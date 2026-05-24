@@ -1,16 +1,14 @@
 import apiClient from './apiClient';
 
 export const authApi = {
-  // Bettitude SSO — website users
-  login:         (email, password) => apiClient.post('/website/login',    { email, password }),
-  register:      (data)            => apiClient.post('/website/register', data),
-  logout:        ()                => apiClient.post('/logout'),
-  me:            ()                => apiClient.get('/user'),
+  login:          (email, password) => apiClient.post('/auth/login',           { email, password }),
+  register:       (data)            => apiClient.post('/auth/register',         data),
+  logout:         ()                => apiClient.post('/auth/logout'),
+  me:             ()                => apiClient.get('/auth/me'),
 
-  // Password recovery
-  forgotPassword: (email)          => apiClient.post('/forgot-password', { email }),
-  resetPassword:  (payload)        => apiClient.post('/reset-password',  payload),
+  forgotPassword: (email)           => apiClient.post('/auth/forgot-password',  { email }),
+  resetPassword:  (payload)         => apiClient.post('/auth/reset-password',   payload),
+  changePassword: (payload)         => apiClient.post('/auth/change-password',  payload),
 
-  // Profile
-  updateProfile:  (data)           => apiClient.put('/website/profile',  data),
+  updateProfile:  (data)            => apiClient.put('/users/me',               data),
 };

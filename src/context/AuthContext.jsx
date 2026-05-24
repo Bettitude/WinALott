@@ -45,8 +45,8 @@ export function AuthProvider({ children }) {
 
     authApi.me()
       .then(res => {
-        // Bettitude: GET /user returns the user object directly
-        const u = res.data?.data?.user || res.data;
+        // Node.js: { success, data: { user } }  — fallback: user object directly
+        const u = res.data?.data?.user || res.data?.user || res.data;
         if (u?.id) setUser(normalizeUser(u));
       })
       .catch(() => {
@@ -80,9 +80,10 @@ export function AuthProvider({ children }) {
     }
     // ── Real API login ────────────────────────────────────────────────────────
     const res = await authApi.login(email, password);
-    // Bettitude response: { message, user, token }
-    const token = res.data?.token || res.data?.data?.session?.access_token;
-    const u     = res.data?.user  || res.data?.data?.user;
+    // Node.js backend: { success, data: { user, token } }
+    // Laravel shape kept as fallback: { token, user } or { data: { session: { access_token } } }
+    const token = res.data?.data?.token || res.data?.token || res.data?.data?.session?.access_token;
+    const u     = res.data?.data?.user  || res.data?.user;
     if (!token || !u) throw new Error('Invalid response from server');
     localStorage.setItem('winalott_token', token);
     const normalized = normalizeUser(u);
@@ -92,20 +93,20 @@ export function AuthProvider({ children }) {
   };
 
   const signup = async (data) => {
-    const payload = new FormData();
-    payload.append('name',                  data.fullName);
-    payload.append('email',                 data.email);
-    payload.append('password',              data.password);
-    payload.append('password_confirmation', data.password);
-    if (data.country) payload.append('country', data.country);
-    // username stored as part of name — Bettitude may not have a separate username field
-    // Store username in localStorage for display purposes until backend adds it
-    const res = await authApi.register(payload);
-    const token = res.data?.token || res.data?.data?.session?.access_token;
-    const u     = res.data?.user  || res.data?.data?.user;
+    const payload = {
+      username:  data.username  || data.fullName?.toLowerCase().replace(/\s+/g, '_'),
+      full_name: data.fullName  || data.name || '',
+      email:     data.email,
+      password:  data.password,
+      phone:     data.phone     || undefined,
+    };
+    const res   = await authApi.register(payload);
+    // Node.js: { success, data: { user, token } }
+    const token = res.data?.data?.token || res.data?.token || res.data?.data?.session?.access_token;
+    const u     = res.data?.data?.user  || res.data?.user;
     if (!token || !u) throw new Error('Invalid response from server');
     localStorage.setItem('winalott_token', token);
-    const normalized = normalizeUser({ ...u, username: data.username || u.name });
+    const normalized = normalizeUser({ ...u, username: data.username || u.username || u.name });
     setUser(normalized);
     localStorage.setItem('winalott_user', JSON.stringify(normalized));
     return { success: true };
