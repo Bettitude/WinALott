@@ -70,18 +70,23 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
   const tier       = TIER[match.tier] || TIER.silver;
   const TierIcon   = tier.Icon;
   const isLive     = match.status === 'live';
+  const isFinished = match.status === 'finished';
   const isFree     = match.price === 0;
   const isPlatinum = match.tier === 'platinum';
 
   const isHot       = (match.fillPercent ?? 0) > 50;
   const closesMs    = new Date(`${match.date}T${match.time}:00`).getTime() - Date.now();
   const closesMin   = Math.floor(closesMs / 60000);
-  const closingSoon = closesMin > 0 && closesMin < 15;
+  // Staking closes 5 mins before kickoff
+  const stakingOpenMins = closesMin - 5;
+  const closingSoon     = stakingOpenMins > 0 && stakingOpenMins <= 15;
+  const stakingClosed   = isLive || isFinished || stakingOpenMins <= 0;
   const almostFull  = (match.fillPercent ?? 0) >= 80;
   const ticketsLeft = Math.max(0, Math.round(100 * (1 - (match.fillPercent ?? 0) / 100)));
 
   const openStakeModal  = (e) => {
     e.stopPropagation();
+    if (stakingClosed) return;
     if (!requireAuth(navigate, isAuthenticated)) return;
     setModalOpen(true);
   };
@@ -248,6 +253,23 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
                 <FiCheckCircle className="w-3.5 h-3.5" />
                 In Cart
               </div>
+            ) : isLive ? (
+              <div className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 text-xs font-black">
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shrink-0" />
+                Live — Staking Closed
+              </div>
+            ) : stakingClosed ? (
+              <div className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 text-gray-400 dark:text-slate-500 text-xs font-semibold cursor-not-allowed">
+                <FiAlertCircle className="w-3.5 h-3.5" />
+                Staking Closed
+              </div>
+            ) : closingSoon ? (
+              <button
+                onClick={openStakeModal}
+                className="flex-1 text-white text-xs sm:text-sm font-black py-2.5 rounded-xl text-center transition-colors bg-orange-500 hover:bg-orange-600 animate-pulse"
+              >
+                Closing Soon — Enter
+              </button>
             ) : (
               <button
                 onClick={openStakeModal}
@@ -257,11 +279,13 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
               </button>
             )}
             <button
-              onClick={inCart ? undefined : openStakeModal}
-              disabled={inCart}
+              onClick={(!inCart && !stakingClosed) ? openStakeModal : undefined}
+              disabled={inCart || stakingClosed}
               className={`flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl text-xs font-semibold border-2 transition-all ${
                 inCart
                   ? 'border-green-200 dark:border-green-800 text-green-400 cursor-not-allowed bg-green-50 dark:bg-green-950/40'
+                  : stakingClosed
+                  ? 'border-gray-100 dark:border-slate-700 text-gray-300 dark:text-slate-600 cursor-not-allowed'
                   : 'border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-[#1A4D8F] hover:text-[#1A4D8F] dark:hover:border-blue-600 dark:hover:text-blue-400'
               }`}
             >

@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   FiSearch, FiChevronDown, FiChevronUp, FiFilter, FiX,
-  FiRadio, FiUsers, FiStar, FiAward, FiZap, FiTrendingUp, FiGift,
+  FiRadio, FiUsers, FiStar, FiAward, FiZap, FiTrendingUp, FiGift, FiClock,
 } from 'react-icons/fi';
 import MatchCard from '../components/ui/MatchCard';
 import { useMatches } from '../hooks/useMatches';
@@ -25,11 +25,27 @@ const POPULAR_LEAGUES = [
 ];
 
 const SORT_OPTIONS = [
-  { key: 'newest',     label: 'Newest' },
-  { key: 'prize_high', label: 'Prize High-Low' },
-  { key: 'entry_low',  label: 'Entry Low-High' },
-  { key: 'soonest',    label: 'Soonest' },
+  { key: 'upcoming_first', label: 'Upcoming First' },
+  { key: 'prize_high',     label: 'Prize High-Low' },
+  { key: 'entry_low',      label: 'Entry Low-High' },
+  { key: 'soonest',        label: 'Soonest' },
 ];
+
+// 2026 FIFA World Cup opening match — June 11 2026 19:00 UTC
+const WC_START = new Date('2026-06-11T19:00:00Z').getTime();
+
+function useCountdown(targetMs) {
+  const [remaining, setRemaining] = useState(() => Math.max(0, targetMs - Date.now()));
+  useEffect(() => {
+    const id = setInterval(() => setRemaining(Math.max(0, targetMs - Date.now())), 1000);
+    return () => clearInterval(id);
+  }, [targetMs]);
+  const days  = Math.floor(remaining / 86400000);
+  const hours = Math.floor((remaining % 86400000) / 3600000);
+  const mins  = Math.floor((remaining % 3600000)  / 60000);
+  const secs  = Math.floor((remaining % 60000)    / 1000);
+  return { days, hours, mins, secs, started: remaining === 0 };
+}
 
 const STATUS_FILTERS = ['Live', 'Upcoming', 'Free'];
 
@@ -48,7 +64,7 @@ export default function Lobby() {
   const [tierTab, setTierTab]             = useState('all');
   const [search, setSearch]               = useState('');
   const [activeStatuses, setActiveStatuses] = useState(new Set());
-  const [sort, setSort]                   = useState('newest');
+  const [sort, setSort]                   = useState('upcoming_first');
   const [leagueOpen, setLeagueOpen]       = useState(true);
   const [selectedLeague, setSelectedLeague] = useState(null);
   const [page, setPage]                   = useState(1);
@@ -115,11 +131,30 @@ export default function Lobby() {
       );
     }
 
+    const statusOrder = { upcoming: 0, live: 1 };
     switch (sort) {
-      case 'prize_high': list = [...list].sort((a, b) => b.prizePool - a.prizePool); break;
-      case 'entry_low':  list = [...list].sort((a, b) => a.price - b.price);         break;
-      case 'soonest':    list = [...list].sort((a, b) => a.time.localeCompare(b.time)); break;
-      default: break;
+      case 'prize_high':
+        list = [...list].sort((a, b) => b.prizePool - a.prizePool);
+        break;
+      case 'entry_low':
+        list = [...list].sort((a, b) => a.price - b.price);
+        break;
+      case 'soonest':
+        list = [...list].sort((a, b) => {
+          const da = `${a.date}T${a.time}`;
+          const db = `${b.date}T${b.time}`;
+          return da.localeCompare(db);
+        });
+        break;
+      default: // upcoming_first
+        list = [...list].sort((a, b) => {
+          const sa = statusOrder[a.status] ?? 2;
+          const sb = statusOrder[b.status] ?? 2;
+          if (sa !== sb) return sa - sb;
+          const da = `${a.date}T${a.time}`;
+          const db = `${b.date}T${b.time}`;
+          return da.localeCompare(db);
+        });
     }
 
     return list;
@@ -136,7 +171,8 @@ export default function Lobby() {
   [activeMatches]);
 
   const hasFilters = activeStatuses.size > 0 || selectedLeague || search.trim();
-  const activeFilterCount = activeStatuses.size + (selectedLeague ? 1 : 0) + (sort !== 'newest' ? 1 : 0);
+  const activeFilterCount = activeStatuses.size + (selectedLeague ? 1 : 0) + (sort !== 'upcoming_first' ? 1 : 0);
+  const wc = useCountdown(WC_START);
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
@@ -220,7 +256,7 @@ export default function Lobby() {
 
             <div className="p-5 border-t border-gray-100 dark:border-slate-700 flex gap-3">
               <button
-                onClick={() => { setActiveStatuses(new Set()); setSelectedLeague(null); setSort('newest'); setPage(1); }}
+                onClick={() => { setActiveStatuses(new Set()); setSelectedLeague(null); setSort('upcoming_first'); setPage(1); }}
                 className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:border-gray-300 dark:hover:border-slate-500 transition-colors"
               >
                 Reset
@@ -414,6 +450,56 @@ export default function Lobby() {
             </button>
           </div>
 
+          {/* World Cup 2026 countdown banner */}
+          {!wc.started && (
+            <div
+              className="mb-5 rounded-2xl overflow-hidden border border-[#1A4D8F]/30 dark:border-blue-700/40 bg-gradient-to-r from-[#0D2B5E] via-[#1A4D8F] to-[#0D2B5E] cursor-pointer"
+              onClick={() => { setSelectedLeague(selectedLeague === 'World Cup' ? null : 'World Cup'); setPage(1); }}
+              title="Filter World Cup matches"
+            >
+              <div className="px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 shrink-0 rounded-xl bg-[#F5C518] flex items-center justify-center">
+                    <FiTrendingUp className="w-5 h-5 text-[#1A1A2E]" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-black text-white">World Cup 2026</span>
+                      <span className="px-2 py-0.5 rounded-full bg-[#F5C518] text-[#1A1A2E] text-[10px] font-black uppercase tracking-wide">
+                        Coming Soon
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-white/60 mt-0.5">USA · Canada · Mexico — Jun 11, 2026</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <FiClock className="w-3.5 h-3.5 text-white/50" />
+                  <div className="flex items-center gap-1">
+                    {[
+                      { v: wc.days,  u: 'd' },
+                      { v: wc.hours, u: 'h' },
+                      { v: wc.mins,  u: 'm' },
+                      { v: wc.secs,  u: 's' },
+                    ].map(({ v, u }) => (
+                      <div key={u} className="flex items-baseline gap-0.5">
+                        <span className="font-mono font-black text-white text-sm tabular-nums">
+                          {String(v).padStart(2, '0')}
+                        </span>
+                        <span className="text-[10px] text-white/50 font-semibold">{u}</span>
+                        {u !== 's' && <span className="text-white/30 text-sm font-bold mx-0.5">:</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {selectedLeague === 'World Cup' && (
+                <div className="px-4 pb-2 text-[10px] text-[#F5C518]/80 font-semibold">
+                  Showing World Cup matches — click to clear
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Tier tabs */}
           <div className="flex gap-2 mb-5 overflow-x-auto scrollbar-hide pb-0.5">
             {TIER_TABS.map(t => {
@@ -452,7 +538,7 @@ export default function Lobby() {
             </p>
             {hasFilters && (
               <button
-                onClick={() => { setActiveStatuses(new Set()); setSelectedLeague(null); setSearch(''); setPage(1); }}
+                onClick={() => { setActiveStatuses(new Set()); setSelectedLeague(null); setSearch(''); setSort('upcoming_first'); setPage(1); }}
                 className="text-xs text-[#1A4D8F] font-semibold hover:underline"
               >
                 Clear filters

@@ -13,6 +13,7 @@ import MatchDetails from './pages/MatchDetails';
 import HowToPlay from './pages/HowToPlay';
 import Winners from './pages/Winners';
 import BTGiveaway from './pages/BTGiveaway';
+import WorldCup from './pages/WorldCup';
 import PartnerWithUs from './pages/PartnerWithUs';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
@@ -24,6 +25,7 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 
 // Dashboard
 import Dashboard from './pages/dashboard/Dashboard';
+import MyStakes from './pages/MyStakes';
 import MyTickets from './pages/dashboard/MyTickets';
 import MyProfile from './pages/dashboard/MyProfile';
 import MyWinnings from './pages/dashboard/MyWinnings';
@@ -89,6 +91,7 @@ function AppRoutes() {
           <Route path="/how-to-play" element={<HowToPlay />} />
           <Route path="/winners" element={<Winners />} />
           <Route path="/btgiveaway" element={<BTGiveaway />} />
+          <Route path="/worldcup" element={<WorldCup />} />
           <Route path="/partner-with-us" element={<PartnerWithUs />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
@@ -100,6 +103,7 @@ function AppRoutes() {
           <Route path="/auth/reset-password" element={<ResetPassword />} />
 
           {/* Protected Dashboard */}
+          <Route path="/my-stakes" element={<ProtectedRoute><MyStakes /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/dashboard/tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
           <Route path="/dashboard/profile" element={<ProtectedRoute><MyProfile /></ProtectedRoute>} />

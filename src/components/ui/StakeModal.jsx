@@ -105,7 +105,7 @@ function CancelModal({ onConfirm, onCancel }) {
 
 export default function StakeModal({ match, open, onClose }) {
   const { addToCart, items } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [pick, setPick]           = useState(null);
   const [selectedTier, setSelectedTier] = useState(null);
@@ -176,17 +176,21 @@ export default function StakeModal({ match, open, onClose }) {
   if (!open || !match) return null;
 
   const chosen = tiers.find(t => t.tier === selectedTier);
+  const hasEnoughBalance = !chosen || (user?.balance ?? 0) >= (chosen.price ?? 0);
 
   const cartPayload = () => ({
-    cartId:     `${match.id}-${chosen.tier}-${Date.now()}`,
-    matchId:    match.id,
-    marketId:   chosen.marketId,
-    match:      `${match.homeTeam.name} vs ${match.awayTeam.name}`,
-    market:     chosen.name || match.market,
-    pick:       pick,
-    prediction: pick,
-    tier:       chosen.tier,
-    price:      chosen.price,
+    cartId:      `${match.id}-${chosen.tier}-${Date.now()}`,
+    matchId:     match.id,
+    marketId:    chosen.marketId,
+    match:       `${match.homeTeam.name} vs ${match.awayTeam.name}`,
+    market:      chosen.name || match.market,
+    pick:        pick,
+    prediction:  pick,
+    tier:        chosen.tier,
+    price:       chosen.price,
+    matchStatus: match.status,
+    matchDate:   match.date,
+    matchTime:   match.time,
   });
 
   const handleAddToCart = () => {
@@ -200,9 +204,15 @@ export default function StakeModal({ match, open, onClose }) {
   const handlePayNow = () => {
     if (!pick || !chosen) return;
     if (!requireAuth(navigate, isAuthenticated)) { onClose(); return; }
+    if (!hasEnoughBalance) {
+      localStorage.setItem('redirect_after_topup', '/checkout');
+      onClose();
+      navigate('/dashboard/wallet?deposit=1');
+      return;
+    }
     addToCart(cartPayload());
     setPaid(true);
-    setTimeout(() => { setPaid(false); onClose(); }, 1600);
+    setTimeout(() => { setPaid(false); onClose(); navigate('/checkout'); }, 1400);
   };
 
   const isLive = match.status === 'live';
@@ -397,9 +407,13 @@ export default function StakeModal({ match, open, onClose }) {
                     {isAuthenticated ? (
                       <button onClick={handlePayNow} disabled={!pick || !selectedTier}
                         className={`flex-1 py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-1.5 transition-all ${
-                          !pick || !selectedTier ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-[#F5C518] hover:brightness-105 text-[#1A1A2E]'
+                          !pick || !selectedTier
+                            ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                            : !hasEnoughBalance
+                            ? 'bg-orange-100 text-orange-600 hover:bg-orange-200'
+                            : 'bg-[#F5C518] hover:brightness-105 text-[#1A1A2E]'
                         }`}>
-                        {chosen ? formatBTP(chosen.price) : 'Use BTP'}
+                        {pick && selectedTier && !hasEnoughBalance ? 'Top Up to Play' : (chosen ? formatBTP(chosen.price) : 'Use BTP')}
                       </button>
                     ) : (
                       <Link to="/auth/login" onClick={onClose}

@@ -53,6 +53,10 @@ export default function Checkout() {
   };
 
   const handlePay = async () => {
+    if (!hasEnoughBTP) {
+      setErrors({ general: 'Insufficient BTP balance. Please deposit more to continue.' });
+      return;
+    }
     setErrors({});
     setLoading(true);
 
@@ -66,8 +70,9 @@ export default function Checkout() {
           const res = await matchApi.purchaseTicket(item.marketId, item.matchId, item.prediction);
           const ticket = res.data?.data?.ticket || res.data?.ticket;
           ticketNumber = ticket?.ticket_number || generateTicketNumber();
-        } catch {
-          // If backend is unavailable, fall back to a local ticket number
+        } catch (apiErr) {
+          // Only allow fallback if it's a network/unavailable error, not a 4xx
+          if (apiErr?.response?.status >= 400) throw apiErr;
           ticketNumber = generateTicketNumber();
         }
 
@@ -85,6 +90,25 @@ export default function Checkout() {
 
       // Optimistically deduct BTP from local user state
       if (updateUser) updateUser({ balance: balance - cartTotal });
+
+      // Persist to localStorage so My Stakes page can show them (mock/offline mode)
+      const userId = user?.id || 'guest';
+      const lsKey  = `winalot_stakes_${userId}`;
+      const existing = (() => { try { return JSON.parse(localStorage.getItem(lsKey) || '[]'); } catch { return []; } })();
+      const newStakes = purchased.map(tk => ({
+        id:           `local-${tk.matchId}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        ticketNumber: tk.ticketNumber,
+        match:        tk.match,
+        market:       tk.market,
+        myPick:       tk.pick,
+        adminPick:    '—',
+        entryFee:     tk.price,
+        prize:        0,
+        status:       'pending',
+        date:         new Date().toLocaleDateString(),
+        _raw:         { tier: tk.tier },
+      }));
+      localStorage.setItem(lsKey, JSON.stringify([...existing, ...newStakes]));
 
       setConfirmedTickets(purchased);
       clearCart();
@@ -298,11 +322,12 @@ export default function Checkout() {
               </div>
 
               <Link
-                to="/dashboard/wallet"
+                to="/dashboard/wallet?deposit=1"
+                onClick={() => localStorage.setItem('redirect_after_topup', '/checkout')}
                 className="flex items-center justify-center gap-2 w-full bg-[#1A4D8F] text-white font-black py-3.5 rounded-xl hover:bg-[#0D2B5E] transition-colors text-sm"
               >
                 <FiPlusCircle className="w-4 h-4" />
-                Go to Wallet
+                Deposit Funds
               </Link>
             </div>
           )}

@@ -1,9 +1,11 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useCallback } from 'react';
 import { authApi } from '../api/authApi';
 
 export const AuthContext = createContext(null);
 
-// Handles both Bettitude SSO response shape and legacy WinALot shape
+// Handles both Bettitude SSO response shape and legacy WinALot shape.
+// Balance is kept in BTP (= cents at 100 BTP per $1). Do NOT divide here —
+// the display layer divides by 100 to show dollars.
 function normalizeUser(u) {
   return {
     id:            u.id,
@@ -12,10 +14,9 @@ function normalizeUser(u) {
     email:         u.email      || '',
     avatar:        u.avatar     || u.avatar_url || null,
     country:       u.country    || '',
-    // Wallet balance: stored in cents by WinALot backend; Bettitude may send raw float
-    balance:       u.bt_points != null
-                     ? Number(u.bt_points)
-                     : (u.wallet_balance || 0) / 100,
+    balance:       u.bt_points  != null
+                     ? Math.round(Number(u.bt_points) * 100)   // BTP SSO → cents
+                     : (u.wallet_balance || 0),                 // DB/demo already in cents
     totalWinnings: 0,
     winRate:       0,
     activeTickets: 0,
@@ -45,7 +46,6 @@ export function AuthProvider({ children }) {
 
     authApi.me()
       .then(res => {
-        // Node.js: { success, data: { user } }  — fallback: user object directly
         const u = res.data?.data?.user || res.data?.user || res.data;
         if (u?.id) setUser(normalizeUser(u));
       })
@@ -57,16 +57,15 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (email, password) => {
-    // ── Dummy / demo accounts (no backend required) ─────────────────────────
     const DEMO_ACCOUNTS = [
       { email: 'demo@winalott.com', password: 'Demo1234', user: {
           id: 'demo-user-001', username: 'demo_user', full_name: 'Demo User',
-          email: 'demo@winalott.com', role: 'user', wallet_balance: 50000, // $500
+          email: 'demo@winalott.com', role: 'user', wallet_balance: 0,
         },
       },
       { email: 'test@example.com', password: 'test1234', user: {
           id: 'demo-user-002', username: 'test_player', full_name: 'Test Player',
-          email: 'test@example.com', role: 'user', wallet_balance: 12500, // $125
+          email: 'test@example.com', role: 'user', wallet_balance: 0,
         },
       },
     ];
@@ -78,10 +77,7 @@ export function AuthProvider({ children }) {
       setUser(normalized);
       return { success: true };
     }
-    // ── Real API login ────────────────────────────────────────────────────────
     const res = await authApi.login(email, password);
-    // Node.js backend: { success, data: { user, token } }
-    // Laravel shape kept as fallback: { token, user } or { data: { session: { access_token } } }
     const token = res.data?.data?.token || res.data?.token || res.data?.data?.session?.access_token;
     const u     = res.data?.data?.user  || res.data?.user;
     if (!token || !u) throw new Error('Invalid response from server');
@@ -101,7 +97,6 @@ export function AuthProvider({ children }) {
       phone:     data.phone     || undefined,
     };
     const res   = await authApi.register(payload);
-    // Node.js: { success, data: { user, token } }
     const token = res.data?.data?.token || res.data?.token || res.data?.data?.session?.access_token;
     const u     = res.data?.data?.user  || res.data?.user;
     if (!token || !u) throw new Error('Invalid response from server');
@@ -113,17 +108,37 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    try { await authApi.logout(); } catch { /* ignore network errors on logout */ }
+    try { await authApi.logout(); } catch { /* ignore */ }
     setUser(null);
     localStorage.removeItem('winalott_token');
     localStorage.removeItem('winalott_user');
   };
 
-  const updateProfile = (updates) => {
-    const updated = { ...user, ...updates };
-    setUser(updated);
-    localStorage.setItem('winalott_user', JSON.stringify(updated));
-  };
+  // Update local user state + localStorage (works for both demo and real users)
+  const updateUser = useCallback((updates) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...updates };
+      localStorage.setItem('winalott_user', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  // Re-fetch balance from the server (for real users after confirmed deposit)
+  const refreshBalance = useCallback(async () => {
+    const token = localStorage.getItem('winalott_token');
+    // Demo users never hit the server — their balance lives in localStorage
+    if (token?.startsWith('demo_token_')) return;
+    try {
+      const res = await authApi.me();
+      const u = res.data?.data?.user || res.data?.user || res.data;
+      if (u?.id) {
+        const normalized = normalizeUser(u);
+        setUser(normalized);
+        localStorage.setItem('winalott_user', JSON.stringify(normalized));
+      }
+    } catch { /* ignore — keep current state */ }
+  }, []);
 
   const isDemo = typeof window !== 'undefined' &&
     !!localStorage.getItem('winalott_token')?.startsWith('demo_token_');
@@ -137,7 +152,9 @@ export function AuthProvider({ children }) {
       login,
       logout,
       signup,
-      updateProfile,
+      updateUser,
+      updateProfile: updateUser,  // alias so Profile pages keep working
+      refreshBalance,
     }}>
       {children}
     </AuthContext.Provider>

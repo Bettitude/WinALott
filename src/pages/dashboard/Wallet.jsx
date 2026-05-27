@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   FiDollarSign, FiArrowDownCircle, FiArrowUpCircle, FiClock, FiCheckCircle, FiXCircle,
   FiCopy, FiCheck, FiPlus, FiTrash2, FiStar, FiAlertCircle,
@@ -57,7 +57,7 @@ function DepositModal({ onClose, onSuccess }) {
       // Demo accounts can't hit the real payment gateway — simulate instantly
       if (isDemo) {
         await new Promise(r => setTimeout(r, 800));
-        onSuccess?.(`$${n.toFixed(2)} (${amountCents / 100 * 100} BTP) added to your demo wallet`);
+        onSuccess?.(`$${n.toFixed(2)} added to your demo wallet!`, amountCents);
         return;
       }
 
@@ -68,7 +68,7 @@ function DepositModal({ onClose, onSuccess }) {
       // Backend mock mode — no real payment keys configured
       if (d?.mock) {
         await matchApi.verifyDeposit({ mock: true, amount: amountCents });
-        onSuccess?.(`$${n.toFixed(2)} added to your wallet (test mode)`);
+        onSuccess?.(`$${n.toFixed(2)} added to your wallet (test mode)`, amountCents);
         return;
       }
 
@@ -322,7 +322,8 @@ function WithdrawModal({ balance, savedMethods, onClose, onSuccess }) {
 
 // ── Main Wallet page ───────────────────────────────────────────────────────
 export default function Wallet() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, refreshBalance } = useAuth();
+  const navigate = useNavigate();
   const [filter, setFilter]     = useState('All');
   const [modal,  setModal]      = useState(null);
   const [copied, setCopied]     = useState(false);
@@ -343,6 +344,14 @@ export default function Wallet() {
 
   useEffect(() => { loadMethods(); }, [loadMethods]);
 
+  // Auto-open deposit modal when redirected with ?deposit=1 (e.g. from StakeModal low-balance)
+  useEffect(() => {
+    if (searchParams.get('deposit') === '1') {
+      setModal('deposit');
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
+
   // Handle redirect back after Paystack / PayPal
   useEffect(() => {
     const provider    = searchParams.get('provider');
@@ -359,7 +368,13 @@ export default function Wallet() {
         const params = ppReturn || provider === 'paypal'
           ? { paypal_order_id: ppToken }
           : { reference: psRef };
-        await matchApi.verifyDeposit(params);
+        const res = await matchApi.verifyDeposit(params);
+        const credited = res.data?.data?.amount_credited;
+        // Update balance: for real DB users this reflects the server credit;
+        // for mock/no-DB, we apply it locally so the UI shows the new amount.
+        if (credited) updateUser({ balance: (user?.balance ?? 0) + credited });
+        // Also pull fresh data from the server (no-op for demo tokens)
+        refreshBalance();
         setBanner('Payment confirmed. Your wallet has been credited.');
         refetch();
       } catch {
@@ -543,7 +558,18 @@ export default function Wallet() {
             {modal === 'deposit' && (
               <DepositModal
                 onClose={() => setModal(null)}
-                onSuccess={(msg) => { setModal(null); showBanner(msg || 'Deposit successful!'); refetch(); if (updateUser) updateUser(); }}
+                onSuccess={(msg, amountBTP) => {
+                  setModal(null);
+                  showBanner(msg || 'Deposit successful!');
+                  if (amountBTP) updateUser({ balance: (user?.balance ?? 0) + amountBTP });
+                  refetch();
+                  // Redirect back if this deposit was triggered by a low-balance flow
+                  const returnUrl = localStorage.getItem('redirect_after_topup');
+                  if (returnUrl) {
+                    localStorage.removeItem('redirect_after_topup');
+                    setTimeout(() => navigate(returnUrl), 600);
+                  }
+                }}
               />
             )}
             {modal === 'withdraw' && (
@@ -551,7 +577,13 @@ export default function Wallet() {
                 balance={balance}
                 savedMethods={savedMethods}
                 onClose={() => setModal(null)}
-                onSuccess={() => { setModal(null); showBanner('Withdrawal submitted.'); refetch(); loadMethods(); if (updateUser) updateUser(); }}
+                onSuccess={() => {
+                  setModal(null);
+                  showBanner('Withdrawal submitted.');
+                  refreshBalance();
+                  refetch();
+                  loadMethods();
+                }}
               />
             )}
           </div>
