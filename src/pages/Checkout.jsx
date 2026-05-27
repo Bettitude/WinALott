@@ -6,6 +6,7 @@ import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import { matchApi } from '../api/matchApi';
 import { formatBTP } from '../utils/btp';
+import PayPalHostedButton from '../components/ui/PayPalHostedButton';
 
 const steps = ['Review', 'Payment', 'Confirmation'];
 
@@ -280,19 +281,29 @@ export default function Checkout() {
               <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-center">
                 <p className="text-red-600 font-bold text-sm mb-1">Insufficient BT Points</p>
                 <p className="text-red-500 text-xs">
-                  You need {shortfall.toLocaleString()} more BTP to complete this order.
+                  You need {shortfall.toLocaleString()} more BTP (≈ ${(shortfall / BTP_PER_USD).toFixed(2)}) to complete this order.
                 </p>
               </div>
+
+              {/* Buy BTP directly with PayPal */}
+              <div className="border border-gray-200 rounded-xl p-4">
+                <p className="text-xs font-black text-gray-500 uppercase tracking-wider mb-3">Buy BT Points with PayPal</p>
+                <PayPalHostedButton />
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <div className="flex-1 h-px bg-gray-100" />
+                <span>or</span>
+                <div className="flex-1 h-px bg-gray-100" />
+              </div>
+
               <Link
                 to="/dashboard/wallet"
                 className="flex items-center justify-center gap-2 w-full bg-[#1A4D8F] text-white font-black py-3.5 rounded-xl hover:bg-[#0D2B5E] transition-colors text-sm"
               >
                 <FiPlusCircle className="w-4 h-4" />
-                Buy BT Points
+                Go to Wallet
               </Link>
-              <p className="text-xs text-center text-gray-400">
-                Top up {shortfall.toLocaleString()} BTP (≈ ${(shortfall / BTP_PER_USD).toFixed(2)}) to continue.
-              </p>
             </div>
           )}
         </div>

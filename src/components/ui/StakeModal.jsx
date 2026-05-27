@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { requireAuth } from '../../utils/requireAuth';
 import { FiX, FiStar, FiAward, FiZap, FiUsers, FiShoppingCart, FiCheckCircle, FiLock, FiBarChart2, FiAlertTriangle, FiLogIn } from 'react-icons/fi';
 import { formatBTP } from '../../utils/btp';
 import { useCart } from '../../hooks/useCart';
@@ -105,6 +106,7 @@ function CancelModal({ onConfirm, onCancel }) {
 export default function StakeModal({ match, open, onClose }) {
   const { addToCart, items } = useCart();
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [pick, setPick]           = useState(null);
   const [selectedTier, setSelectedTier] = useState(null);
   const [added, setAdded]         = useState(false);
@@ -189,6 +191,7 @@ export default function StakeModal({ match, open, onClose }) {
 
   const handleAddToCart = () => {
     if (!pick || !chosen) return;
+    if (!requireAuth(navigate, isAuthenticated)) { onClose(); return; }
     addToCart(cartPayload());
     setAdded(true);
     setTimeout(() => { setAdded(false); onClose(); }, 1400);
@@ -196,6 +199,7 @@ export default function StakeModal({ match, open, onClose }) {
 
   const handlePayNow = () => {
     if (!pick || !chosen) return;
+    if (!requireAuth(navigate, isAuthenticated)) { onClose(); return; }
     addToCart(cartPayload());
     setPaid(true);
     setTimeout(() => { setPaid(false); onClose(); }, 1600);

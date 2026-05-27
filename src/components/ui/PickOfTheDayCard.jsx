@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiShoppingCart, FiStar, FiChevronRight, FiChevronLeft } from 'react-icons/fi';
 import { useCart } from '../../hooks/useCart';
+import { useAuth } from '../../hooks/useAuth';
+import { requireAuth } from '../../utils/requireAuth';
 import TeamAvatar from './TeamAvatar';
 import { formatBTP } from '../../utils/btp';
 
 export default function PickOfTheDayCard({ matches = [] }) {
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const [idx, setIdx] = useState(0);
   const [fade, setFade] = useState(true);
 
@@ -39,6 +42,7 @@ export default function PickOfTheDayCard({ matches = [] }) {
   const handleAddToCart = (e) => {
     e.stopPropagation();
     if (!match) return;
+    if (!requireAuth(navigate, isAuthenticated)) return;
     addToCart({
       cartId:  `potd-${match.id}-${Date.now()}`,
       matchId: match.id,

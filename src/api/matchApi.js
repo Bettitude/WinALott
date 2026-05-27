@@ -48,4 +48,15 @@ export const matchApi = {
 
   // Self-exclusion
   requestSelfExclusion: (data)           => apiClient.post('/users/me/self-exclusion', data),
+
+  // Saved payment methods
+  getPaymentMethods:    ()               => apiClient.get('/users/me/payment-methods'),
+  savePaymentMethod:    (data)           => apiClient.post('/users/me/payment-methods', data),
+  deletePaymentMethod:  (id)             => apiClient.delete(`/users/me/payment-methods/${id}`),
+
+  // Bank list (Paystack)
+  listBanks:            (country)        => apiClient.get('/transactions/banks', { params: { country } }),
+
+  // Admin: approve withdrawal
+  approveWithdrawal:    (ref)            => apiClient.post(`/transactions/withdraw/approve/${ref}`),
 };

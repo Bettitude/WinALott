@@ -1,15 +1,23 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiMail, FiLock, FiEye, FiEyeOff, FiLogIn } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function LoginForm() {
-  const [form, setForm] = useState({ email: '', password: '', remember: false });
+  const [form, setForm]     = useState({ email: '', password: '', remember: false });
   const [errors, setErrors] = useState({});
   const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]   = useState(false);
   const { login } = useAuth();
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+
+  const redirectPath = localStorage.getItem('redirect_after_login');
+
+  const afterLogin = () => {
+    const dest = localStorage.getItem('redirect_after_login');
+    localStorage.removeItem('redirect_after_login');
+    navigate(dest || '/lobby', { replace: true });
+  };
 
   const validate = () => {
     const e = {};
@@ -28,7 +36,7 @@ export default function LoginForm() {
     setLoading(true);
     try {
       const res = await login(form.email, form.password);
-      if (res.success) navigate('/dashboard');
+      if (res.success) afterLogin();
     } catch {
       setErrors({ submit: 'Invalid email or password. Please try again.' });
     } finally {
@@ -36,14 +44,12 @@ export default function LoginForm() {
     }
   };
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
   const handleDemoLogin = async () => {
     setErrors({});
     setLoading(true);
     try {
       const res = await login('demo@winalott.com', 'Demo1234');
-      if (res.success) navigate('/dashboard');
+      if (res.success) afterLogin();
     } catch {
       setErrors({ submit: 'Demo login failed. Please try again.' });
     } finally {
@@ -51,15 +57,21 @@ export default function LoginForm() {
     }
   };
 
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
-      {/* Demo login shortcut */}
-      <button
-        type="button"
-        onClick={handleDemoLogin}
-        disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#F5C518]/15 border border-[#F5C518]/40 text-[#1A1A2E] text-xs font-bold py-2.5 rounded-xl hover:bg-[#F5C518]/25 transition-colors disabled:opacity-60"
-      >
+      {/* Staking redirect notice */}
+      {redirectPath && (
+        <div className="flex items-start gap-2.5 bg-[#0D2B5E] border border-[#1A4D8F] text-blue-200 text-sm px-4 py-3 rounded-xl">
+          <FiLogIn className="w-4 h-4 text-[#F5C518] shrink-0 mt-0.5" />
+          <span>Please log in to continue staking. You'll be taken back to your match.</span>
+        </div>
+      )}
+
+      {/* Demo shortcut */}
+      <button type="button" onClick={handleDemoLogin} disabled={loading}
+        className="w-full flex items-center justify-center gap-2 bg-[#F5C518]/15 border border-[#F5C518]/40 text-[#1A1A2E] text-xs font-bold py-2.5 rounded-xl hover:bg-[#F5C518]/25 transition-colors disabled:opacity-60">
         {loading ? 'Logging in…' : 'Use Demo Account — demo@winalott.com / Demo1234'}
       </button>
 
@@ -73,15 +85,9 @@ export default function LoginForm() {
         <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
         <div className="relative">
           <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="email"
-            value={form.email}
-            onChange={e => set('email', e.target.value)}
+          <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
             placeholder="you@example.com"
-            className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] transition-colors ${
-              errors.email ? 'border-red-400 bg-red-50' : 'border-gray-200'
-            }`}
-          />
+            className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] transition-colors ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
         </div>
         {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
       </div>
@@ -90,15 +96,9 @@ export default function LoginForm() {
         <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
         <div className="relative">
           <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type={showPass ? 'text' : 'password'}
-            value={form.password}
-            onChange={e => set('password', e.target.value)}
+          <input type={showPass ? 'text' : 'password'} value={form.password} onChange={e => set('password', e.target.value)}
             placeholder="Your password"
-            className={`w-full pl-10 pr-10 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] transition-colors ${
-              errors.password ? 'border-red-400 bg-red-50' : 'border-gray-200'
-            }`}
-          />
+            className={`w-full pl-10 pr-10 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] transition-colors ${errors.password ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
           <button type="button" onClick={() => setShowPass(!showPass)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
             {showPass ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
@@ -109,12 +109,8 @@ export default function LoginForm() {
 
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.remember}
-            onChange={e => set('remember', e.target.checked)}
-            className="w-4 h-4 accent-[#1A4D8F] rounded"
-          />
+          <input type="checkbox" checked={form.remember} onChange={e => set('remember', e.target.checked)}
+            className="w-4 h-4 accent-[#1A4D8F] rounded" />
           <span className="text-sm text-gray-600">Remember me</span>
         </label>
         <Link to="/auth/forgot-password" className="text-sm text-[#1A4D8F] hover:underline font-medium">
@@ -122,36 +118,25 @@ export default function LoginForm() {
         </Link>
       </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-[#1A4D8F] text-white font-bold py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-sm"
-      >
+      <button type="submit" disabled={loading}
+        className="w-full bg-[#1A4D8F] text-white font-bold py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-sm">
         {loading ? 'Logging in…' : 'Log In'}
       </button>
 
       <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-100" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-white px-3 text-gray-400">or continue with</span>
-        </div>
+        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100" /></div>
+        <div className="relative flex justify-center text-xs"><span className="bg-white px-3 text-gray-400">or continue with</span></div>
       </div>
 
-      <button
-        type="button"
-        className="w-full flex items-center justify-center gap-3 border border-gray-200 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors font-medium"
-      >
+      <button type="button"
+        className="w-full flex items-center justify-center gap-3 border border-gray-200 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors font-medium">
         <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
         Continue with Google
       </button>
 
       <p className="text-center text-sm text-gray-500">
         Don't have an account?{' '}
-        <Link to="/auth/signup" className="text-[#1A4D8F] font-semibold hover:underline">
-          Sign Up
-        </Link>
+        <Link to="/auth/signup" className="text-[#1A4D8F] font-semibold hover:underline">Sign Up</Link>
       </p>
     </form>
   );

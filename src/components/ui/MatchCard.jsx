@@ -5,6 +5,8 @@ import { FiShoppingCart, FiUsers, FiZap, FiAward, FiStar, FiClock, FiCheckCircle
 import TeamAvatar from './TeamAvatar';
 import StakeModal from './StakeModal';
 import { useCart } from '../../hooks/useCart';
+import { useAuth } from '../../hooks/useAuth';
+import { requireAuth } from '../../utils/requireAuth';
 import { formatBTP } from '../../utils/btp';
 
 const TIER = {
@@ -40,6 +42,7 @@ const TIER = {
 export default function MatchCard({ match, loading = false, homeMode = false }) {
   const navigate = useNavigate();
   const { items } = useCart();
+  const { isAuthenticated } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const inCart = items.some(i => i.matchId === match?.id);
 
@@ -77,7 +80,11 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
   const almostFull  = (match.fillPercent ?? 0) >= 80;
   const ticketsLeft = Math.max(0, Math.round(100 * (1 - (match.fillPercent ?? 0) / 100)));
 
-  const openStakeModal  = (e) => { e.stopPropagation(); setModalOpen(true); };
+  const openStakeModal  = (e) => {
+    e.stopPropagation();
+    if (!requireAuth(navigate, isAuthenticated)) return;
+    setModalOpen(true);
+  };
   const handleCardClick = () => navigate(`/match/${match.id}`);
 
   const openTeamPage = (side, e) => {
