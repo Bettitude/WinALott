@@ -125,11 +125,15 @@ export function AuthProvider({ children }) {
     localStorage.setItem('winalott_user', JSON.stringify(updated));
   };
 
+  const isDemo = typeof window !== 'undefined' &&
+    !!localStorage.getItem('winalott_token')?.startsWith('demo_token_');
+
   return (
     <AuthContext.Provider value={{
       user,
       loading,
       isAuthenticated: !!user,
+      isDemo,
       login,
       logout,
       signup,

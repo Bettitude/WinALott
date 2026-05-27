@@ -15,11 +15,13 @@ apiClient.interceptors.response.use(
   res => res,
   err => {
     if (err.response?.status === 401) {
-      // Only clear stored credentials — do NOT auto-redirect.
-      // Protected pages (dashboard, checkout) handle their own login gates.
-      // Browsing/public pages must always work without login.
-      localStorage.removeItem('winalott_token');
-      localStorage.removeItem('winalott_user');
+      const token = localStorage.getItem('winalott_token');
+      // Never clear demo session tokens — the backend rejects them by design
+      // (demo_token_ is not a real JWT) but the session must survive.
+      if (!token?.startsWith('demo_token_')) {
+        localStorage.removeItem('winalott_token');
+        localStorage.removeItem('winalott_user');
+      }
     }
     return Promise.reject(err);
   }

@@ -39,7 +39,7 @@ const TYPE_FILTERS = {
 
 // ── DepositModal ──────────────────────────────────────────────────────────
 function DepositModal({ onClose, onSuccess }) {
-  const { user } = useAuth();
+  const { user, isDemo } = useAuth();
   const [amount,   setAmount]   = useState('');
   const [provider, setProvider] = useState('paystack');
   const [loading,  setLoading]  = useState(false);
@@ -53,11 +53,19 @@ function DepositModal({ onClose, onSuccess }) {
     setError('');
     try {
       const amountCents = Math.round(n * 100);
+
+      // Demo accounts can't hit the real payment gateway — simulate instantly
+      if (isDemo) {
+        await new Promise(r => setTimeout(r, 800));
+        onSuccess?.(`$${n.toFixed(2)} (${amountCents / 100 * 100} BTP) added to your demo wallet`);
+        return;
+      }
+
       const res = await matchApi.initDeposit(amountCents, provider,
         `${window.location.origin}/dashboard/wallet?verify=1&provider=${provider}`);
       const d = res.data?.data;
 
-      // Mock mode — no real payment keys
+      // Backend mock mode — no real payment keys configured
       if (d?.mock) {
         await matchApi.verifyDeposit({ mock: true, amount: amountCents });
         onSuccess?.(`$${n.toFixed(2)} added to your wallet (test mode)`);
