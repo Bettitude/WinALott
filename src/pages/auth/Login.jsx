@@ -5,7 +5,7 @@ import Logo from '../../components/ui/Logo';
 
 const PERKS = [
   { Icon: FiShield, text: 'Provably fair draws — HMAC-SHA256 verified' },
-  { Icon: FiZap,    text: 'Instant BT Points credited to your wallet' },
+  { Icon: FiZap,    text: 'Instant WAP credited to your wallet' },
   { Icon: FiAward,  text: 'Silver, Gold & Platinum prediction tiers' },
 ];
 
@@ -30,7 +30,7 @@ export default function Login() {
             Take a Side.<br />Win the Pride.
           </h2>
           <p className="text-blue-200 text-sm mb-8">
-            Predict football markets with BT Points — stake, win, and cash out.
+            Predict football markets with WAP — stake, win, and cash out.
           </p>
           <div className="space-y-3 mb-8">
             {PERKS.map(({ Icon, text }) => (

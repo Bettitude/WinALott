@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   FiCheckCircle, FiXCircle, FiClock, FiTrendingUp, FiZap, FiAward, FiStar,
-  FiAlertCircle, FiRefreshCw, FiGift,
+  FiAlertCircle, FiRefreshCw, FiGift, FiCalendar,
 } from 'react-icons/fi';
 import { useTickets } from '../hooks/useTickets';
 import { useAuth } from '../hooks/useAuth';
@@ -62,7 +62,7 @@ function ActiveStakeCard({ ticket }) {
           </div>
           <div className="text-right">
             <p className="text-[10px] text-gray-400 dark:text-slate-500">Entry</p>
-            <p className="text-sm font-black text-[#1A1A2E] dark:text-white">${ticket.entryFee.toFixed(2)}</p>
+            <p className="text-sm font-black text-[#1A1A2E] dark:text-white">${(ticket.entryFee ?? 0).toFixed(2)}</p>
           </div>
         </div>
 
@@ -84,7 +84,7 @@ function HistoryCard({ ticket }) {
   const isWin     = ticket.status === 'won';
   const isLoss    = ticket.status === 'lost';
   const isVoided  = ticket.status === 'voided';
-  const netChange = isWin ? ticket.prize - ticket.entryFee : isLoss ? -ticket.entryFee : 0;
+  const netChange = isWin ? (ticket.prize ?? 0) - (ticket.entryFee ?? 0) : isLoss ? -(ticket.entryFee ?? 0) : 0;
 
   return (
     <div className={`bg-white dark:bg-slate-800 rounded-2xl border shadow-sm p-4 ${
@@ -266,8 +266,8 @@ export default function MyStakes() {
         )
       ) : (
         <>
-          {/* History filters */}
-          <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide pb-1">
+          {/* History filters + calendar link */}
+          <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-hide pb-1">
             {HISTORY_FILTERS.map(f => (
               <button key={f} onClick={() => setHistoryFilter(f)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
@@ -278,6 +278,12 @@ export default function MyStakes() {
                 {f}
               </button>
             ))}
+            <Link
+              to="/dashboard/history"
+              className="ml-auto shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-100 transition-colors"
+            >
+              <FiCalendar className="w-3 h-3" /> Calendar View
+            </Link>
           </div>
 
           {filteredHistory.length === 0 ? (

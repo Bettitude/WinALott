@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FiList, FiDollarSign, FiTrendingUp, FiClock, FiArrowRight, FiGift } from 'react-icons/fi';
+import { FiList, FiDollarSign, FiTrendingUp, FiClock, FiArrowRight, FiGift, FiCalendar } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import { useTickets } from '../../hooks/useTickets';
 
@@ -52,9 +52,9 @@ export default function Dashboard() {
       {/* Quick links */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-6 sm:mb-8">
         {[
-          { to: '/lobby',               label: 'Buy Tickets',    desc: 'Browse active markets',     icon: FiList,       bg: 'bg-[#1A4D8F]'  },
+          { to: '/lobby',                label: 'Buy Tickets',    desc: 'Browse active markets',     icon: FiList,       bg: 'bg-[#1A4D8F]'  },
           { to: '/dashboard/wallet',    label: 'My Wallet',      desc: 'Deposit or withdraw',       icon: FiDollarSign, bg: 'bg-green-600' },
-          { to: '/dashboard/winnings',  label: 'My Winnings',    desc: 'Check your prizes',         icon: FiTrendingUp, bg: 'bg-purple-600' },
+          { to: '/dashboard/history',   label: 'My History',     desc: 'Calendar stake history',    icon: FiCalendar,   bg: 'bg-indigo-600' },
           { to: '/dashboard/referrals', label: 'Refer a Friend', desc: 'Earn per referral',         icon: FiGift,       bg: 'bg-orange-500' },
         ].map(q => (
           <Link key={q.to} to={q.to}
@@ -75,7 +75,7 @@ export default function Dashboard() {
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-700">
           <h2 className="font-bold text-[#1A1A2E] dark:text-white">Recent Tickets</h2>
-          <Link to="/dashboard/tickets" className="text-sm text-[#1A4D8F] dark:text-blue-400 font-medium hover:underline flex items-center gap-1">
+          <Link to="/dashboard/history" className="text-sm text-[#1A4D8F] dark:text-blue-400 font-medium hover:underline flex items-center gap-1">
             View all <FiArrowRight className="w-3 h-3" />
           </Link>
         </div>

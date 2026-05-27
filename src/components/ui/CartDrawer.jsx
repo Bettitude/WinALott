@@ -132,7 +132,7 @@ export default function CartDrawer() {
             <div className="flex items-center justify-between">
               <span className="text-gray-500 dark:text-slate-400 text-sm">Total</span>
               <span className="font-black text-lg text-[#1A4D8F]">
-                {payableTotal.toLocaleString()} BTP
+                {payableTotal.toLocaleString()} WAP
               </span>
             </div>
             {payableItems.length > 0 ? (

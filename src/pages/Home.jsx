@@ -14,10 +14,11 @@ import LeagueLogoStrip from '../components/ui/LeagueLogoStrip';
 import TeamAvatar from '../components/ui/TeamAvatar';
 import { useMatches } from '../hooks/useMatches';
 import { useWinners } from '../hooks/useWinners';
+import { FEATURED_PICKS, applyPick } from '../data/adminPicks';
 
 const STATS = [
   { Icon: FiUsers,       label: 'Active Players',  value: '12,400+', color: 'text-[#1A4D8F]',  bg: 'bg-blue-50' },
-  { Icon: FiAward,       label: 'Total Prize Pool', value: '4.8M BTP', color: 'text-green-600',  bg: 'bg-green-50' },
+  { Icon: FiAward,       label: 'Total Prize Pool', value: '4.8M WAP', color: 'text-green-600',  bg: 'bg-green-50' },
   { Icon: FiTrendingUp,  label: 'Markets Live',     value: '120+',     color: 'text-purple-600', bg: 'bg-purple-50' },
   { Icon: FiCheckCircle, label: 'Verified Winners', value: '9,800+',   color: 'text-[#F5C518]',  bg: 'bg-yellow-50' },
 ];
@@ -77,12 +78,21 @@ export default function Home() {
   const [stakingCount, setStakingCount] = useState(842);
   const [newsIdx, setNewsIdx]           = useState(0);
   const { openPlayer, isOpen: radioOpen } = useRadio();
-  const { matches, loading } = useMatches({ limit: 9 });
+  const { matches, loading } = useMatches({ limit: Math.max(FEATURED_PICKS.length, 9) + 2 });
   const { winners } = useWinners(4);
   const countdown = useCountdown(WC_DATE);
 
-  const allMatches = matches;
-  const featured   = allMatches[0] || null;
+  // Only show upcoming/live matches — never finished games
+  const allMatches = matches
+    .filter(m => m.status !== 'finished')
+    .sort((a, b) => {
+      const order = { upcoming: 0, live: 1 };
+      return (order[a.status] ?? 2) - (order[b.status] ?? 2);
+    });
+  const featuredMatches = allMatches
+    .slice(0, FEATURED_PICKS.length)
+    .map((m, i) => applyPick(m, FEATURED_PICKS[i]));
+  const featured   = featuredMatches[0] || null;
   const isLive     = featured?.status === 'live';
 
   useEffect(() => {
@@ -95,9 +105,24 @@ export default function Home() {
     return () => clearInterval(id);
   }, []);
 
-  const filtered = activeMarket === 'All Markets'
-    ? allMatches.slice(0, 9)
-    : allMatches.filter(m => m.marketTag?.toLowerCase() === activeMarket.toLowerCase()).slice(0, 9);
+  const filtered = (() => {
+    if (activeMarket === 'All Markets') return allMatches.slice(0, 9);
+    return allMatches.map(m => {
+      const rawMarkets = m._raw?.markets || [];
+      const target = rawMarkets.find(mk => mk.name === activeMarket);
+      if (!target) return null;
+      const priceCents = target.ticket_price || 0;
+      return {
+        ...m,
+        market:      target.name,
+        marketTag:   target.type,
+        price:       priceCents / 100,
+        tier:        target.tier || 'silver',
+        fillPercent: target.fill_percent || 0,
+        prizePool:   Math.floor(priceCents * (target.max_tickets || 200) * 0.9) / 100,
+      };
+    }).filter(Boolean).slice(0, 9);
+  })();
 
   return (
     <div>
@@ -202,15 +227,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Match */}
-      {featured && (
+      {/* Featured Matches */}
+      {featuredMatches.length > 0 && (
         <section className="py-6 sm:py-10 px-4 bg-gradient-to-b from-white to-gray-50">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-2 mb-4">
               <FiRadio className="w-4 h-4 text-red-500 animate-pulse" />
-              <h2 className="text-lg font-black text-[#1A1A2E] uppercase tracking-wide">Featured Match</h2>
+              <h2 className="text-lg font-black text-[#1A1A2E] uppercase tracking-wide">Featured Matches</h2>
+              <span className="ml-auto text-xs text-gray-400 font-medium">{featuredMatches.length} admin picks</span>
             </div>
 
+            {/* Primary featured card */}
             <div
               onClick={() => navigate(`/match/${featured.id}`)}
               className="bg-gradient-to-r from-[#0D2B5E] to-[#1A4D8F] rounded-2xl overflow-hidden shadow-xl cursor-pointer hover:shadow-2xl transition-shadow"
@@ -267,7 +294,7 @@ export default function Home() {
                   <div className="bg-white/10 border border-white/20 rounded-2xl px-5 py-3">
                     <p className="text-xs text-blue-200 mb-1">Entry Fee</p>
                     <p className="text-2xl font-black text-[#F5C518]">{formatBTP(featured.price || 0)}</p>
-                    <p className="text-xs text-blue-200 mt-1">{featured.maxWinners} winners</p>
+                    <p className="text-xs text-blue-200 mt-1">{featured.ticketsSold}/{featured.maxTickets} tickets</p>
                   </div>
                   <Link
                     to={`/match/${featured.id}`}
@@ -275,10 +302,55 @@ export default function Home() {
                   >
                     Enter Now
                   </Link>
-                  <p className="text-xs text-blue-200">Pool {featured.fillPercent}% full</p>
+                  <div className="w-full">
+                    <div className="flex justify-between text-[10px] text-blue-300 mb-1">
+                      <span>{featured.ticketsSold} sold</span>
+                      <span>{featured.fillPercent}% full</span>
+                    </div>
+                    <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                      <div className="h-full bg-[#F5C518] rounded-full" style={{ width: `${featured.fillPercent}%` }} />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Remaining admin-picked featured matches */}
+            {featuredMatches.length > 1 && (
+              <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
+                {featuredMatches.slice(1).map(m => (
+                  <div
+                    key={m.id}
+                    onClick={() => navigate(`/match/${m.id}`)}
+                    className="flex-shrink-0 w-48 bg-white border border-gray-100 rounded-xl p-3 cursor-pointer hover:shadow-md transition-shadow"
+                  >
+                    <p className="text-[10px] text-gray-400 truncate mb-2">{m.league}</p>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
+                        <TeamAvatar logo={m.homeTeam?.logo} short={m.homeTeam?.short} size="sm" />
+                        <p className="text-[10px] font-semibold text-[#1A1A2E] truncate w-full text-center">{m.homeTeam?.name}</p>
+                      </div>
+                      <span className="text-[10px] text-gray-300 font-black shrink-0">VS</span>
+                      <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
+                        <TeamAvatar logo={m.awayTeam?.logo} short={m.awayTeam?.short} size="sm" />
+                        <p className="text-[10px] font-semibold text-[#1A1A2E] truncate w-full text-center">{m.awayTeam?.name}</p>
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg px-2 py-1.5 mb-2">
+                      <p className="text-[10px] text-gray-400 truncate">{m.market}</p>
+                      <p className="text-xs font-bold text-[#1A4D8F] truncate">{m.adminPick}</p>
+                    </div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-black text-[#1A4D8F]">{formatBTP(m.price)}</span>
+                      <span className="text-[10px] text-gray-400">{m.ticketsSold}/{m.maxTickets}</span>
+                    </div>
+                    <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-[#1A4D8F] rounded-full" style={{ width: `${m.fillPercent}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -358,7 +430,7 @@ export default function Home() {
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-[#1A1A2E] dark:text-white truncate">{w.username}</p>
                   <p className="text-xs text-gray-400 dark:text-slate-500 truncate">{w.match}</p>
-                  <p className="text-sm font-black text-green-600 dark:text-green-400 mt-0.5">+${w.prize.toFixed(2)}</p>
+                  <p className="text-sm font-black text-green-600 dark:text-green-400 mt-0.5">+${(w.prize ?? 0).toFixed(2)}</p>
                 </div>
               </div>
             ))}

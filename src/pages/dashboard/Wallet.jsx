@@ -90,19 +90,18 @@ function DepositModal({ onClose, onSuccess }) {
       <p className="text-gray-400 dark:text-slate-500 text-sm mb-5">Credited instantly after payment confirmation.</p>
 
       <p className="text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">Pay with</p>
-      <div className="grid grid-cols-2 gap-3 mb-5">
+      <div className="grid grid-cols-3 gap-2 mb-5">
         {[
-          { id: 'paystack', name: 'Paystack',  sub: 'Card / Bank',    color: '#00c3f7' },
-          { id: 'paypal',   name: 'PayPal',    sub: 'PayPal account', color: '#003087' },
+          { id: 'flutterwave',      name: 'Flutterwave',   sub: 'Card / USSD',   color: '#F5A623' },
+          { id: 'flutterwave_bank', name: 'Bank Transfer', sub: 'Direct Bank',   color: '#27AE60' },
+          { id: 'paystack',         name: 'Paystack',      sub: 'Card / Bank',   color: '#00c3f7' },
         ].map(p => (
           <button key={p.id} onClick={() => setProvider(p.id)}
-            className={`flex flex-col items-center gap-2 py-3 px-4 rounded-xl border-2 transition-all ${
-              provider === p.id ? `border-[${p.color}] bg-[${p.color}]/5` : 'border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500'
-            }`}
-            style={provider === p.id ? { borderColor: p.color, background: `${p.color}10` } : {}}
+            className="flex flex-col items-center gap-1.5 py-2.5 px-2 rounded-xl border-2 transition-all"
+            style={provider === p.id ? { borderColor: p.color, background: `${p.color}12` } : { borderColor: '#e5e7eb' }}
           >
-            <span className="text-sm font-black" style={{ color: provider === p.id ? p.color : '' }}>{p.name}</span>
-            <span className="text-[10px] text-gray-400 dark:text-slate-500">{p.sub}</span>
+            <span className="text-xs font-black text-center leading-tight" style={{ color: provider === p.id ? p.color : '#6b7280' }}>{p.name}</span>
+            <span className="text-[9px] text-gray-400 dark:text-slate-500 text-center">{p.sub}</span>
           </button>
         ))}
       </div>
@@ -110,8 +109,8 @@ function DepositModal({ onClose, onSuccess }) {
       {provider === 'paypal' ? (
         <div>
           <p className="text-xs text-gray-400 dark:text-slate-500 mb-3 leading-relaxed">
-            Click the button below to complete your BT Points purchase securely via PayPal.
-            BTP will be credited to your wallet once payment is confirmed.
+            Click the button below to complete your WAP purchase securely via PayPal.
+            WAP will be credited to your wallet once payment is confirmed.
           </p>
           <PayPalHostedButton className="mb-2" />
         </div>
@@ -140,7 +139,7 @@ function DepositModal({ onClose, onSuccess }) {
             className="w-full font-bold py-3 rounded-xl text-sm text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2 bg-[#1A4D8F] hover:bg-[#0D2B5E]">
             {loading
               ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Redirecting…</>
-              : `Deposit $${Number(amount || 0).toFixed(2)} via Paystack`
+              : `Deposit $${Number(amount || 0).toFixed(2)} via ${provider === 'flutterwave_bank' ? 'Bank Transfer' : provider === 'flutterwave' ? 'Flutterwave' : 'Paystack'}`
             }
           </button>
         </>
@@ -356,6 +355,7 @@ export default function Wallet() {
   useEffect(() => {
     const provider    = searchParams.get('provider');
     const psRef       = searchParams.get('reference') || searchParams.get('trxref');
+    const fwRef       = searchParams.get('tx_ref');   // Flutterwave redirect param
     const ppToken     = searchParams.get('token');
     const ppReturn    = searchParams.get('pp');
     const verifyFlag  = searchParams.get('verify');
@@ -367,6 +367,8 @@ export default function Wallet() {
       try {
         const params = ppReturn || provider === 'paypal'
           ? { paypal_order_id: ppToken }
+          : provider?.startsWith('flutterwave') || fwRef
+          ? { reference: fwRef || psRef }
           : { reference: psRef };
         const res = await matchApi.verifyDeposit(params);
         const credited = res.data?.data?.amount_credited;

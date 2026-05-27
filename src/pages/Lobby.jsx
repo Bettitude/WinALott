@@ -49,12 +49,9 @@ function useCountdown(targetMs) {
 
 const STATUS_FILTERS = ['Live', 'Upcoming', 'Free'];
 
-function Toggle({ on, onClick }) {
+function Toggle({ on }) {
   return (
-    <div
-      onClick={onClick}
-      className={`relative w-8 h-4 rounded-full transition-colors cursor-pointer shrink-0 ${on ? 'bg-[#1A4D8F]' : 'bg-gray-200'}`}
-    >
+    <div className={`relative w-8 h-4 rounded-full transition-colors cursor-pointer shrink-0 pointer-events-none ${on ? 'bg-[#1A4D8F]' : 'bg-gray-200 dark:bg-slate-600'}`}>
       <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-4' : 'translate-x-0.5'}`} />
     </div>
   );
@@ -195,10 +192,10 @@ export default function Lobby() {
                 <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-3">Status</p>
                 <div className="space-y-3">
                   {STATUS_FILTERS.map(s => (
-                    <label key={s} className="flex items-center justify-between cursor-pointer">
+                    <div key={s} onClick={() => toggleStatus(s)} className="flex items-center justify-between cursor-pointer py-0.5">
                       <span className="text-sm font-medium text-gray-600 dark:text-slate-300">{s}</span>
-                      <Toggle on={activeStatuses.has(s)} onClick={() => toggleStatus(s)} />
-                    </label>
+                      <Toggle on={activeStatuses.has(s)} />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -301,10 +298,10 @@ export default function Lobby() {
               <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-3">Filters</p>
               <div className="space-y-2.5">
                 {STATUS_FILTERS.map(s => (
-                  <label key={s} className="flex items-center justify-between cursor-pointer gap-2">
-                    <span className="text-xs font-medium text-gray-600 dark:text-slate-300">{s}</span>
-                    <Toggle on={activeStatuses.has(s)} onClick={() => toggleStatus(s)} />
-                  </label>
+                  <div key={s} onClick={() => toggleStatus(s)} className="flex items-center justify-between cursor-pointer gap-2 py-0.5 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 px-1 -mx-1 transition-colors">
+                    <span className="text-xs font-medium text-gray-600 dark:text-slate-300 select-none">{s}</span>
+                    <Toggle on={activeStatuses.has(s)} />
+                  </div>
                 ))}
               </div>
             </div>
@@ -405,7 +402,7 @@ export default function Lobby() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-white/70">Total pool</span>
-                  <span className="text-xs font-black text-[#F5C518]">${totalPool.toFixed(0)}</span>
+                  <span className="text-xs font-black text-[#F5C518]">${(totalPool ?? 0).toFixed(0)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-white/70">Open markets</span>
@@ -642,7 +639,7 @@ export default function Lobby() {
                       </p>
                       <p className="text-[10px] text-gray-400 dark:text-slate-500 truncate">{m.market}</p>
                     </div>
-                    <span className="text-xs font-black text-green-600 dark:text-green-400 shrink-0">${m.prizePool.toFixed(0)}</span>
+                    <span className="text-xs font-black text-green-600 dark:text-green-400 shrink-0">${(m.prizePool ?? 0).toFixed(0)}</span>
                   </div>
                 ))}
               </div>
@@ -676,7 +673,7 @@ export default function Lobby() {
                       <p className="text-xs font-semibold text-[#1A1A2E] dark:text-slate-200">{w.username}</p>
                       <p className="text-[10px] text-gray-400 dark:text-slate-500 truncate">{w.market}</p>
                     </div>
-                    <span className="text-xs font-black text-[#1A4D8F] dark:text-blue-400 shrink-0">+${w.prize.toFixed(2)}</span>
+                    <span className="text-xs font-black text-[#1A4D8F] dark:text-blue-400 shrink-0">+${(w.prize ?? 0).toFixed(2)}</span>
                   </div>
                 ))}
               </div>

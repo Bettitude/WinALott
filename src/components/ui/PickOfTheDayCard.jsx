@@ -119,10 +119,26 @@ export default function PickOfTheDayCard({ matches = [] }) {
           </div>
 
           {/* Price */}
-          <div className="text-center mb-4">
+          <div className="text-center mb-3">
             <span className="text-2xl font-black text-[#1A4D8F]">{formatBTP(match.price)}</span>
             <span className="text-gray-400 text-xs ml-1">/ ticket</span>
           </div>
+
+          {/* Tickets fill */}
+          {match.maxTickets > 0 && (
+            <div className="mb-4">
+              <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                <span>{match.ticketsSold || 0} sold</span>
+                <span>{match.maxTickets} max</span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#1A4D8F] rounded-full transition-all"
+                  style={{ width: `${Math.min(100, Math.round(((match.ticketsSold || 0) / match.maxTickets) * 100))}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* CTA Buttons */}

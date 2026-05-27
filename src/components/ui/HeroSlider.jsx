@@ -5,6 +5,7 @@ import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
 import PickOfTheDayCard from './PickOfTheDayCard';
 import { useMatches } from '../../hooks/useMatches';
+import { POTD_PICKS, applyPick } from '../../data/adminPicks';
 
 const slides = [
   {
@@ -28,8 +29,11 @@ const slides = [
 ];
 
 export default function HeroSlider() {
-  const { matches } = useMatches({ limit: 3 });
-  const potd = matches;
+  const { matches } = useMatches({ limit: POTD_PICKS.length + 2 });
+  const potd = matches
+    .filter(m => m.status !== 'finished')
+    .slice(0, POTD_PICKS.length)
+    .map((m, i) => applyPick(m, POTD_PICKS[i]));
 
   return (
     <div className="relative">

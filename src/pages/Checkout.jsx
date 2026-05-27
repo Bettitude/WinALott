@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiCheck, FiShoppingBag, FiArrowLeft, FiStar, FiAward, FiZap, FiCopy,
+import { FiCheck, FiCheckCircle, FiShoppingBag, FiArrowLeft, FiStar, FiAward, FiZap, FiCopy,
          FiLogIn, FiShoppingCart, FiAlertCircle, FiPlusCircle } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
@@ -221,18 +221,58 @@ export default function Checkout() {
               <div className="flex justify-between font-black text-lg mb-2">
                 <span className="text-[#1A1A2E]">Total</span>
                 <span className="text-[#1A4D8F]">
-                  {cartTotal.toLocaleString()} BTP
+                  {cartTotal.toLocaleString()} WAP
                 </span>
               </div>
-              <p className="text-xs text-gray-400 mb-6">
-                ≈ ${(cartTotal / BTP_PER_USD).toFixed(2)} USD at current rate (1 USD = {BTP_PER_USD} BTP)
+              <p className="text-xs text-gray-400 mb-4">
+                ≈ ${(cartTotal / BTP_PER_USD).toFixed(2)} USD at current rate (1 USD = {BTP_PER_USD} WAP)
               </p>
-              <button
-                onClick={() => setStep(2)}
-                className="w-full bg-[#1A4D8F] text-white font-bold py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors text-sm"
-              >
-                Continue to Payment
-              </button>
+
+              {/* Direct pay when balance is sufficient */}
+              {hasEnoughBTP ? (
+                <>
+                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-2.5 mb-4">
+                    <div className="flex items-center gap-2">
+                      <FiCheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-green-700">Balance ready</p>
+                        <p className="text-xs text-green-600">{balance.toLocaleString()} WAP available</p>
+                      </div>
+                    </div>
+                    <p className="text-xs font-black text-green-700">{(balance - cartTotal).toLocaleString()} remaining</p>
+                  </div>
+                  {errors.general && (
+                    <div className="mb-3 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 text-red-600 text-xs">
+                      <FiAlertCircle className="w-3.5 h-3.5 shrink-0" />{errors.general}
+                    </div>
+                  )}
+                  <button
+                    onClick={handlePay}
+                    disabled={loading}
+                    className="w-full bg-[#F5C518] text-[#1A1A2E] font-black py-3.5 rounded-xl hover:brightness-105 transition-all disabled:opacity-60 text-sm flex items-center justify-center gap-2"
+                  >
+                    {loading
+                      ? <><span className="w-4 h-4 border-2 border-[#1A1A2E] border-t-transparent rounded-full animate-spin" />Processing…</>
+                      : `Pay ${cartTotal.toLocaleString()} WAP`}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl px-4 py-2.5 mb-4">
+                    <FiAlertCircle className="w-4 h-4 text-orange-500 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-orange-700">Insufficient balance</p>
+                      <p className="text-xs text-orange-600">Need {shortfall.toLocaleString()} more WAP (≈ ${(shortfall / BTP_PER_USD).toFixed(2)})</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setStep(2)}
+                    className="w-full bg-[#1A4D8F] text-white font-bold py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors text-sm"
+                  >
+                    Top Up &amp; Pay
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>
@@ -244,34 +284,34 @@ export default function Checkout() {
           <button onClick={() => setStep(1)} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-5">
             <FiArrowLeft className="w-4 h-4" /> Back
           </button>
-          <h2 className="text-xl font-black text-[#1A1A2E] mb-5">Pay with BT Points</h2>
+          <h2 className="text-xl font-black text-[#1A1A2E] mb-5">Pay with WAP</h2>
 
-          {/* BTP Balance status */}
+          {/* WAP Balance status */}
           <div className={`rounded-2xl p-4 mb-6 border-2 ${hasEnoughBTP ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-black uppercase tracking-wider text-gray-500">Your BTP Balance</p>
+              <p className="text-xs font-black uppercase tracking-wider text-gray-500">Your WAP Balance</p>
               <span className={`text-base font-black ${hasEnoughBTP ? 'text-green-700' : 'text-red-600'}`}>
-                {balance.toLocaleString()} BTP
+                {balance.toLocaleString()} WAP
               </span>
             </div>
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-wider text-gray-500">Order Total</p>
               <span className="text-base font-black text-[#1A4D8F]">
-                {cartTotal.toLocaleString()} BTP
+                {cartTotal.toLocaleString()} WAP
               </span>
             </div>
             {hasEnoughBTP ? (
               <div className="mt-3 flex items-center gap-2 text-green-700">
                 <FiCheck className="w-4 h-4 shrink-0" />
                 <p className="text-xs font-semibold">
-                  After payment: <strong>{(balance - cartTotal).toLocaleString()} BTP</strong> remaining
+                  After payment: <strong>{(balance - cartTotal).toLocaleString()} WAP</strong> remaining
                 </p>
               </div>
             ) : (
               <div className="mt-3 flex items-center gap-2 text-red-600">
                 <FiAlertCircle className="w-4 h-4 shrink-0" />
                 <p className="text-xs font-semibold">
-                  You need <strong>{shortfall.toLocaleString()} more BTP</strong>
+                  You need <strong>{shortfall.toLocaleString()} more WAP</strong>
                   {' '}(≈ ${(shortfall / BTP_PER_USD).toFixed(2)} USD)
                 </p>
               </div>
@@ -280,8 +320,8 @@ export default function Checkout() {
 
           {/* Conversion rate info */}
           <div className="bg-[#F5C518]/10 border border-[#F5C518]/30 rounded-xl px-4 py-3 mb-6 text-xs text-gray-600">
-            <p className="font-bold text-[#1A1A2E] mb-1">BTP Conversion Rate</p>
-            <p>1 USD = {BTP_PER_USD} BTP &nbsp;·&nbsp; 1 BTP = ${(1 / BTP_PER_USD).toFixed(4)} USD</p>
+            <p className="font-bold text-[#1A1A2E] mb-1">WAP Conversion Rate</p>
+            <p>1 USD = {BTP_PER_USD} WAP &nbsp;·&nbsp; 1 WAP = ${(1 / BTP_PER_USD).toFixed(4)} USD</p>
             <p className="text-gray-400 mt-0.5">Rate is set by the admin and may change at any time.</p>
           </div>
 
@@ -298,20 +338,20 @@ export default function Checkout() {
               disabled={loading}
               className="w-full bg-[#F5C518] text-[#1A1A2E] font-black py-3.5 rounded-xl hover:brightness-105 transition-all disabled:opacity-60 text-sm flex items-center justify-center gap-2"
             >
-              {loading ? 'Processing…' : `Pay ${cartTotal.toLocaleString()} BTP`}
+              {loading ? 'Processing…' : `Pay ${cartTotal.toLocaleString()} WAP`}
             </button>
           ) : (
             <div className="space-y-3">
               <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-center">
-                <p className="text-red-600 font-bold text-sm mb-1">Insufficient BT Points</p>
+                <p className="text-red-600 font-bold text-sm mb-1">Insufficient WAP Balance</p>
                 <p className="text-red-500 text-xs">
-                  You need {shortfall.toLocaleString()} more BTP (≈ ${(shortfall / BTP_PER_USD).toFixed(2)}) to complete this order.
+                  You need {shortfall.toLocaleString()} more WAP (≈ ${(shortfall / BTP_PER_USD).toFixed(2)}) to complete this order.
                 </p>
               </div>
 
-              {/* Buy BTP directly with PayPal */}
+              {/* Buy WAP directly with PayPal */}
               <div className="border border-gray-200 rounded-xl p-4">
-                <p className="text-xs font-black text-gray-500 uppercase tracking-wider mb-3">Buy BT Points with PayPal</p>
+                <p className="text-xs font-black text-gray-500 uppercase tracking-wider mb-3">Top Up WAP with PayPal</p>
                 <PayPalHostedButton />
               </div>
 
@@ -389,7 +429,7 @@ export default function Checkout() {
 
                     <div className="shrink-0 text-right">
                       <p className="font-black text-[#1A4D8F]">
-                        {tk.price === 0 ? 'FREE' : `$${tk.price.toFixed(2)}`}
+                        {!tk.price ? 'FREE' : `$${(tk.price ?? 0).toFixed(2)}`}
                       </p>
                       <p className="text-[10px] text-gray-400 mt-0.5 font-mono">ID: {tk.matchId}</p>
                     </div>

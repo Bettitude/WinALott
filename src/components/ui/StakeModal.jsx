@@ -413,7 +413,7 @@ export default function StakeModal({ match, open, onClose }) {
                             ? 'bg-orange-100 text-orange-600 hover:bg-orange-200'
                             : 'bg-[#F5C518] hover:brightness-105 text-[#1A1A2E]'
                         }`}>
-                        {pick && selectedTier && !hasEnoughBalance ? 'Top Up to Play' : (chosen ? formatBTP(chosen.price) : 'Use BTP')}
+                        {pick && selectedTier && !hasEnoughBalance ? 'Top Up to Play' : (chosen ? formatBTP(chosen.price) : 'Use WAP')}
                       </button>
                     ) : (
                       <Link to="/auth/login" onClick={onClose}
