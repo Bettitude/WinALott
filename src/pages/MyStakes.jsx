@@ -278,12 +278,12 @@ export default function MyStakes() {
                 {f}
               </button>
             ))}
-            <Link
+            {/* <Link
               to="/dashboard/history"
               className="ml-auto shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-100 transition-colors"
             >
               <FiCalendar className="w-3 h-3" /> Calendar View
-            </Link>
+            </Link> */}
           </div>
 
           {filteredHistory.length === 0 ? (

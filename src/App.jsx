@@ -26,7 +26,7 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 // Dashboard
 import Dashboard from './pages/dashboard/Dashboard';
 import MyStakes from './pages/MyStakes';
-import MyHistory from './pages/dashboard/MyTickets';
+// import MyHistory from './pages/dashboard/MyTickets';
 import MyProfile from './pages/dashboard/MyProfile';
 import MyWinnings from './pages/dashboard/MyWinnings';
 import Notifications from './pages/dashboard/Notifications';
@@ -105,8 +105,8 @@ function AppRoutes() {
           {/* Protected Dashboard */}
           <Route path="/my-stakes" element={<ProtectedRoute><MyStakes /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/dashboard/tickets" element={<ProtectedRoute><MyHistory /></ProtectedRoute>} />
-          <Route path="/dashboard/history" element={<ProtectedRoute><MyHistory /></ProtectedRoute>} />
+          {/* <Route path="/dashboard/tickets" element={<ProtectedRoute><MyHistory /></ProtectedRoute>} /> */}
+          {/* <Route path="/dashboard/history" element={<ProtectedRoute><MyHistory /></ProtectedRoute>} /> */}
           <Route path="/dashboard/profile" element={<ProtectedRoute><MyProfile /></ProtectedRoute>} />
           <Route path="/dashboard/winnings" element={<ProtectedRoute><MyWinnings /></ProtectedRoute>} />
           <Route path="/dashboard/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
