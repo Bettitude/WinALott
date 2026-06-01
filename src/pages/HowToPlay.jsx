@@ -4,12 +4,12 @@ import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 const faqItems = [
   { q: 'What is WinALot?', a: 'WinALot is a football sweepstakes and prediction platform by Bettitude Inc. You buy tickets for specific football markets, and if your prediction matches the admin pick, you enter a random draw for prize money.' },
-  { q: 'How much does a ticket cost?', a: 'Standard tickets cost $0.99 each. We also offer free BTGiveaway tickets periodically at no cost.' },
+  { q: 'How much does a ticket cost?', a: 'Standard tickets cost $0.99 each. We also offer free WAL Giveaway tickets periodically at no cost.' },
   { q: 'How are winners selected?', a: "All users whose prediction matches the admin's pick are entered into a random draw. Winners are selected randomly from this pool, ensuring fair play for everyone." },
   { q: 'What markets can I predict on?', a: 'We offer a wide range of markets including Corners, Total Goals, Total Cards, BTTS, Shots on Target, Fouls, Throw Ins, Penalties, and Goal Scorers.' },
   { q: 'When do draws take place?', a: 'Draws happen automatically after the match result is confirmed, typically within 2 hours of the final whistle.' },
   { q: 'How do I claim my winnings?', a: 'Winnings are credited to your WinALot account. You can request a withdrawal from your dashboard. Processing takes 1-3 business days.' },
-  { q: 'What is the BTGiveaway?', a: 'BTGiveaway is our free-to-play tier. Selected matches are available with free tickets — no purchase required. Everyone gets a shot at winning.' },
+  { q: 'What is the WAL Giveaway?', a: 'WAL Giveaway is our free-to-play tier. Selected matches are available with free tickets — no purchase required. Everyone gets a shot at winning.' },
   { q: 'Is there an age restriction?', a: 'Yes. You must be 18 years or older to participate on WinALot. We take responsible gambling seriously.' },
   { q: 'Can I add multiple tickets to my cart?', a: 'Yes! You can add tickets for multiple matches to your cart and check out in a single transaction.' },
   { q: 'What payment methods are accepted?', a: 'We accept payments via PayPal, Stripe, and bank transfer for users in Australia.' },
@@ -20,7 +20,7 @@ const steps = [
   { n: 1, title: 'Create Your Account', desc: 'Sign up for free on WinALot. Just your name, email and you\'re in.' },
   { n: 2, title: 'Browse the Lobby', desc: 'Explore all active prediction markets. Filter by league, market type, or upcoming kickoff time.' },
   { n: 3, title: 'Choose Your Prediction', desc: 'Each match has an admin prediction. Decide: do you Agree (YES) or Disagree (NO)?' },
-  { n: 4, title: 'Buy Your Ticket', desc: 'Tickets cost just $0.99. Free tickets are also available through BTGiveaway events.' },
+  { n: 4, title: 'Buy Your Ticket', desc: 'Tickets cost just $0.99. Free tickets are also available through WAL Giveaway events.' },
   { n: 5, title: 'Watch & Wait', desc: 'Sit back and follow the match. Our platform tracks all results in real time.' },
   { n: 6, title: 'Match the Prediction', desc: 'If the final result matches the admin\'s pick AND your pick, you enter the prize draw.' },
   { n: 7, title: 'Win the Prize!', desc: 'Winners are randomly selected from all correct predictors. Claim your prize from your dashboard!' },
@@ -78,7 +78,7 @@ export default function HowToPlay() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               { label: 'Standard Ticket', price: '$0.99', badge: 'Per Match', color: 'bg-white', textColor: 'text-[#1A4D8F]' },
-              { label: 'BTGiveaway Ticket', price: 'FREE', badge: 'Selected Matches', color: 'bg-[#F5C518]', textColor: 'text-[#1A1A2E]' },
+              { label: 'WAL Giveaway Ticket', price: 'FREE', badge: 'Selected Matches', color: 'bg-[#F5C518]', textColor: 'text-[#1A1A2E]' },
             ].map(t => (
               <div key={t.label} className={`${t.color} rounded-2xl p-5 shadow-lg`}>
                 <span className="text-xs font-bold uppercase tracking-widest text-gray-400">{t.badge}</span>

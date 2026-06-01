@@ -12,7 +12,7 @@ import Lobby from './pages/Lobby';
 import MatchDetails from './pages/MatchDetails';
 import HowToPlay from './pages/HowToPlay';
 import Winners from './pages/Winners';
-import BTGiveaway from './pages/BTGiveaway';
+import WALGiveaway from './pages/BTGiveaway';
 import WorldCup from './pages/WorldCup';
 import PartnerWithUs from './pages/PartnerWithUs';
 import Cart from './pages/Cart';
@@ -26,7 +26,7 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 // Dashboard
 import Dashboard from './pages/dashboard/Dashboard';
 import MyStakes from './pages/MyStakes';
-// import MyHistory from './pages/dashboard/MyTickets';
+import MyHistory from './pages/dashboard/MyTickets';
 import MyProfile from './pages/dashboard/MyProfile';
 import MyWinnings from './pages/dashboard/MyWinnings';
 import Notifications from './pages/dashboard/Notifications';
@@ -90,7 +90,8 @@ function AppRoutes() {
           <Route path="/match/:matchId" element={<MatchDetails />} />
           <Route path="/how-to-play" element={<HowToPlay />} />
           <Route path="/winners" element={<Winners />} />
-          <Route path="/btgiveaway" element={<BTGiveaway />} />
+          <Route path="/wal-giveaway" element={<WALGiveaway />} />
+          <Route path="/btgiveaway" element={<Navigate to="/wal-giveaway" replace />} />
           <Route path="/worldcup" element={<WorldCup />} />
           <Route path="/partner-with-us" element={<PartnerWithUs />} />
           <Route path="/cart" element={<Cart />} />
@@ -105,8 +106,8 @@ function AppRoutes() {
           {/* Protected Dashboard */}
           <Route path="/my-stakes" element={<ProtectedRoute><MyStakes /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          {/* <Route path="/dashboard/tickets" element={<ProtectedRoute><MyHistory /></ProtectedRoute>} /> */}
-          {/* <Route path="/dashboard/history" element={<ProtectedRoute><MyHistory /></ProtectedRoute>} /> */}
+          <Route path="/dashboard/tickets" element={<ProtectedRoute><MyHistory /></ProtectedRoute>} />
+          <Route path="/dashboard/history" element={<ProtectedRoute><MyHistory /></ProtectedRoute>} />
           <Route path="/dashboard/profile" element={<ProtectedRoute><MyProfile /></ProtectedRoute>} />
           <Route path="/dashboard/winnings" element={<ProtectedRoute><MyWinnings /></ProtectedRoute>} />
           <Route path="/dashboard/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />

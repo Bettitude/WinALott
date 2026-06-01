@@ -109,8 +109,8 @@ function DepositModal({ onClose, onSuccess }) {
       {provider === 'paypal' ? (
         <div>
           <p className="text-xs text-gray-400 dark:text-slate-500 mb-3 leading-relaxed">
-            Click the button below to complete your WAP purchase securely via PayPal.
-            WAP will be credited to your wallet once payment is confirmed.
+            Click the button below to complete your WALP purchase securely via PayPal.
+            WALP will be credited to your wallet once payment is confirmed. (1 WALP = $1.00 USD)
           </p>
           <PayPalHostedButton className="mb-2" />
         </div>

@@ -7,7 +7,7 @@ import Logo from '../ui/Logo';
 
 const platformLinks = [
   { label: 'Lobby',              to: '/lobby' },
-  { label: 'BTGiveaway',         to: '/btgiveaway' },
+  { label: 'WAL Giveaway',       to: '/wal-giveaway' },
   { label: 'Winners',            to: '/winners' },
   { label: 'Leaderboard',        to: '/leaderboard' },
   { label: 'How to Play',        to: '/how-to-play' },

@@ -12,7 +12,13 @@ export function normalizeMatch(match) {
   const maxTickets = market.max_tickets  || 0;
   const prizePool  = Math.floor(priceCents * maxTickets * 0.9) / 100;
 
-  const statusMap = { active: 'upcoming', live: 'live', finished: 'finished', draft: 'upcoming' };
+  const statusMap = { active: 'active', live: 'live', finished: 'finished', draft: 'upcoming' };
+
+  // Parse auto_options if stored as string
+  let autoOptions = market.auto_options;
+  if (typeof autoOptions === 'string') {
+    try { autoOptions = JSON.parse(autoOptions); } catch { autoOptions = null; }
+  }
 
   return {
     id:         match.id,
@@ -26,21 +32,23 @@ export function normalizeMatch(match) {
       short: (match.team_away || '???').slice(0, 3).toUpperCase(),
       logo:  match.away_logo || match.team_away_logo || null,
     },
-    league:        match.league     || '',
+    league:         match.league     || '',
     date,
     time,
-    market:        market.name      || '',
-    marketTag:     market.type      || '',
-    adminPick:     market.correct_prediction || '',
-    price:         priceCents / 100,
-    maxWinners:    market.max_winners || 5,
+    market:         market.name      || '',
+    marketTag:      market.type      || '',
+    adminPick:      market.admin_pick || market.correct_prediction || '',
+    predictionType: market.prediction_type || 'market_pick',
+    autoOptions:    autoOptions || null,
+    price:          priceCents / 100,
+    maxWinners:     market.max_winners || 5,
     prizePool,
-    tier:          market.tier      || 'silver',
-    fillPercent:   market.fill_percent || 0,
-    status:        statusMap[match.status] || 'upcoming',
-    score:         (match.score?.home != null || match.score?.away != null) ? match.score : null,
-    minute:        match.minute     || null,
-    apiFootballId: match.api_football_id || null,
+    tier:           market.tier      || 'silver',
+    fillPercent:    market.fill_percent || 0,
+    status:         statusMap[match.status] || 'upcoming',
+    score:          (match.score?.home != null || match.score?.away != null) ? match.score : null,
+    minute:         match.minute     || null,
+    apiFootballId:  match.api_football_id || null,
     // keep originals for detail pages
     _raw: match,
   };

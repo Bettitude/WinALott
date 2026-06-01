@@ -4,8 +4,8 @@ import { FiUsers, FiGrid, FiCreditCard, FiRefreshCw } from 'react-icons/fi';
 import Logo from '../../components/ui/Logo';
 
 const PERKS = [
-  { Icon: FiCreditCard,  text: 'Buy WAP once — stake across all matches' },
-  { Icon: FiRefreshCw,   text: 'Top up anytime; points never expire' },
+  { Icon: FiCreditCard,  text: 'Buy WALP once — stake across all matches' },
+  { Icon: FiRefreshCw,   text: 'Top up anytime; 1 WALP = $1.00 USD' },
   { Icon: FiUsers,       text: 'Join 12,400+ active players worldwide' },
 ];
 
@@ -35,12 +35,12 @@ export default function Signup() {
 
           {/* WAP explanation */}
           <div className="bg-[#F5C518]/10 border border-[#F5C518]/25 rounded-xl p-4 mb-6">
-            <p className="text-xs font-black text-[#F5C518] uppercase tracking-wide mb-2">How WAP Works</p>
+            <p className="text-xs font-black text-[#F5C518] uppercase tracking-wide mb-2">How WALP Works</p>
             <ul className="space-y-1.5">
-              <li className="text-xs text-blue-200 leading-relaxed">Buy WAP once using card or bank transfer</li>
-              <li className="text-xs text-blue-200 leading-relaxed">Use WAP to stake on any prediction market</li>
-              <li className="text-xs text-blue-200 leading-relaxed">Win more WAP — convert to cash at any time</li>
-              <li className="text-xs text-blue-200 leading-relaxed">Admin sets the exchange rate (e.g. 100 WAP = $1)</li>
+              <li className="text-xs text-blue-200 leading-relaxed">1 WALP = $1.00 USD — simple, always</li>
+              <li className="text-xs text-blue-200 leading-relaxed">Buy WALP once using card or bank transfer</li>
+              <li className="text-xs text-blue-200 leading-relaxed">Use WALP to stake on any prediction market</li>
+              <li className="text-xs text-blue-200 leading-relaxed">Win more WALP — convert to cash at any time</li>
             </ul>
           </div>
 

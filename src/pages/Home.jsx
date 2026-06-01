@@ -18,7 +18,7 @@ import { FEATURED_PICKS, applyPick } from '../data/adminPicks';
 
 const STATS = [
   { Icon: FiUsers,       label: 'Active Players',  value: '12,400+', color: 'text-[#1A4D8F]',  bg: 'bg-blue-50' },
-  { Icon: FiAward,       label: 'Total Prize Pool', value: '4.8M WAP', color: 'text-green-600',  bg: 'bg-green-50' },
+  { Icon: FiAward,       label: 'Total Prize Pool', value: '4.8M WALP', color: 'text-green-600',  bg: 'bg-green-50' },
   { Icon: FiTrendingUp,  label: 'Markets Live',     value: '120+',     color: 'text-purple-600', bg: 'bg-purple-50' },
   { Icon: FiCheckCircle, label: 'Verified Winners', value: '9,800+',   color: 'text-[#F5C518]',  bg: 'bg-yellow-50' },
 ];
@@ -35,7 +35,7 @@ const BREAKING_NEWS = [
   'FIFA World Cup 2026 kicks off June 11 — USA, Canada & Mexico hosting',
   'UEFA Champions League final ticket predictions now live on WinALot',
   'Premier League title race tightens — predict the winner and win big',
-  'Copa America 2026 predictions open — enter free with BTGiveaway',
+  'Copa America 2026 predictions open — enter free with WAL Giveaway',
   'New platinum markets added for El Clasico — prize pool $2,500+',
 ];
 

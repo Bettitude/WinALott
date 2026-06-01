@@ -23,8 +23,8 @@ function generateTicketNumber() {
   return `WAL-${date}-${seq}`;
 }
 
-// Admin-set conversion rate: how many BTP per 1 USD
-const BTP_PER_USD = 100;
+// 1 WALP = $1 USD
+const BTP_PER_USD = 1;
 
 export default function Checkout() {
   const { items, cartTotal, clearCart } = useCart();
@@ -221,11 +221,11 @@ export default function Checkout() {
               <div className="flex justify-between font-black text-lg mb-2">
                 <span className="text-[#1A1A2E]">Total</span>
                 <span className="text-[#1A4D8F]">
-                  {cartTotal.toLocaleString()} WAP
+                  {cartTotal.toLocaleString()} WALP
                 </span>
               </div>
               <p className="text-xs text-gray-400 mb-4">
-                ≈ ${(cartTotal / BTP_PER_USD).toFixed(2)} USD at current rate (1 USD = {BTP_PER_USD} WAP)
+                1 WALP = $1.00 USD &nbsp;·&nbsp; You pay ${cartTotal.toFixed(2)} USD equivalent
               </p>
 
               {/* Direct pay when balance is sufficient */}
@@ -236,7 +236,7 @@ export default function Checkout() {
                       <FiCheckCircle className="w-4 h-4 text-green-500 shrink-0" />
                       <div>
                         <p className="text-xs font-bold text-green-700">Balance ready</p>
-                        <p className="text-xs text-green-600">{balance.toLocaleString()} WAP available</p>
+                        <p className="text-xs text-green-600">{balance.toLocaleString()} WALP available</p>
                       </div>
                     </div>
                     <p className="text-xs font-black text-green-700">{(balance - cartTotal).toLocaleString()} remaining</p>
@@ -253,7 +253,7 @@ export default function Checkout() {
                   >
                     {loading
                       ? <><span className="w-4 h-4 border-2 border-[#1A1A2E] border-t-transparent rounded-full animate-spin" />Processing…</>
-                      : `Pay ${cartTotal.toLocaleString()} WAP`}
+                      : `Pay ${cartTotal.toLocaleString()} WALP`}
                   </button>
                 </>
               ) : (
@@ -262,7 +262,7 @@ export default function Checkout() {
                     <FiAlertCircle className="w-4 h-4 text-orange-500 shrink-0" />
                     <div>
                       <p className="text-xs font-bold text-orange-700">Insufficient balance</p>
-                      <p className="text-xs text-orange-600">Need {shortfall.toLocaleString()} more WAP (≈ ${(shortfall / BTP_PER_USD).toFixed(2)})</p>
+                      <p className="text-xs text-orange-600">Need {shortfall.toLocaleString()} more WALP (≈ ${shortfall.toFixed(2)})</p>
                     </div>
                   </div>
                   <button
@@ -284,35 +284,35 @@ export default function Checkout() {
           <button onClick={() => setStep(1)} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-5">
             <FiArrowLeft className="w-4 h-4" /> Back
           </button>
-          <h2 className="text-xl font-black text-[#1A1A2E] mb-5">Pay with WAP</h2>
+          <h2 className="text-xl font-black text-[#1A1A2E] mb-5">Pay with WALP</h2>
 
-          {/* WAP Balance status */}
+          {/* WALP Balance status */}
           <div className={`rounded-2xl p-4 mb-6 border-2 ${hasEnoughBTP ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-black uppercase tracking-wider text-gray-500">Your WAP Balance</p>
+              <p className="text-xs font-black uppercase tracking-wider text-gray-500">Your WALP Balance</p>
               <span className={`text-base font-black ${hasEnoughBTP ? 'text-green-700' : 'text-red-600'}`}>
-                {balance.toLocaleString()} WAP
+                {balance.toLocaleString()} WALP
               </span>
             </div>
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-wider text-gray-500">Order Total</p>
               <span className="text-base font-black text-[#1A4D8F]">
-                {cartTotal.toLocaleString()} WAP
+                {cartTotal.toLocaleString()} WALP
               </span>
             </div>
             {hasEnoughBTP ? (
               <div className="mt-3 flex items-center gap-2 text-green-700">
                 <FiCheck className="w-4 h-4 shrink-0" />
                 <p className="text-xs font-semibold">
-                  After payment: <strong>{(balance - cartTotal).toLocaleString()} WAP</strong> remaining
+                  After payment: <strong>{(balance - cartTotal).toLocaleString()} WALP</strong> remaining
                 </p>
               </div>
             ) : (
               <div className="mt-3 flex items-center gap-2 text-red-600">
                 <FiAlertCircle className="w-4 h-4 shrink-0" />
                 <p className="text-xs font-semibold">
-                  You need <strong>{shortfall.toLocaleString()} more WAP</strong>
-                  {' '}(≈ ${(shortfall / BTP_PER_USD).toFixed(2)} USD)
+                  You need <strong>{shortfall.toLocaleString()} more WALP</strong>
+                  {' '}(≈ ${shortfall.toFixed(2)} USD)
                 </p>
               </div>
             )}
@@ -320,9 +320,9 @@ export default function Checkout() {
 
           {/* Conversion rate info */}
           <div className="bg-[#F5C518]/10 border border-[#F5C518]/30 rounded-xl px-4 py-3 mb-6 text-xs text-gray-600">
-            <p className="font-bold text-[#1A1A2E] mb-1">WAP Conversion Rate</p>
-            <p>1 USD = {BTP_PER_USD} WAP &nbsp;·&nbsp; 1 WAP = ${(1 / BTP_PER_USD).toFixed(4)} USD</p>
-            <p className="text-gray-400 mt-0.5">Rate is set by the admin and may change at any time.</p>
+            <p className="font-bold text-[#1A1A2E] mb-1">WALP Value</p>
+            <p>1 WALP = $1.00 USD &nbsp;·&nbsp; What you see is what you pay</p>
+            <p className="text-gray-400 mt-0.5">WALP is the platform currency used to enter all markets.</p>
           </div>
 
           {errors.general && (
@@ -338,20 +338,20 @@ export default function Checkout() {
               disabled={loading}
               className="w-full bg-[#F5C518] text-[#1A1A2E] font-black py-3.5 rounded-xl hover:brightness-105 transition-all disabled:opacity-60 text-sm flex items-center justify-center gap-2"
             >
-              {loading ? 'Processing…' : `Pay ${cartTotal.toLocaleString()} WAP`}
+              {loading ? 'Processing…' : `Pay ${cartTotal.toLocaleString()} WALP`}
             </button>
           ) : (
             <div className="space-y-3">
               <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-center">
-                <p className="text-red-600 font-bold text-sm mb-1">Insufficient WAP Balance</p>
+                <p className="text-red-600 font-bold text-sm mb-1">Insufficient WALP Balance</p>
                 <p className="text-red-500 text-xs">
-                  You need {shortfall.toLocaleString()} more WAP (≈ ${(shortfall / BTP_PER_USD).toFixed(2)}) to complete this order.
+                  You need {shortfall.toLocaleString()} more WALP (≈ ${shortfall.toFixed(2)}) to complete this order.
                 </p>
               </div>
 
-              {/* Buy WAP directly with PayPal */}
+              {/* Buy WALP directly with PayPal */}
               <div className="border border-gray-200 rounded-xl p-4">
-                <p className="text-xs font-black text-gray-500 uppercase tracking-wider mb-3">Top Up WAP with PayPal</p>
+                <p className="text-xs font-black text-gray-500 uppercase tracking-wider mb-3">Top Up WALP with PayPal</p>
                 <PayPalHostedButton />
               </div>
 

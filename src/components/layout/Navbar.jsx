@@ -14,7 +14,7 @@ const navLinks = [
   { to: '/how-to-play',   label: 'How to Play' },
   { to: '/leaderboard',   label: 'Leaderboard' },
   { to: '/winners',       label: 'Winners' },
-  { to: '/btgiveaway',    label: 'BTGiveaway' },
+  { to: '/wal-giveaway',  label: 'WAL Giveaway' },
 ];
 
 const bottomNavItems = [
@@ -142,7 +142,7 @@ export default function Navbar() {
                       to="/dashboard/wallet"
                       className="flex items-center gap-1 whitespace-nowrap text-[#b89300] dark:text-[#F5C518] text-xs font-bold px-2 py-1.5 hover:bg-[#F5C518]/20 transition-colors"
                     >
-                      <span className="text-[10px] font-black text-[#F5C518] leading-none">WAP</span>
+                      <span className="text-[10px] font-black text-[#F5C518] leading-none">WALP</span>
                       {showBTP
                         ? <span className="tabular-nums">{(user?.balance ?? 0).toLocaleString()}</span>
                         : <span className="tracking-widest text-[#F5C518]/60 font-black text-[10px]">•••</span>

@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 import LoginForm from '../../components/forms/LoginForm';
-import { FiShield, FiZap, FiAward, FiGrid } from 'react-icons/fi';
+import { FiShield, FiZap, FiAward, FiGrid, FiLock } from 'react-icons/fi';
 import Logo from '../../components/ui/Logo';
 
 const PERKS = [
   { Icon: FiShield, text: 'Provably fair draws — HMAC-SHA256 verified' },
-  { Icon: FiZap,    text: 'Instant WAP credited to your wallet' },
+  { Icon: FiZap,    text: 'Instant WALP credited to your wallet (1 WALP = $1)' },
   { Icon: FiAward,  text: 'Silver, Gold & Platinum prediction tiers' },
 ];
 
@@ -30,7 +30,7 @@ export default function Login() {
             Take a Side.<br />Win the Pride.
           </h2>
           <p className="text-blue-200 text-sm mb-8">
-            Predict football markets with WAP — stake, win, and cash out.
+            Predict football markets with WALP — stake, win, and cash out. 1 WALP = $1.00 USD.
           </p>
           <div className="space-y-3 mb-8">
             {PERKS.map(({ Icon, text }) => (
@@ -76,6 +76,13 @@ export default function Login() {
             <FiGrid className="w-3.5 h-3.5 text-[#F5C518] shrink-0" />
             One Bettitude account — works across WinALot, Bettitude.com &amp; more
           </div>
+
+          {typeof window !== 'undefined' && localStorage.getItem('redirect_after_login') && (
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium px-4 py-2.5 rounded-xl mb-4">
+              <FiLock className="w-3.5 h-3.5 shrink-0" />
+              Log in to continue — you will be returned to your previous page
+            </div>
+          )}
 
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-5 sm:p-8">
             <h2 className="text-xl font-black text-[#1A1A2E] mb-1">Welcome back</h2>

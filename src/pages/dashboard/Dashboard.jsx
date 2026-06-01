@@ -54,7 +54,7 @@ export default function Dashboard() {
         {[
           { to: '/lobby',                label: 'Buy Tickets',    desc: 'Browse active markets',     icon: FiList,       bg: 'bg-[#1A4D8F]'  },
           { to: '/dashboard/wallet',    label: 'My Wallet',      desc: 'Deposit or withdraw',       icon: FiDollarSign, bg: 'bg-green-600' },
-          // { to: '/dashboard/history',   label: 'My History',     desc: 'Calendar stake history',    icon: FiCalendar,   bg: 'bg-indigo-600' },
+          { to: '/dashboard/history',   label: 'My History',     desc: 'Calendar stake history',    icon: FiCalendar,   bg: 'bg-indigo-600' },
           { to: '/dashboard/referrals', label: 'Refer a Friend', desc: 'Earn per referral',         icon: FiGift,       bg: 'bg-orange-500' },
         ].map(q => (
           <Link key={q.to} to={q.to}

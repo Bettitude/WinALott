@@ -122,10 +122,11 @@ export default function SignupForm() {
           <input type="checkbox" checked={form.terms} onChange={e => set('terms', e.target.checked)}
             className="w-4 h-4 accent-[#1A4D8F] mt-0.5 rounded shrink-0" />
           <span className="text-sm text-gray-600">
-            I agree to the{' '}
-            <Link to="/terms" className="text-[#1A4D8F] hover:underline font-medium">Terms and Conditions</Link>
+            I agree with the Terms and Conditions for WinALot. Read it at{' '}
+            <Link to="/terms" className="text-[#1A4D8F] hover:underline font-medium">winalott.com/terms</Link>
             {' '}and{' '}
-            <Link to="/privacy" className="text-[#1A4D8F] hover:underline font-medium">Privacy Policy</Link>
+            <Link to="/privacy" className="text-[#1A4D8F] hover:underline font-medium">Privacy Policy</Link>.
+            {' '}Note: <strong>1 WALP = $1.00 USD</strong>.
           </span>
         </label>
         {errors.terms && <p className="text-red-500 text-xs">{errors.terms}</p>}

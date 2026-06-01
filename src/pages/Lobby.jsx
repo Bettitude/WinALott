@@ -1,12 +1,15 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   FiSearch, FiChevronDown, FiChevronUp, FiFilter, FiX,
   FiRadio, FiUsers, FiStar, FiAward, FiZap, FiTrendingUp, FiGift, FiClock,
+  FiCheckCircle,
 } from 'react-icons/fi';
 import MatchCard from '../components/ui/MatchCard';
 import { useMatches } from '../hooks/useMatches';
 import { useLiveFixtures } from '../hooks/useLiveFixtures';
 import { useWinners } from '../hooks/useWinners';
+
+const PAGE_SIZE = 20;
 
 const TIER_TABS = [
   { key: 'all',      label: 'All',      Icon: null,    activeBg: 'bg-[#1A4D8F]',  activeText: 'text-white' },
@@ -25,11 +28,64 @@ const POPULAR_LEAGUES = [
 ];
 
 const SORT_OPTIONS = [
-  { key: 'upcoming_first', label: 'Upcoming First' },
-  { key: 'prize_high',     label: 'Prize High-Low' },
-  { key: 'entry_low',      label: 'Entry Low-High' },
-  { key: 'soonest',        label: 'Soonest' },
+  { key: 'open_first',  label: 'Open First' },
+  { key: 'prize_high',  label: 'Prize High-Low' },
+  { key: 'entry_low',   label: 'Entry Low-High' },
+  { key: 'soonest',     label: 'Soonest' },
 ];
+
+// Group separator shown between Open / Live / Coming Up sections
+function GroupSeparator({ label, dot }) {
+  return (
+    <div className="flex items-center gap-3 py-2 col-span-full">
+      <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+      <span className="text-xs font-black uppercase tracking-widest text-gray-400 dark:text-slate-500 whitespace-nowrap">{label}</span>
+      <div className="flex-1 h-px bg-gray-100 dark:bg-slate-700" />
+    </div>
+  );
+}
+
+function isLive(m)     { return m.status === 'live'; }
+function isFinished(m) { return m.status === 'finished'; }
+function isOpen(m)     { return !isLive(m) && !isFinished(m); }
+function isUpcoming(m) { return false; } // all non-live non-finished = open
+
+// Renders the visible matches with group separators injected between buckets
+function InfiniteMatchList({ matches, allFiltered, sort }) {
+  if (sort !== 'open_first') {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-2">
+        {matches.map(m => <MatchCard key={m.id} match={m} />)}
+      </div>
+    );
+  }
+
+  const rows = [];
+  let shownOpen = false, shownLive = false;
+
+  matches.forEach(m => {
+    if (isOpen(m) && !shownOpen) {
+      rows.push({ type: 'sep', key: 'sep-open', label: 'Open for Staking', dot: 'bg-green-500' });
+      shownOpen = true;
+    }
+    if (isLive(m) && !shownLive) {
+      rows.push({ type: 'sep', key: 'sep-live', label: 'Live Now', dot: 'bg-red-500' });
+      shownLive = true;
+    }
+    rows.push({ type: 'card', key: m.id, match: m });
+  });
+
+  // Render in a CSS grid — separators span full width
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-2">
+      {rows.map(row =>
+        row.type === 'sep'
+          ? <GroupSeparator key={row.key} label={row.label} dot={row.dot} />
+          : <MatchCard key={row.key} match={row.match} />
+      )}
+    </div>
+  );
+}
 
 // 2026 FIFA World Cup opening match — June 11 2026 19:00 UTC
 const WC_START = new Date('2026-06-11T19:00:00Z').getTime();
@@ -47,7 +103,7 @@ function useCountdown(targetMs) {
   return { days, hours, mins, secs, started: remaining === 0 };
 }
 
-const STATUS_FILTERS = ['Live', 'Upcoming', 'Free'];
+const STATUS_FILTERS = ['Live', 'Free'];
 
 function Toggle({ on }) {
   return (
@@ -58,16 +114,16 @@ function Toggle({ on }) {
 }
 
 export default function Lobby() {
-  const [tierTab, setTierTab]             = useState('all');
-  const [search, setSearch]               = useState('');
+  const [tierTab, setTierTab]               = useState('all');
+  const [search, setSearch]                 = useState('');
   const [activeStatuses, setActiveStatuses] = useState(new Set());
-  const [sort, setSort]                   = useState('upcoming_first');
-  const [leagueOpen, setLeagueOpen]       = useState(true);
+  const [sort, setSort]                     = useState('open_first');
+  const [leagueOpen, setLeagueOpen]         = useState(true);
   const [selectedLeague, setSelectedLeague] = useState(null);
-  const [page, setPage]                   = useState(1);
-  const [filterOpen, setFilterOpen]       = useState(false);
-  const [showAllPools, setShowAllPools]   = useState(false);
-  const perPage = 12;
+  const [filterOpen, setFilterOpen]         = useState(false);
+  const [showAllPools, setShowAllPools]     = useState(false);
+  const [visibleCount, setVisibleCount]     = useState(PAGE_SIZE);
+  const sentinelRef                         = useRef(null);
 
   const { matches: allMatches } = useMatches();
   const { liveOnly } = useLiveFixtures();
@@ -86,11 +142,11 @@ export default function Lobby() {
       if (next.has(s)) next.delete(s); else next.add(s);
       return next;
     });
-    setPage(1);
+    setVisibleCount(PAGE_SIZE);
   };
 
+  // Sorted into three buckets: open → live → upcoming. Never show finished.
   const filtered = useMemo(() => {
-    // Always hide finished games — only live + upcoming belong in the lobby
     let list = allMatches.filter(m => m.status !== 'finished');
 
     if (tierTab === 'free') {
@@ -114,9 +170,8 @@ export default function Lobby() {
 
     if (activeStatuses.size > 0) {
       list = list.filter(m => {
-        if (activeStatuses.has('Live')     && m.status === 'live')     return true;
-        if (activeStatuses.has('Upcoming') && m.status === 'upcoming') return true;
-        if (activeStatuses.has('Free')     && m.price  === 0)          return true;
+        if (activeStatuses.has('Live') && m.status === 'live') return true;
+        if (activeStatuses.has('Free') && m.price  === 0)      return true;
         return false;
       });
     }
@@ -128,37 +183,39 @@ export default function Lobby() {
       );
     }
 
-    const statusOrder = { upcoming: 0, live: 1 };
-    switch (sort) {
-      case 'prize_high':
-        list = [...list].sort((a, b) => b.prizePool - a.prizePool);
-        break;
-      case 'entry_low':
-        list = [...list].sort((a, b) => a.price - b.price);
-        break;
-      case 'soonest':
-        list = [...list].sort((a, b) => {
-          const da = `${a.date}T${a.time}`;
-          const db = `${b.date}T${b.time}`;
-          return da.localeCompare(db);
-        });
-        break;
-      default: // upcoming_first
-        list = [...list].sort((a, b) => {
-          const sa = statusOrder[a.status] ?? 2;
-          const sb = statusOrder[b.status] ?? 2;
-          if (sa !== sb) return sa - sb;
-          const da = `${a.date}T${a.time}`;
-          const db = `${b.date}T${b.time}`;
-          return da.localeCompare(db);
-        });
-    }
+    // Sort within each bucket by date ASC (soonest first)
+    const dateKey = m => `${m.date || ''}T${m.time || ''}`;
 
-    return list;
+    if (sort === 'prize_high') return [...list].sort((a, b) => b.prizePool - a.prizePool);
+    if (sort === 'entry_low')  return [...list].sort((a, b) => a.price - b.price);
+    if (sort === 'soonest')    return [...list].sort((a, b) => dateKey(a).localeCompare(dateKey(b)));
+
+    // Default: open for staking → live → (no upcoming shown separately)
+    const live = list.filter(m => m.status === 'live').sort((a,b) => dateKey(a).localeCompare(dateKey(b)));
+    const open = list.filter(m => m.status !== 'live' && m.status !== 'finished').sort((a,b) => dateKey(a).localeCompare(dateKey(b)));
+    return [...open, ...live];
   }, [allMatches, tierTab, selectedLeague, activeStatuses, search, sort]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
-  const paginated  = filtered.slice((page - 1) * perPage, page * perPage);
+  // Reset visible count when filters change
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [filtered]);
+
+  // IntersectionObserver — load more when sentinel enters viewport
+  const loadMore = useCallback(() => {
+    setVisibleCount(v => Math.min(v + PAGE_SIZE, filtered.length));
+  }, [filtered.length]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) loadMore();
+    }, { rootMargin: '200px' });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [loadMore]);
+
+  const visible   = filtered.slice(0, visibleCount);
+  const hasMore   = visibleCount < filtered.length;
 
   const activeMatches = useMemo(() => allMatches.filter(m => m.status !== 'finished'), [allMatches]);
   const liveCount  = activeMatches.filter(m => m.status === 'live').length;
@@ -168,7 +225,7 @@ export default function Lobby() {
   [activeMatches]);
 
   const hasFilters = activeStatuses.size > 0 || selectedLeague || search.trim();
-  const activeFilterCount = activeStatuses.size + (selectedLeague ? 1 : 0) + (sort !== 'upcoming_first' ? 1 : 0);
+  const activeFilterCount = activeStatuses.size + (selectedLeague ? 1 : 0) + (sort !== 'open_first' ? 1 : 0);
   const wc = useCountdown(WC_START);
 
   return (
@@ -225,7 +282,7 @@ export default function Lobby() {
                 <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-3">League</p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => { setSelectedLeague(null); setPage(1); }}
+                    onClick={() => { setSelectedLeague(null); setVisibleCount(PAGE_SIZE); }}
                     className={`px-3 py-2 rounded-xl text-xs font-medium text-left ${
                       !selectedLeague
                         ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-800'
@@ -237,7 +294,7 @@ export default function Lobby() {
                   {leagues.map((l, i) => (
                     <button
                       key={i}
-                      onClick={() => { setSelectedLeague(l); setPage(1); }}
+                      onClick={() => { setSelectedLeague(l); setVisibleCount(PAGE_SIZE); }}
                       className={`px-3 py-2 rounded-xl text-xs font-medium text-left truncate ${
                         selectedLeague === l
                           ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-800'
@@ -253,7 +310,7 @@ export default function Lobby() {
 
             <div className="p-5 border-t border-gray-100 dark:border-slate-700 flex gap-3">
               <button
-                onClick={() => { setActiveStatuses(new Set()); setSelectedLeague(null); setSort('upcoming_first'); setPage(1); }}
+                onClick={() => { setActiveStatuses(new Set()); setSelectedLeague(null); setSort('open_first'); setVisibleCount(PAGE_SIZE); }}
                 className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:border-gray-300 dark:hover:border-slate-500 transition-colors"
               >
                 Reset
@@ -287,7 +344,7 @@ export default function Lobby() {
               <input
                 type="text"
                 value={search}
-                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                onChange={e => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
                 placeholder="Search matches…"
                 className="w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500"
               />
@@ -313,7 +370,7 @@ export default function Lobby() {
                 {POPULAR_LEAGUES.filter(l => leagues.includes(l)).map(l => (
                   <button
                     key={l}
-                    onClick={() => { setSelectedLeague(selectedLeague === l ? null : l); setPage(1); }}
+                    onClick={() => { setSelectedLeague(selectedLeague === l ? null : l); setVisibleCount(PAGE_SIZE); }}
                     className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all ${
                       selectedLeague === l
                         ? 'bg-[#1A4D8F] text-white'
@@ -343,7 +400,7 @@ export default function Lobby() {
               {leagueOpen && (
                 <div className="border-t border-gray-100 dark:border-slate-700 max-h-56 overflow-y-auto">
                   <button
-                    onClick={() => { setSelectedLeague(null); setPage(1); }}
+                    onClick={() => { setSelectedLeague(null); setVisibleCount(PAGE_SIZE); }}
                     className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors border-b border-gray-50 dark:border-slate-700 ${
                       !selectedLeague
                         ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400 font-bold'
@@ -355,7 +412,7 @@ export default function Lobby() {
                   {leagues.map((l, i) => (
                     <button
                       key={i}
-                      onClick={() => { setSelectedLeague(l); setPage(1); }}
+                      onClick={() => { setSelectedLeague(l); setVisibleCount(PAGE_SIZE); }}
                       className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors border-b border-gray-50 dark:border-slate-700 last:border-0 ${
                         selectedLeague === l
                           ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400 font-bold'
@@ -424,7 +481,7 @@ export default function Lobby() {
               <input
                 type="text"
                 value={search}
-                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                onChange={e => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
                 placeholder="Search matches…"
                 className="w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500"
               />
@@ -451,7 +508,7 @@ export default function Lobby() {
           {!wc.started && (
             <div
               className="mb-5 rounded-2xl overflow-hidden border border-[#1A4D8F]/30 dark:border-blue-700/40 bg-gradient-to-r from-[#0D2B5E] via-[#1A4D8F] to-[#0D2B5E] cursor-pointer"
-              onClick={() => { setSelectedLeague(selectedLeague === 'World Cup' ? null : 'World Cup'); setPage(1); }}
+              onClick={() => { setSelectedLeague(selectedLeague === 'World Cup' ? null : 'World Cup'); setVisibleCount(PAGE_SIZE); }}
               title="Filter World Cup matches"
             >
               <div className="px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -509,7 +566,7 @@ export default function Lobby() {
               return (
                 <button
                   key={t.key}
-                  onClick={() => { setTierTab(t.key); setPage(1); }}
+                  onClick={() => { setTierTab(t.key); setVisibleCount(PAGE_SIZE); }}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-black whitespace-nowrap transition-all ${
                     active
                       ? `${t.activeBg} ${t.activeText} shadow-md`
@@ -535,7 +592,7 @@ export default function Lobby() {
             </p>
             {hasFilters && (
               <button
-                onClick={() => { setActiveStatuses(new Set()); setSelectedLeague(null); setSearch(''); setSort('upcoming_first'); setPage(1); }}
+                onClick={() => { setActiveStatuses(new Set()); setSelectedLeague(null); setSearch(''); setSort('open_first'); setVisibleCount(PAGE_SIZE); }}
                 className="text-xs text-[#1A4D8F] font-semibold hover:underline"
               >
                 Clear filters
@@ -543,11 +600,9 @@ export default function Lobby() {
             )}
           </div>
 
-          {/* Grid */}
-          {paginated.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
-              {paginated.map(m => <MatchCard key={m.id} match={m} />)}
-            </div>
+          {/* Infinite scroll feed with group separators */}
+          {visible.length > 0 ? (
+            <InfiniteMatchList matches={visible} allFiltered={filtered} sort={sort} />
           ) : (
             <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700">
               <FiFilter className="w-10 h-10 text-gray-200 dark:text-slate-600 mx-auto mb-3" />
@@ -556,35 +611,19 @@ export default function Lobby() {
             </div>
           )}
 
-          {/* Pagination */}
-          <div className="flex items-center justify-center gap-2 mt-2">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-medium text-gray-600 dark:text-slate-300 hover:border-[#1A4D8F] hover:text-[#1A4D8F] dark:hover:border-blue-500 dark:hover:text-blue-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white dark:bg-slate-800"
-            >
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={`w-9 h-9 rounded-xl text-sm font-semibold transition-all ${
-                  p === page
-                    ? 'bg-[#1A4D8F] text-white shadow-sm'
-                    : 'border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:border-[#1A4D8F] hover:text-[#1A4D8F] dark:hover:border-blue-500 dark:hover:text-blue-400'
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-medium text-gray-600 dark:text-slate-300 hover:border-[#1A4D8F] hover:text-[#1A4D8F] dark:hover:border-blue-500 dark:hover:text-blue-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white dark:bg-slate-800"
-            >
-              Next
-            </button>
+          {/* Sentinel — triggers next batch load */}
+          <div ref={sentinelRef} className="py-6 flex items-center justify-center">
+            {hasMore ? (
+              <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-slate-500">
+                <span className="w-4 h-4 border-2 border-[#1A4D8F]/30 border-t-[#1A4D8F] rounded-full animate-spin" />
+                Loading more matches…
+              </div>
+            ) : filtered.length > 0 ? (
+              <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-slate-500">
+                <FiCheckCircle className="w-4 h-4 text-green-400" />
+                You've seen all available matches
+              </div>
+            ) : null}
           </div>
 
         </div>
