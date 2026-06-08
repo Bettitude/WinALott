@@ -78,6 +78,7 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
     || match._raw?.prediction_type
     || 'market_pick';
   const isMarketType = predictionType === 'market_type';
+  const isApiPick    = predictionType === 'api_pick';
 
   // Generate preview options for market_type markets
   const previewOptions = isMarketType
@@ -85,6 +86,7 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
        || generateOptions(match.market, match.homeTeam?.name, match.awayTeam?.name))
     : [];
 
+  const isUnavailable = match.marketAvailable === false;
   const isHot       = (match.fillPercent ?? 0) > 50;
   const closesMs    = new Date(`${match.date}T${match.time}:00`).getTime() - Date.now();
   const closesMin   = Math.floor(closesMs / 60000);
@@ -96,7 +98,7 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
 
   const openStakeModal = (e) => {
     e.stopPropagation();
-    if (stakingClosed) return;
+    if (isUnavailable || stakingClosed) return;
     if (!requireAuth(navigate, isAuthenticated)) return;
     setModalOpen(true);
   };
@@ -137,9 +139,11 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
               isMarketType
                 ? 'bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800'
+                : isApiPick
+                ? 'bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-800'
                 : 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400 border-blue-200 dark:border-blue-800'
             }`}>
-              {isMarketType ? 'Pick Option' : 'Yes / No'}
+              {isMarketType ? 'Pick Option' : isApiPick ? 'API Pick' : 'Yes / No'}
             </span>
           </div>
 
@@ -200,7 +204,9 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
               </div>
               {!isMarketType && match.adminPick && (
                 <div className="shrink-0 text-right">
-                  <p className="text-[10px] text-gray-400 dark:text-slate-500 leading-none mb-0.5">Admin Pick</p>
+                  <p className="text-[10px] text-gray-400 dark:text-slate-500 leading-none mb-0.5">
+                    {isApiPick ? 'API Pick' : 'Admin Pick'}
+                  </p>
                   <p className="text-xs font-bold text-[#1A1A2E] dark:text-slate-200">{match.adminPick}</p>
                 </div>
               )}
@@ -271,7 +277,11 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
 
           {/* Actions */}
           <div className="flex gap-2 mt-auto" onClick={e => e.stopPropagation()}>
-            {inCart ? (
+            {isUnavailable ? (
+              <div className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-gray-100 dark:bg-slate-700/60 border border-dashed border-gray-300 dark:border-slate-600 text-gray-400 dark:text-slate-500 text-xs font-semibold cursor-not-allowed">
+                <FiAlertCircle className="w-3.5 h-3.5" /> Unavailable
+              </div>
+            ) : inCart ? (
               <div className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-50 dark:bg-green-950/40 border-2 border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 text-xs font-black">
                 <FiCheckCircle className="w-3.5 h-3.5" /> In Cart
               </div>
@@ -296,12 +306,12 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
               </button>
             )}
             <button
-              onClick={(!inCart && !stakingClosed) ? openStakeModal : undefined}
-              disabled={inCart || stakingClosed}
+              onClick={(!inCart && !stakingClosed && !isUnavailable) ? openStakeModal : undefined}
+              disabled={inCart || stakingClosed || isUnavailable}
               className={`flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl text-xs font-semibold border-2 transition-all ${
                 inCart
                   ? 'border-green-200 dark:border-green-800 text-green-400 cursor-not-allowed bg-green-50 dark:bg-green-950/40'
-                  : stakingClosed
+                  : (stakingClosed || isUnavailable)
                   ? 'border-gray-100 dark:border-slate-700 text-gray-300 dark:text-slate-600 cursor-not-allowed'
                   : 'border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-[#1A4D8F] hover:text-[#1A4D8F] dark:hover:border-blue-600 dark:hover:text-blue-400'
               }`}

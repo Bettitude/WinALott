@@ -14,6 +14,9 @@ export function normalizeMatch(match) {
 
   const statusMap = { active: 'active', live: 'live', finished: 'finished', draft: 'upcoming' };
 
+  // marketAvailable: false when no active market exists (shows "Unavailable" in lobby)
+  const marketAvailable = !!(market.id && (market.status === 'active' || market.status === 'open'));
+
   // Parse auto_options if stored as string
   let autoOptions = market.auto_options;
   if (typeof autoOptions === 'string') {
@@ -40,6 +43,7 @@ export function normalizeMatch(match) {
     adminPick:      market.admin_pick || market.correct_prediction || '',
     predictionType: market.prediction_type || 'market_pick',
     autoOptions:    autoOptions || null,
+    marketAvailable,
     price:          priceCents / 100,
     maxWinners:     market.max_winners || 5,
     prizePool,
