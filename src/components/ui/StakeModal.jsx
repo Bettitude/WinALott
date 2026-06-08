@@ -13,6 +13,9 @@ import { matchApi } from '../../api/matchApi';
 import { normalizeMarketToTier } from '../../api/normalizers';
 import { generateOptions, getOptionsLayout } from '../../utils/marketOptions';
 
+const PAID_TIERS = ['silver', 'gold', 'platinum'];
+const TIER_ORDER  = ['silver', 'gold', 'platinum'];
+
 const TIER_CONFIG = {
   silver: {
     label: 'Silver', Icon: FiStar,
@@ -235,14 +238,27 @@ export default function StakeModal({ match, open, onClose }) {
       .then(res => {
         const markets = res.data?.data?.markets || [];
         const normalized = markets.map(normalizeMarketToTier);
-        setTiers(normalized);
-        const defaultTier = normalized.find(t => t.tier === match.tier) || normalized[0];
+        // Keep only paid tiers (Silver, Gold, Platinum), deduplicate by tier type,
+        // and sort in canonical order
+        const seen = new Set();
+        const deduped = [];
+        for (const t of normalized) {
+          if (PAID_TIERS.includes(t.tier) && !seen.has(t.tier)) {
+            seen.add(t.tier);
+            deduped.push(t);
+          }
+        }
+        deduped.sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier));
+        setTiers(deduped);
+        const defaultTier = deduped.find(t => t.tier === match.tier) || deduped[0];
         setSelectedTier(defaultTier?.tier || null);
       })
       .catch(() => {
+        const rawTier = match.tier || 'silver';
+        if (!PAID_TIERS.includes(rawTier)) { setTiers([]); setSelectedTier(null); return; }
         const fallback = [{
           marketId: match._raw?.id || match.id,
-          tier: match.tier || 'silver',
+          tier: rawTier,
           price: match.price || 0,
           maxWinners: match.maxWinners || 5,
           prizePool: match.prizePool || 0,
@@ -412,7 +428,13 @@ export default function StakeModal({ match, open, onClose }) {
             />
           )}
 
-          {/* Tier selection */}
+          {/* Tier selection — only shown for paid-tier games */}
+          {tiers.length === 0 ? (
+            <div className="mx-5 my-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-center">
+              <p className="text-sm font-bold text-green-700">Free Entry</p>
+              <p className="text-xs text-green-600 mt-1">This is a free giveaway — no stake required.</p>
+            </div>
+          ) : (
           <div className="px-5 py-4">
             <p className="text-xs font-black text-[#1A1A2E] uppercase tracking-wider mb-3">
               {alreadyStaked ? 'Available Tiers' : 'Select Stake Tier'}
@@ -469,10 +491,16 @@ export default function StakeModal({ match, open, onClose }) {
               })}
             </div>
           </div>
+          )}
 
           {/* CTA */}
           <div className="px-5 pb-6">
-            {alreadyStaked ? (
+            {tiers.length === 0 ? (
+              <button onClick={onClose}
+                className="w-full py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 bg-green-500 text-white hover:bg-green-600 transition-all">
+                <FiCheckCircle className="w-4 h-4" /> Visit Giveaway Page to Enter Free
+              </button>
+            ) : alreadyStaked ? (
               <button onClick={onClose}
                 className="w-full py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all">
                 <FiLock className="w-4 h-4" /> Already Staked — Remove from Cart to Change
