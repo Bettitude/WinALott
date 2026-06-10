@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import SignupForm from '../../components/forms/SignupForm';
-import { FiUsers, FiGrid, FiCreditCard, FiRefreshCw } from 'react-icons/fi';
+import { FiUsers, FiCreditCard, FiRefreshCw } from 'react-icons/fi';
 import Logo from '../../components/ui/Logo';
 
 const PERKS = [
@@ -8,8 +8,6 @@ const PERKS = [
   { Icon: FiRefreshCw,   text: 'Top up anytime; 1 WALP = $1.00 USD' },
   { Icon: FiUsers,       text: 'Join 12,400+ active players worldwide' },
 ];
-
-const PRODUCTS = ['Bettitude.com', 'ProBetPicks', 'BettiScores', 'BettiSports Blog'];
 
 export default function Signup() {
   return (
@@ -30,10 +28,10 @@ export default function Signup() {
             Your first win<br />starts here.
           </h2>
           <p className="text-blue-200 text-sm mb-8">
-            One free Bettitude account unlocks WinALot and every other product in our network.
+            Create your free WinALot account and start predicting football markets today.
           </p>
 
-          {/* WAP explanation */}
+          {/* WALP explanation */}
           <div className="bg-[#F5C518]/10 border border-[#F5C518]/25 rounded-xl p-4 mb-6">
             <p className="text-xs font-black text-[#F5C518] uppercase tracking-wide mb-2">How WALP Works</p>
             <ul className="space-y-1.5">
@@ -44,7 +42,7 @@ export default function Signup() {
             </ul>
           </div>
 
-          <div className="space-y-3 mb-8">
+          <div className="space-y-3">
             {PERKS.map(({ Icon, text }) => (
               <div key={text} className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-[#F5C518]/15 border border-[#F5C518]/30 flex items-center justify-center shrink-0">
@@ -53,21 +51,6 @@ export default function Signup() {
                 <p className="text-sm text-blue-100">{text}</p>
               </div>
             ))}
-          </div>
-
-          {/* SSO product list */}
-          <div className="border-t border-white/10 pt-6">
-            <p className="text-xs text-blue-300 font-semibold uppercase tracking-wide mb-3">
-              One account — all Bettitude products
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {PRODUCTS.map(p => (
-                <span key={p}
-                  className="text-xs bg-white/10 border border-white/15 text-blue-200 px-2.5 py-1 rounded-lg font-medium">
-                  {p}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
       </div>
@@ -83,22 +66,14 @@ export default function Signup() {
             <p className="text-gray-400 text-sm mt-2">Take a Side. Win the Pride.</p>
           </div>
 
-          {/* SSO notice (mobile only) */}
-          <div className="lg:hidden flex items-center gap-2 bg-[#0D2B5E] text-blue-200 text-xs font-medium px-4 py-2.5 rounded-xl mb-4">
-            <FiGrid className="w-3.5 h-3.5 text-[#F5C518] shrink-0" />
-            One account — works across WinALot, Bettitude.com &amp; more
-          </div>
-
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-5 sm:p-8">
             <h2 className="text-xl font-black text-[#1A1A2E] mb-1">Create your account</h2>
-            <p className="text-gray-400 text-sm mb-6">
-              Your Bettitude account — one sign-up, all products
-            </p>
+            <p className="text-gray-400 text-sm mb-6">Free to join. Start predicting in minutes.</p>
             <SignupForm />
           </div>
 
           <p className="text-center text-xs text-gray-400 mt-4">
-            Already have a Bettitude account?{' '}
+            Already have an account?{' '}
             <Link to="/auth/login" className="text-[#1A4D8F] font-semibold hover:underline">
               Log In
             </Link>

@@ -13,6 +13,7 @@ import { normalizeMatch, normalizeMarketToTier, normalizeTicket } from '../api/n
 import { useCart } from '../hooks/useCart';
 import { AuthContext } from '../context/AuthContext';
 import TeamAvatar from '../components/ui/TeamAvatar';
+import { OfficialLineup } from '../components/OfficialLineup';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const TABS = [
@@ -79,56 +80,6 @@ function NoData({ label }) {
     <div className="py-12 text-center text-gray-400 dark:text-slate-500">
       <p className="text-sm font-medium">{label || 'No data available'}</p>
       <p className="text-xs mt-1 text-gray-300 dark:text-slate-600">Data will appear once the match is active</p>
-    </div>
-  );
-}
-
-// ── Pitch lineup ─────────────────────────────────────────────────────────
-function groupByLine(players, side) {
-  const gk  = players.filter(p => ['G','GK'].includes(p.pos));
-  const def = players.filter(p => ['D','CB','RB','LB','RWB','LWB'].includes(p.pos));
-  const mid = players.filter(p => ['M','DM','CM','AM','RM','LM'].includes(p.pos));
-  const att = players.filter(p => ['F','RW','LW','ST','CF','SS'].includes(p.pos));
-  const rest = players.filter(p => ![...gk,...def,...mid,...att].includes(p));
-  const lines = [gk, def, mid, att].filter(l => l.length > 0);
-  if (rest.length) lines.splice(lines.length - 1, 0, rest);
-  return side === 'away' ? [...lines].reverse() : lines;
-}
-
-function PitchPlayer({ player, color, textColor }) {
-  const lastName = (player.name || '').split(' ').slice(-1)[0] || player.name || '';
-  return (
-    <div className="flex flex-col items-center gap-0.5" style={{ minWidth: 44 }}>
-      <div
-        className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black shadow-md border-2 border-white/30 relative"
-        style={{ backgroundColor: color, color: textColor }}
-      >
-        {player.number || '?'}
-        {player.rating && (
-          <span className={`absolute -bottom-1.5 -right-1 text-[8px] font-black px-1 rounded-sm leading-tight ${
-            Number(player.rating) >= 7 ? 'bg-green-400 text-white' :
-            Number(player.rating) >= 6 ? 'bg-yellow-400 text-[#1A1A2E]' : 'bg-red-400 text-white'
-          }`}>
-            {Number(player.rating).toFixed(1)}
-          </span>
-        )}
-      </div>
-      <span className="text-[9px] font-semibold text-white/90 text-center leading-tight max-w-[44px] truncate">{lastName}</span>
-    </div>
-  );
-}
-
-function PitchHalf({ players, side, color, textColor }) {
-  const lines = useMemo(() => groupByLine(players, side), [players, side]);
-  return (
-    <div className="flex flex-col justify-around flex-1 py-2 gap-1">
-      {lines.map((row, ri) => (
-        <div key={ri} className="flex justify-center items-center gap-1 flex-wrap">
-          {row.map((p, pi) => (
-            <PitchPlayer key={pi} player={p} color={color} textColor={textColor} />
-          ))}
-        </div>
-      ))}
     </div>
   );
 }
@@ -227,90 +178,18 @@ function LineupsTab({ lineups, match }) {
   const home = lineups.find(l => l.team?.name === match.homeTeam.name) || lineups[0];
   const away = lineups.find(l => l.team?.name === match.awayTeam.name) || lineups[1];
 
-  const toPlayer = (item) => ({
-    number: item.player?.number,
-    name:   item.player?.name || '',
-    pos:    item.player?.pos  || 'M',
-    rating: item.statistics?.[0]?.games?.rating || null,
-  });
-
-  const homePlayers = (home.startXI || []).map(toPlayer);
-  const awayPlayers = (away.startXI || []).map(toPlayer);
-  const homeBench   = (home.substitutes || []).map(p => p.player?.name).filter(Boolean);
-  const awayBench   = (away.substitutes || []).map(p => p.player?.name).filter(Boolean);
+  const fixtureData = match._raw?.fixture || match._raw?.[0]?.fixture;
+  const venue   = fixtureData?.venue?.name || '';
+  const dateStr = match.date || '';
 
   return (
-    <div className="p-3 space-y-3">
-      <div className="flex justify-between items-center px-1">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-[#1A4D8F]" />
-          <span className="text-xs font-black text-[#1A1A2E] dark:text-slate-200">{match.homeTeam.name}</span>
-          {home.formation && <span className="text-[10px] text-gray-400 bg-gray-100 dark:bg-slate-700 dark:text-slate-400 px-1.5 py-0.5 rounded-full">{home.formation}</span>}
-        </div>
-        <div className="flex items-center gap-2">
-          {away.formation && <span className="text-[10px] text-gray-400 bg-gray-100 dark:bg-slate-700 dark:text-slate-400 px-1.5 py-0.5 rounded-full">{away.formation}</span>}
-          <span className="text-xs font-black text-[#1A1A2E] dark:text-slate-200">{match.awayTeam.name}</span>
-          <div className="w-3 h-3 rounded-full bg-red-500" />
-        </div>
-      </div>
-
-      <div
-        className="relative rounded-2xl overflow-hidden"
-        style={{
-          background: 'linear-gradient(180deg, #1a6b2a 0%, #1e7a30 25%, #1a6b2a 50%, #1e7a30 75%, #1a6b2a 100%)',
-          minHeight: 480,
-        }}
-      >
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 480" preserveAspectRatio="none" fill="none">
-          <rect x="10" y="10" width="280" height="460" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
-          <line x1="10" y1="240" x2="290" y2="240" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
-          <circle cx="150" cy="240" r="38" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
-          <circle cx="150" cy="240" r="2.5" fill="rgba(255,255,255,0.4)" />
-          <rect x="65" y="10" width="170" height="65" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <rect x="105" y="10" width="90" height="30" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <circle cx="150" cy="68" r="28" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-          <rect x="65" y="405" width="170" height="65" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <rect x="105" y="450" width="90" height="30" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <circle cx="150" cy="412" r="28" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-          <path d="M10,10 Q16,10 16,16" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <path d="M290,10 Q284,10 284,16" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <path d="M10,470 Q16,470 16,464" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <path d="M290,470 Q284,470 284,464" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-        </svg>
-        <div className="relative z-10 flex flex-col" style={{ minHeight: 480 }}>
-          <div className="flex-1 flex flex-col justify-around px-3 pt-3 pb-1">
-            <PitchHalf players={homePlayers} side="home" color="#1A4D8F" textColor="#fff" />
-          </div>
-          <div className="flex items-center justify-center py-1 gap-3">
-            <div className="h-px flex-1 bg-white/10" />
-            <div className="w-7 h-7 rounded-full border border-white/25 bg-transparent" />
-            <div className="h-px flex-1 bg-white/10" />
-          </div>
-          <div className="flex-1 flex flex-col justify-around px-3 pt-1 pb-3">
-            <PitchHalf players={awayPlayers} side="away" color="#dc2626" textColor="#fff" />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        {[[match.homeTeam.name, homeBench, '#1A4D8F'], [match.awayTeam.name, awayBench, '#dc2626']].map(([name, bench, color]) => (
-          bench.length > 0 && (
-            <div key={name} className="bg-gray-50 dark:bg-slate-700/60 rounded-xl p-3">
-              <p className="text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: color }} />
-                {name} — Bench
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {bench.map((b, i) => (
-                  <span key={i} className="bg-white dark:bg-slate-600 border border-gray-200 dark:border-slate-500 text-gray-600 dark:text-slate-300 text-[10px] px-1.5 py-0.5 rounded-lg shadow-sm">
-                    {b.split(' ').slice(-1)[0]}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )
-        ))}
-      </div>
+    <div className="p-3">
+      <OfficialLineup
+        home={home}
+        away={away}
+        venue={venue}
+        date={dateStr}
+      />
     </div>
   );
 }

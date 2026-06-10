@@ -14,6 +14,7 @@ import HowToPlay from './pages/HowToPlay';
 import Winners from './pages/Winners';
 import WALGiveaway from './pages/BTGiveaway';
 import WorldCup from './pages/WorldCup';
+import WorldCupMatchDetail from './pages/WorldCupMatchDetail';
 import PartnerWithUs from './pages/PartnerWithUs';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
@@ -22,6 +23,7 @@ import Checkout from './pages/Checkout';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import ForgotPassword from './pages/auth/ForgotPassword';
+import AuthCallback from './pages/auth/AuthCallback';
 
 // Dashboard
 import Dashboard from './pages/dashboard/Dashboard';
@@ -79,6 +81,20 @@ function NotFound() {
   );
 }
 
+// Blocks ALL rendering until the auth state is resolved (prevents logged-out → logged-in flash)
+function AuthGate({ children }) {
+  const { loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
+        <p className="text-[#1A4D8F] text-2xl font-black tracking-tight mb-6">WinALot</p>
+        <div className="w-8 h-8 border-4 border-[#1A4D8F] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  return children;
+}
+
 function AppRoutes() {
   return (
     <BrowserRouter>
@@ -93,6 +109,7 @@ function AppRoutes() {
           <Route path="/wal-giveaway" element={<WALGiveaway />} />
           <Route path="/btgiveaway" element={<Navigate to="/wal-giveaway" replace />} />
           <Route path="/worldcup" element={<WorldCup />} />
+          <Route path="/worldcup/match/:fixtureId" element={<WorldCupMatchDetail />} />
           <Route path="/partner-with-us" element={<PartnerWithUs />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
@@ -102,6 +119,7 @@ function AppRoutes() {
           <Route path="/auth/signup" element={<Signup />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
 
           {/* Protected Dashboard */}
           <Route path="/my-stakes" element={<ProtectedRoute><MyStakes /></ProtectedRoute>} />
@@ -143,11 +161,13 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <CartProvider>
-          <RadioProvider>
-            <AppRoutes />
-          </RadioProvider>
-        </CartProvider>
+        <AuthGate>
+          <CartProvider>
+            <RadioProvider>
+              <AppRoutes />
+            </RadioProvider>
+          </CartProvider>
+        </AuthGate>
       </AuthProvider>
     </ThemeProvider>
   );

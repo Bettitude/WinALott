@@ -1,27 +1,25 @@
 import { createContext, useState, useEffect, useCallback } from 'react';
 import { authApi } from '../api/authApi';
+import {
+  getToken, setToken,
+  getStoredUser, setStoredUser,
+  clearSession, isRemembered,
+} from '../utils/tokenStorage';
 
 export const AuthContext = createContext(null);
 
-// Handles both Bettitude SSO response shape and legacy WinALot shape.
-// Balance is kept in BTP (= cents at 100 BTP per $1). Do NOT divide here —
-// the display layer divides by 100 to show dollars.
 function normalizeUser(u) {
   return {
     id:            u.id,
-    name:          u.name       || u.full_name  || '',
+    name:          u.full_name  || u.name     || '',
     username:      u.username   || '',
     email:         u.email      || '',
-    avatar:        u.avatar     || u.avatar_url || null,
-    country:       u.country    || '',
-    balance:       u.bt_points  != null
-                     ? Math.round(Number(u.bt_points) * 100)   // BTP SSO → cents
-                     : (u.wallet_balance || 0),                 // DB/demo already in cents
+    avatar:        u.avatar_url || u.avatar   || null,
+    balance:       u.wallet_balance ?? 0,
+    role:          u.role       || 'user',
     totalWinnings: 0,
     winRate:       0,
     activeTickets: 0,
-    role:          u.role       || u.user_type  || 'user',
-    userType:      u.user_type  || 'website',
   };
 }
 
@@ -29,131 +27,111 @@ export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Restore session on mount
+  // Restore session on mount — honours remember-me (localStorage) vs session-only (sessionStorage)
   useEffect(() => {
-    const token = localStorage.getItem('winalott_token');
+    const token = getToken();
     if (!token) { setLoading(false); return; }
-
-    // Restore demo sessions without hitting the API
-    if (token.startsWith('demo_token_')) {
-      try {
-        const stored = localStorage.getItem('winalott_user');
-        if (stored) setUser(JSON.parse(stored));
-      } catch { /* ignore */ }
-      setLoading(false);
-      return;
-    }
 
     authApi.me()
       .then(res => {
         const u = res.data?.data?.user || res.data?.user || res.data;
         if (u?.id) setUser(normalizeUser(u));
       })
-      .catch(() => {
-        localStorage.removeItem('winalott_token');
-        localStorage.removeItem('winalott_user');
-      })
+      .catch(() => clearSession())
       .finally(() => setLoading(false));
   }, []);
 
-  const login = async (email, password) => {
-    const DEMO_ACCOUNTS = [
-      { email: 'demo@winalott.com', password: 'Demo1234', user: {
-          id: 'demo-user-001', username: 'demo_user', full_name: 'Demo User',
-          email: 'demo@winalott.com', role: 'user', wallet_balance: 0,
-        },
-      },
-      { email: 'test@example.com', password: 'test1234', user: {
-          id: 'demo-user-002', username: 'test_player', full_name: 'Test Player',
-          email: 'test@example.com', role: 'user', wallet_balance: 0,
-        },
-      },
-    ];
-    const demo = DEMO_ACCOUNTS.find(a => a.email === email && a.password === password);
-    if (demo) {
-      const normalized = normalizeUser(demo.user);
-      localStorage.setItem('winalott_token', 'demo_token_' + demo.user.id);
-      localStorage.setItem('winalott_user', JSON.stringify(normalized));
-      setUser(normalized);
-      return { success: true };
-    }
-    const res = await authApi.login(email, password);
-    const token = res.data?.data?.token || res.data?.token || res.data?.data?.session?.access_token;
+  // remember=true  → localStorage  (survives browser close)
+  // remember=false → sessionStorage (cleared when tab closes)
+  const login = async (email, password, remember = true) => {
+    const res   = await authApi.login(email, password);
+    const token = res.data?.data?.token || res.data?.token;
     const u     = res.data?.data?.user  || res.data?.user;
     if (!token || !u) throw new Error('Invalid response from server');
-    localStorage.setItem('winalott_token', token);
+    setToken(token, remember);
     const normalized = normalizeUser(u);
+    setStoredUser(normalized, remember);
     setUser(normalized);
-    localStorage.setItem('winalott_user', JSON.stringify(normalized));
     return { success: true };
   };
 
+  // Called after Google OAuth callback — always remembered (browser redirect = deliberate action)
+  const loginWithToken = useCallback((token, user) => {
+    const normalized = normalizeUser(user);
+    setToken(token, true);
+    setStoredUser(normalized, true);
+    setUser(normalized);
+    return { success: true };
+  }, []);
+
+  // Redirects browser to backend Google OAuth initiation endpoint
+  const loginWithGoogle = useCallback(() => {
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+    window.location.href = `${apiBase}/auth/google`;
+  }, []);
+
   const signup = async (data) => {
     const payload = {
-      username:  data.username  || data.fullName?.toLowerCase().replace(/\s+/g, '_'),
-      full_name: data.fullName  || data.name || '',
-      email:     data.email,
-      password:  data.password,
-      phone:     data.phone     || undefined,
+      username:       data.username || data.email.split('@')[0],
+      full_name:      data.fullName || data.name || '',
+      email:          data.email,
+      password:       data.password,
+      phone:          data.phone          || undefined,
+      terms_accepted: data.terms_accepted ?? false,
+      age_confirmed:  data.age_confirmed  ?? false,
     };
     const res   = await authApi.register(payload);
-    const token = res.data?.data?.token || res.data?.token || res.data?.data?.session?.access_token;
+    const token = res.data?.data?.token || res.data?.token;
     const u     = res.data?.data?.user  || res.data?.user;
     if (!token || !u) throw new Error('Invalid response from server');
-    localStorage.setItem('winalott_token', token);
-    const normalized = normalizeUser({ ...u, username: data.username || u.username || u.name });
+    // New signups are always remembered — they just created an account
+    setToken(token, true);
+    const normalized = normalizeUser(u);
+    setStoredUser(normalized, true);
     setUser(normalized);
-    localStorage.setItem('winalott_user', JSON.stringify(normalized));
     return { success: true };
   };
 
   const logout = async () => {
     try { await authApi.logout(); } catch { /* ignore */ }
     setUser(null);
-    localStorage.removeItem('winalott_token');
-    localStorage.removeItem('winalott_user');
+    clearSession();
   };
 
-  // Update local user state + localStorage (works for both demo and real users)
   const updateUser = useCallback((updates) => {
     setUser(prev => {
       if (!prev) return prev;
-      const updated = { ...prev, ...updates };
-      localStorage.setItem('winalott_user', JSON.stringify(updated));
+      const updated    = { ...prev, ...updates };
+      const remembered = isRemembered();
+      setStoredUser(updated, remembered);
       return updated;
     });
   }, []);
 
-  // Re-fetch balance from the server (for real users after confirmed deposit)
   const refreshBalance = useCallback(async () => {
-    const token = localStorage.getItem('winalott_token');
-    // Demo users never hit the server — their balance lives in localStorage
-    if (token?.startsWith('demo_token_')) return;
     try {
       const res = await authApi.me();
       const u = res.data?.data?.user || res.data?.user || res.data;
       if (u?.id) {
         const normalized = normalizeUser(u);
         setUser(normalized);
-        localStorage.setItem('winalott_user', JSON.stringify(normalized));
+        setStoredUser(normalized, isRemembered());
       }
-    } catch { /* ignore — keep current state */ }
+    } catch { /* keep current state */ }
   }, []);
-
-  const isDemo = typeof window !== 'undefined' &&
-    !!localStorage.getItem('winalott_token')?.startsWith('demo_token_');
 
   return (
     <AuthContext.Provider value={{
       user,
       loading,
       isAuthenticated: !!user,
-      isDemo,
       login,
+      loginWithToken,
+      loginWithGoogle,
       logout,
       signup,
       updateUser,
-      updateProfile: updateUser,  // alias so Profile pages keep working
+      updateProfile: updateUser,
       refreshBalance,
     }}>
       {children}

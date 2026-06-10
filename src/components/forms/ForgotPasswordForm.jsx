@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiMail, FiCheckCircle } from 'react-icons/fi';
+import { authApi } from '../../api/authApi';
 
 export default function ForgotPasswordForm() {
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [sent, setSent] = useState(false);
+  const [email, setEmail]     = useState('');
+  const [error, setError]     = useState('');
+  const [sent, setSent]       = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -14,9 +15,15 @@ export default function ForgotPasswordForm() {
     if (!/\S+@\S+\.\S+/.test(email)) { setError('Enter a valid email'); return; }
     setError('');
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setLoading(false);
-    setSent(true);
+    try {
+      await authApi.forgotPassword(email);
+      setSent(true);
+    } catch {
+      // Always show success to prevent email enumeration
+      setSent(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (sent) {
@@ -29,7 +36,8 @@ export default function ForgotPasswordForm() {
         </div>
         <h3 className="font-bold text-[#1A1A2E] text-lg mb-2">Check your inbox</h3>
         <p className="text-gray-500 text-sm mb-6">
-          We sent a password reset link to <strong>{email}</strong>
+          If <strong>{email}</strong> is registered, a password reset link has been sent.
+          Check your spam folder if you don't see it within a minute.
         </p>
         <Link to="/auth/login" className="text-[#1A4D8F] font-semibold text-sm hover:underline">
           Back to Log In
@@ -45,10 +53,11 @@ export default function ForgotPasswordForm() {
       </p>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+        <label htmlFor="forgot-email" className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
         <div className="relative">
-          <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
+            id="forgot-email"
             type="email"
             value={email}
             onChange={e => { setEmail(e.target.value); setError(''); }}

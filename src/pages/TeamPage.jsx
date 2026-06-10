@@ -28,9 +28,11 @@ export default function TeamPage() {
   const { slug }  = useParams();
   const navigate  = useNavigate();
 
-  // `state` is set by MatchCard navigation: { team, league }
-  const team   = state?.team;
-  const league = state?.league || '';
+  // Accepts { team, league } from MatchCard OR { teamId, teamName, teamLogo } from WC pages
+  const team      = state?.team || (state?.teamId ? { id: state.teamId, name: state.teamName, logo: state.teamLogo } : null);
+  const league    = state?.league || '';
+  const fromMatch = state?.fromMatch || null;   // { title, path, state }
+  const opponent  = state?.opponent  || null;   // { id, name, logo }
 
   if (!team) {
     return (
@@ -93,13 +95,47 @@ export default function TeamPage() {
         )}
 
         <div className="relative max-w-5xl mx-auto px-4 py-8 sm:py-12">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-blue-300 hover:text-white text-sm font-medium mb-6 transition-colors"
-          >
-            <FiArrowLeft className="w-4 h-4" />
-            Back
-          </button>
+          {/* Navigation row */}
+          <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+            {fromMatch ? (
+              <button
+                onClick={() => navigate(fromMatch.path, { state: fromMatch.state })}
+                className="flex items-center gap-2 text-blue-300 hover:text-white text-sm font-medium transition-colors"
+              >
+                <FiArrowLeft className="w-4 h-4" />
+                {fromMatch.title}
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 text-blue-300 hover:text-white text-sm font-medium transition-colors"
+              >
+                <FiArrowLeft className="w-4 h-4" />
+                Back
+              </button>
+            )}
+
+            {/* Link to the other team in this match */}
+            {opponent && (
+              <button
+                onClick={() => navigate(`/team/${opponent.id}`, {
+                  state: {
+                    teamId: opponent.id, teamName: opponent.name, teamLogo: opponent.logo,
+                    league,
+                    fromMatch,
+                    opponent: { id: team.id, name: team.name, logo: team.logo },
+                  },
+                })}
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors"
+              >
+                {opponent.logo && (
+                  <img src={opponent.logo} alt={opponent.name} className="w-4 h-4 object-contain" onError={e => e.target.style.display='none'} />
+                )}
+                View {opponent.name} Stats
+                <FiArrowLeft className="w-3 h-3 rotate-180" />
+              </button>
+            )}
+          </div>
 
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
             {/* Team crest */}

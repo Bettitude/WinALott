@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiUsers, FiGift, FiCopy, FiCheck, FiShare2, FiCheckCircle, FiClock,
          FiMail, FiSend, FiArrowRight } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
+import apiClient from '../../api/apiClient';
 
 const STATUS_STYLE = {
   active:  { label: 'Active',  text: 'text-green-700',  bg: 'bg-green-50 dark:bg-green-950/40'  },
@@ -24,14 +25,23 @@ function Step({ number, title, desc }) {
 
 export default function Referrals() {
   const { user }  = useAuth();
-  const [copied, setCopied] = useState(false);
-  const [email, setEmail]   = useState('');
-  const [sending, setSending] = useState(false);
+  const [copied, setCopied]     = useState(false);
+  const [email, setEmail]       = useState('');
+  const [sending, setSending]   = useState(false);
   const [sentEmails, setSentEmails] = useState([]);
   const [emailError, setEmailError] = useState('');
+  const [stats, setStats]       = useState({ total_referrals: 0, total_earned: '$0.00' });
 
-  const refCode = user?.username ? `${user.username.toUpperCase()}-REF` : 'YOUR-REF';
-  const refLink = `https://winalott.com/auth/signup?ref=${refCode}`;
+  // Real referral code from the user's profile (8-char UUID prefix stored in DB)
+  const refCode = user?.referral_code || '--------';
+  const refLink = `${window.location.origin}/auth/signup?ref=${refCode}`;
+
+  // Load referral stats from backend
+  useEffect(() => {
+    apiClient.get('/referrals/stats')
+      .then(res => { if (res.data?.data) setStats(res.data.data); })
+      .catch(() => {});
+  }, []);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(refLink).catch(() => {});
@@ -65,17 +75,23 @@ export default function Referrals() {
     }
     setEmailError('');
     setSending(true);
-    await new Promise(r => setTimeout(r, 900));
-    setSentEmails(prev => [...prev, trimmed]);
-    setEmail('');
-    setSending(false);
+    try {
+      await apiClient.post('/referrals/invite', { invitee_email: trimmed });
+      setSentEmails(prev => [...prev, trimmed]);
+      setEmail('');
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Failed to send invite. Please try again.';
+      setEmailError(msg);
+    } finally {
+      setSending(false);
+    }
   };
 
-  const stats = [
-    { label: 'Total Referrals',  value: 0,       icon: FiUsers,       color: 'text-[#1A4D8F]',  bg: 'bg-blue-50 dark:bg-blue-950/40',   border: 'border-l-[#1A4D8F]' },
-    { label: 'Active Referrals', value: 0,       icon: FiCheckCircle, color: 'text-green-600',  bg: 'bg-green-50 dark:bg-green-950/40',  border: 'border-l-green-400' },
-    { label: 'Total Earned',     value: '$0.00', icon: FiGift,        color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-950/40', border: 'border-l-yellow-400' },
-    { label: 'Pending Bonus',    value: '$0.00', icon: FiClock,       color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-950/40', border: 'border-l-orange-400' },
+  const statCards = [
+    { label: 'Total Referrals',  value: stats.total_referrals, icon: FiUsers,       color: 'text-[#1A4D8F]',  bg: 'bg-blue-50 dark:bg-blue-950/40',   border: 'border-l-[#1A4D8F]' },
+    { label: 'Active Referrals', value: stats.total_referrals, icon: FiCheckCircle, color: 'text-green-600',  bg: 'bg-green-50 dark:bg-green-950/40',  border: 'border-l-green-400' },
+    { label: 'Total Earned',     value: stats.total_earned,    icon: FiGift,        color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-950/40', border: 'border-l-yellow-400' },
+    { label: 'Pending Bonus',    value: '$0.00',               icon: FiClock,       color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-950/40', border: 'border-l-orange-400' },
   ];
 
   return (
@@ -87,7 +103,7 @@ export default function Referrals() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        {stats.map(s => (
+        {statCards.map(s => (
           <div key={s.label} className={`bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-4 border-l-4 ${s.border}`}>
             <div className={`w-8 h-8 rounded-xl ${s.bg} flex items-center justify-center mb-2`}>
               <s.icon className={`w-4 h-4 ${s.color}`} />

@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiMail, FiLock, FiEye, FiEyeOff, FiLogIn } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
+import { friendlyError } from '../../utils/friendlyError';
 
 export default function LoginForm() {
-  const [form, setForm]     = useState({ email: '', password: '', remember: false });
-  const [errors, setErrors] = useState({});
+  const [form, setForm]         = useState({ email: '', password: '', remember: false });
+  const [errors, setErrors]     = useState({});
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading]   = useState(false);
-  const { login } = useAuth();
-  const navigate  = useNavigate();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { login, loginWithGoogle } = useAuth();
+  const navigate = useNavigate();
 
-  const redirectPath = localStorage.getItem('redirect_after_login');
+  const redirectPath = typeof window !== 'undefined' && localStorage.getItem('redirect_after_login');
 
   const afterLogin = () => {
     const dest = localStorage.getItem('redirect_after_login');
@@ -24,7 +26,7 @@ export default function LoginForm() {
     if (!form.email) e.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Enter a valid email';
     if (!form.password) e.password = 'Password is required';
-    else if (form.password.length < 6) e.password = 'Password must be at least 6 characters';
+    else if (form.password.length < 6) e.password = 'At least 6 characters';
     return e;
   };
 
@@ -35,45 +37,31 @@ export default function LoginForm() {
     setErrors({});
     setLoading(true);
     try {
-      const res = await login(form.email, form.password);
-      if (res.success) afterLogin();
-    } catch {
-      setErrors({ submit: 'Invalid email or password. Please try again.' });
+      await login(form.email, form.password, form.remember);
+      afterLogin();
+    } catch (err) {
+      setErrors({ submit: friendlyError(err, 'Invalid email or password. Please try again.') });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDemoLogin = async () => {
+  const handleGoogleLogin = () => {
     setErrors({});
-    setLoading(true);
-    try {
-      const res = await login('demo@winalott.com', 'Demo1234');
-      if (res.success) afterLogin();
-    } catch {
-      setErrors({ submit: 'Demo login failed. Please try again.' });
-    } finally {
-      setLoading(false);
-    }
+    setGoogleLoading(true);
+    loginWithGoogle(); // browser redirect — no return value
   };
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
-      {/* Staking redirect notice */}
       {redirectPath && (
         <div className="flex items-start gap-2.5 bg-[#0D2B5E] border border-[#1A4D8F] text-blue-200 text-sm px-4 py-3 rounded-xl">
           <FiLogIn className="w-4 h-4 text-[#F5C518] shrink-0 mt-0.5" />
-          <span>Please log in to continue staking. You'll be taken back to your match.</span>
+          <span>Please log in to continue. You'll be returned to your previous page.</span>
         </div>
       )}
-
-      {/* Demo shortcut */}
-      <button type="button" onClick={handleDemoLogin} disabled={loading}
-        className="w-full flex items-center justify-center gap-2 bg-[#F5C518]/15 border border-[#F5C518]/40 text-[#1A1A2E] text-xs font-bold py-2.5 rounded-xl hover:bg-[#F5C518]/25 transition-colors disabled:opacity-60">
-        {loading ? 'Logging in…' : 'Use Demo Account — demo@winalott.com / Demo1234'}
-      </button>
 
       {errors.submit && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
@@ -82,10 +70,10 @@ export default function LoginForm() {
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+        <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
         <div className="relative">
-          <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
+          <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <input id="login-email" type="email" value={form.email} onChange={e => set('email', e.target.value)}
             placeholder="you@example.com"
             className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] transition-colors ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
         </div>
@@ -93,10 +81,10 @@ export default function LoginForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+        <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
         <div className="relative">
-          <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input type={showPass ? 'text' : 'password'} value={form.password} onChange={e => set('password', e.target.value)}
+          <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <input id="login-password" type={showPass ? 'text' : 'password'} value={form.password} onChange={e => set('password', e.target.value)}
             placeholder="Your password"
             className={`w-full pl-10 pr-10 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] transition-colors ${errors.password ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
           <button type="button" onClick={() => setShowPass(!showPass)}
@@ -128,10 +116,13 @@ export default function LoginForm() {
         <div className="relative flex justify-center text-xs"><span className="bg-white px-3 text-gray-400">or continue with</span></div>
       </div>
 
-      <button type="button"
-        className="w-full flex items-center justify-center gap-3 border border-gray-200 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors font-medium">
-        <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
-        Continue with Google
+      <button type="button" onClick={handleGoogleLogin} disabled={googleLoading || loading}
+        className="w-full flex items-center justify-center gap-3 border border-gray-200 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors font-medium disabled:opacity-60 disabled:cursor-not-allowed">
+        {googleLoading
+          ? <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+          : <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
+        }
+        {googleLoading ? 'Redirecting…' : 'Continue with Google'}
       </button>
 
       <p className="text-center text-sm text-gray-500">

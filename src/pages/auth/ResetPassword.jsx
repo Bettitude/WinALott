@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiLock, FiEye, FiEyeOff, FiCheckCircle } from 'react-icons/fi';
+import { FiLock, FiEye, FiEyeOff, FiCheckCircle, FiAlertTriangle } from 'react-icons/fi';
 import Logo from '../../components/ui/Logo';
+import { authApi } from '../../api/authApi';
+import { friendlyError } from '../../utils/friendlyError';
 
 function StrengthBar({ password }) {
   const checks = [
@@ -10,7 +12,7 @@ function StrengthBar({ password }) {
     /[0-9]/.test(password),
     /[^A-Za-z0-9]/.test(password),
   ];
-  const score = checks.filter(Boolean).length;
+  const score  = checks.filter(Boolean).length;
   const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
   const colors = ['', 'bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-green-500'];
   if (!password) return null;
@@ -29,6 +31,8 @@ function StrengthBar({ password }) {
 }
 
 export default function ResetPassword() {
+  const [token,       setToken]       = useState(null);
+  const [tokenError,  setTokenError]  = useState(false);
   const [password,    setPassword]    = useState('');
   const [confirm,     setConfirm]     = useState('');
   const [showPass,    setShowPass]    = useState(false);
@@ -38,6 +42,25 @@ export default function ResetPassword() {
   const [error,       setError]       = useState('');
   const navigate = useNavigate();
 
+  // Extract the Supabase recovery token from the URL hash.
+  // Supabase sends: /auth/reset-password#access_token=XXX&type=recovery
+  useEffect(() => {
+    const hash   = new URLSearchParams(window.location.hash.slice(1));
+    const aToken = hash.get('access_token');
+    const type   = hash.get('type');
+
+    if (aToken && type === 'recovery') {
+      setToken(aToken);
+      // Remove the token from the URL bar immediately for security
+      window.history.replaceState(null, '', window.location.pathname);
+    } else if (aToken) {
+      // Access token present but not a recovery type — redirect
+      navigate('/auth/login', { replace: true });
+    } else {
+      setTokenError(true);
+    }
+  }, [navigate]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -45,22 +68,50 @@ export default function ResetPassword() {
     if (password !== confirm) { setError('Passwords do not match.'); return; }
 
     setLoading(true);
-    // In production: call POST /api/auth/reset-password with supabase session token
-    await new Promise(r => setTimeout(r, 1400));
-    setLoading(false);
-    setDone(true);
+    try {
+      await authApi.resetPassword(token, password);
+      setDone(true);
+    } catch (err) {
+      setError(friendlyError(err, 'Reset failed. The link may have expired.'));
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (tokenError) {
+    return (
+      <div className="min-h-[calc(100vh-64px)] bg-[#F5F7FA] flex items-center justify-center px-4 py-6">
+        <div className="w-full max-w-md text-center">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+            <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FiAlertTriangle className="w-8 h-8 text-amber-500" />
+            </div>
+            <h2 className="text-xl font-black text-[#1A1A2E] mb-2">Link Expired or Invalid</h2>
+            <p className="text-gray-400 text-sm mb-6">
+              This reset link is missing or has expired. Request a new one.
+            </p>
+            <Link to="/auth/forgot-password"
+              className="inline-block w-full bg-[#1A4D8F] text-white font-bold py-3 rounded-xl text-sm hover:bg-[#0D2B5E] transition-colors">
+              Request New Reset Link
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (done) {
     return (
-      <div className="min-h-[calc(100vh-64px)] bg-[#F5F7FA] flex items-center justify-center px-4 py-6 sm:py-10">
+      <div className="min-h-[calc(100vh-64px)] bg-[#F5F7FA] flex items-center justify-center px-4 py-6">
         <div className="w-full max-w-md text-center">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-5 sm:p-8">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
             <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <FiCheckCircle className="w-8 h-8 text-green-500" />
             </div>
             <h2 className="text-xl font-black text-[#1A1A2E] mb-2">Password Updated</h2>
-            <p className="text-gray-400 text-sm mb-6">Your password has been changed successfully. You can now log in with your new password.</p>
+            <p className="text-gray-400 text-sm mb-6">
+              Your password has been changed successfully. You can now log in.
+            </p>
             <button onClick={() => navigate('/auth/login')}
               className="w-full bg-[#1A4D8F] text-white font-bold py-3 rounded-xl text-sm hover:bg-[#0D2B5E] transition-colors">
               Go to Login
@@ -74,7 +125,6 @@ export default function ResetPassword() {
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[#F5F7FA] flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-block">
             <Logo variant="full" height={40} />
@@ -100,7 +150,6 @@ export default function ResetPassword() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* New password */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">New Password</label>
               <div className="relative">
@@ -120,7 +169,6 @@ export default function ResetPassword() {
               <StrengthBar password={password} />
             </div>
 
-            {/* Confirm password */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Confirm Password</label>
               <div className="relative">
@@ -144,10 +192,10 @@ export default function ResetPassword() {
               )}
             </div>
 
-            <button type="submit" disabled={loading || !password || !confirm}
+            <button type="submit" disabled={loading || !password || !confirm || !token}
               className="w-full bg-[#1A4D8F] text-white font-bold py-3 rounded-xl text-sm hover:bg-[#0D2B5E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2">
               {loading
-                ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full spin" />Updating...</>
+                ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Updating…</>
                 : 'Update Password'
               }
             </button>
