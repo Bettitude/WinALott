@@ -314,85 +314,173 @@ const TIER_STYLES = {
   platinum: { bg: 'bg-purple-500/20', text: 'text-purple-300', label: 'Platinum' },
 };
 
-function MarketCard({ market, isAuthenticated, navigate }) {
-  const [selected, setSelected] = useState(null);
-  const tier = TIER_STYLES[market.tier] || TIER_STYLES.silver;
-  const isClosed = market.status === 'settled' || market.status === 'closed';
+const MARKET_TYPE_LABELS = {
+  match_winner:       'Match Winner',
+  both_teams_score:   'Both Teams to Score',
+  over_under:         'Over / Under Goals',
+  first_goalscorer:   'First Goalscorer',
+  correct_score:      'Correct Score',
+  half_time:          'Half Time Result',
+  double_chance:      'Double Chance',
+  asian_handicap:     'Asian Handicap',
+};
 
-  const handleEnter = () => {
-    if (!isAuthenticated) { navigate('/auth/login'); return; }
-    // TODO: wire to backend ticket purchase
+function getMarketDisplay(market) {
+  if (market.prediction_type === 'market_type') {
+    return {
+      question: MARKET_TYPE_LABELS[market.market_type] || market.market_type,
+      options: (market.auto_options || []).map(o =>
+        typeof o === 'string' ? { key: o, label: o } : o
+      ),
+    };
+  }
+  // market_pick or api_pick — YES / NO vote against admin_pick
+  return {
+    question: market.admin_pick || 'Make your prediction',
+    options: [
+      { key: 'yes', label: 'Yes' },
+      { key: 'no', label: 'No'  },
+    ],
   };
+}
+
+function MarketCard({ market, isAuthenticated = false }) {
+  const navigate = useNavigate();
+  const [selected,  setSelected]  = useState(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting,setSubmitting]= useState(false);
+  const [error,     setError]     = useState(null);
+
+  const tier     = TIER_STYLES[market.tier] || TIER_STYLES.silver;
+  const isClosed = market.status === 'settled' || market.status === 'closed';
+  const { question, options } = getMarketDisplay(market);
+
+  const handleEnter = async () => {
+    if (!isAuthenticated) { navigate('/auth/login'); return; }
+    if (!selected) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('winalott_token') || sessionStorage.getItem('winalott_token');
+      const res = await fetch(`${API_BASE}/tickets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ market_id: market.id, match_id: market.match_id, user_prediction: selected }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Purchase failed');
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-4 flex items-start gap-3">
+        <FiCheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-green-300 font-black text-sm">Stake confirmed!</p>
+          <p className="text-white/40 text-xs mt-0.5">
+            Your ticket is active · {tier.label} tier
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`rounded-2xl border p-4 space-y-3 ${
       isClosed ? 'border-white/10 bg-white/[0.03] opacity-60' : 'border-white/15 bg-white/[0.05]'
     }`}>
-      {/* Header row */}
       <div className="flex items-center justify-between">
         <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${tier.bg} ${tier.text}`}>
           {tier.label}
         </span>
-        <div className="flex items-center gap-2 text-xs text-white/40">
+        <div className="flex items-center gap-1.5 text-xs text-white/40">
           <FiDollarSign className="w-3 h-3" />
-          {(market.ticket_price / 100).toFixed(2)} entry
+          ${(market.entry_fee / 100).toFixed(2)} entry
         </div>
       </div>
 
-      {/* Question */}
-      <p className="text-white font-bold text-sm">{market.name}</p>
-
-      {/* Options */}
-      {!isClosed && (
-        <div className="flex flex-wrap gap-2">
-          {(market.options || []).map(opt => (
-            <button
-              key={opt.key}
-              onClick={() => setSelected(opt.key)}
-              className={`flex-1 min-w-[70px] px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
-                selected === opt.key
-                  ? 'bg-[#F5C518] text-[#1A1A2E] border-[#F5C518]'
-                  : 'bg-white/5 text-white/60 border-white/10 hover:border-white/30 hover:text-white'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      )}
+      <p className="text-white font-bold text-sm">{question}</p>
 
       {isClosed ? (
         <p className="text-white/30 text-xs flex items-center gap-1.5">
-          <FiClock className="w-3 h-3" /> Predictions closed
+          <FiClock className="w-3 h-3" />
+          {market.status === 'settled' ? `Settled · correct: ${market.correct_outcome || '—'}` : 'Predictions closed'}
         </p>
       ) : (
-        <button
-          disabled={!selected}
-          onClick={handleEnter}
-          className={`w-full py-2.5 rounded-xl text-sm font-black transition-all ${
-            selected
-              ? 'bg-[#1A4D8F] text-white hover:bg-[#0D2B5E]'
-              : 'bg-white/5 text-white/20 cursor-not-allowed'
-          }`}
-        >
-          {selected ? `Enter — $${(market.ticket_price / 100).toFixed(2)}` : 'Pick an option above'}
-        </button>
+        <>
+          <div className="flex flex-wrap gap-2">
+            {options.map(opt => (
+              <button
+                key={opt.key}
+                onClick={() => setSelected(opt.key)}
+                className={`flex-1 min-w-[60px] px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
+                  selected === opt.key
+                    ? 'bg-[#F5C518] text-[#1A1A2E] border-[#F5C518]'
+                    : 'bg-white/5 text-white/60 border-white/10 hover:border-white/30 hover:text-white'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {error && <p className="text-red-400 text-[11px]">{error}</p>}
+
+          {!isAuthenticated ? (
+            <button
+              onClick={() => navigate('/auth/login')}
+              className="w-full flex items-center justify-center gap-2 bg-white/10 border border-white/20 text-white text-xs font-bold py-2.5 rounded-xl hover:bg-white/15 transition-colors"
+            >
+              <FiLogIn className="w-3.5 h-3.5" /> Log in to stake
+            </button>
+          ) : (
+            <button
+              disabled={!selected || submitting}
+              onClick={handleEnter}
+              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black transition-all ${
+                selected
+                  ? 'bg-[#1A4D8F] text-white hover:bg-[#0D2B5E] active:scale-[0.98]'
+                  : 'bg-white/5 text-white/20 cursor-not-allowed'
+              }`}
+            >
+              {submitting ? (
+                <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Processing…</>
+              ) : selected ? (
+                `Stake $${(market.entry_fee / 100).toFixed(2)}`
+              ) : (
+                'Pick an option'
+              )}
+            </button>
+          )}
+        </>
       )}
     </div>
   );
 }
 
-function StakesSection({ fixture, isAuthenticated }) {
-  const navigate = useNavigate();
-  const markets = fixture.markets || [];
-  const activeMarkets = markets.filter(m => m.status === 'active');
+function StakesSection({ markets, loading, isAuthenticated }) {
+  const openMarkets = markets.filter(m => m.status === 'open');
 
-  if (activeMarkets.length === 0) {
+  if (loading) {
     return (
-      <div className="border border-dashed border-white/10 rounded-2xl p-5">
-        {/* Header */}
+      <div className="border border-white/10 rounded-2xl p-5 flex items-center justify-center gap-2">
+        <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+        <span className="text-white/30 text-xs">Loading stakes…</span>
+      </div>
+    );
+  }
+
+  if (openMarkets.length === 0) {
+    return (
+      <div className="border border-dashed border-white/10 rounded-2xl p-4">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
             <FiLock className="w-4 h-4 text-white/30" />
           </div>
           <div>
@@ -402,26 +490,26 @@ function StakesSection({ fixture, isAuthenticated }) {
         </div>
 
         {/* Ghost preview */}
-        <div className="opacity-25 pointer-events-none space-y-3">
+        <div className="opacity-20 pointer-events-none space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black bg-[#F5C518]/20 text-[#F5C518] px-2 py-0.5 rounded-full uppercase tracking-widest">Gold</span>
+            <span className="text-[10px] font-black bg-[#F5C518]/20 text-[#F5C518] px-2 py-0.5 rounded-full uppercase">Gold</span>
             <span className="text-white/40 text-xs">$2.00 entry</span>
           </div>
-          <p className="text-white text-sm font-bold">Who will win this match?</p>
-          <div className="flex gap-2">
+          <p className="text-white text-xs font-bold">Match Winner</p>
+          <div className="flex gap-1.5">
             {['Home Win', 'Draw', 'Away Win'].map(opt => (
-              <div key={opt} className="flex-1 px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-center">
-                <p className="text-white text-xs font-bold">{opt}</p>
+              <div key={opt} className="flex-1 px-2 py-1.5 rounded-lg border border-white/10 bg-white/5 text-center">
+                <p className="text-white text-[10px] font-bold">{opt}</p>
               </div>
             ))}
           </div>
-          <div className="w-full py-2.5 rounded-xl bg-white/5 text-center">
-            <span className="text-white/20 text-sm font-black">Pick an option above</span>
+          <div className="w-full py-2 rounded-xl bg-white/5 text-center">
+            <span className="text-white/20 text-xs font-black">Pick an option</span>
           </div>
         </div>
 
-        <p className="text-white/20 text-[11px] text-center mt-4 border-t border-white/5 pt-4">
-          Stakes will open when the admin activates markets for this match
+        <p className="text-white/15 text-[10px] text-center mt-3 border-t border-white/5 pt-3">
+          Admin will open stakes before kick-off
         </p>
       </div>
     );
@@ -433,11 +521,11 @@ function StakesSection({ fixture, isAuthenticated }) {
         <FiZap className="w-4 h-4 text-[#F5C518]" />
         <h3 className="text-white font-black text-sm uppercase tracking-wide">Stakes</h3>
         <span className="bg-green-500/20 text-green-300 text-[10px] font-black px-2 py-0.5 rounded-full">
-          {activeMarkets.length} Open
+          {openMarkets.length} Open
         </span>
       </div>
-      {activeMarkets.map(market => (
-        <MarketCard key={market.id} market={market} isAuthenticated={isAuthenticated} navigate={navigate} />
+      {openMarkets.map(market => (
+        <MarketCard key={market.id} market={market} isAuthenticated={isAuthenticated} />
       ))}
     </div>
   );
@@ -457,13 +545,15 @@ export default function WorldCupMatchDetail() {
   const navigate            = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  const [tab,          setTab]          = useState('overview');
-  const [fixture,      setFixture]      = useState(state?.item || null);
-  const [allFixtures,  setAllFixtures]  = useState([]);
-  const [lineups,      setLineups]      = useState(null);
-  const [stats,        setStats]        = useState(null);
-  const [loading,      setLoading]      = useState(!state?.item);
-  const [sideFilter,   setSideFilter]   = useState('all');
+  const [tab,           setTab]           = useState('overview');
+  const [fixture,       setFixture]       = useState(state?.item || null);
+  const [allFixtures,   setAllFixtures]   = useState([]);
+  const [lineups,       setLineups]       = useState(null);
+  const [stats,         setStats]         = useState(null);
+  const [loading,       setLoading]       = useState(!state?.item);
+  const [sideFilter,    setSideFilter]    = useState('all');
+  const [markets,       setMarkets]       = useState([]);
+  const [marketsLoading,setMarketsLoading]= useState(true);
 
   // Fetch all fixtures (for sidebar + current if not in state)
   useEffect(() => {
@@ -492,6 +582,17 @@ export default function WorldCupMatchDetail() {
       if (lin?.length) setLineups(lin);
       if (st?.length)  setStats(st[0]?.statistics || st);
     }).catch(() => {});
+  }, [fixtureId]);
+
+  // Fetch markets from backend for this fixture
+  useEffect(() => {
+    setMarketsLoading(true);
+    setMarkets([]);
+    fetch(`${API_BASE}/markets/fixture/${fixtureId}`)
+      .then(r => r.json())
+      .then(d => { if (d.success) setMarkets(d.data?.markets || []); })
+      .catch(() => {})
+      .finally(() => setMarketsLoading(false));
   }, [fixtureId]);
 
   // Reset tab when fixture changes
@@ -648,8 +749,10 @@ export default function WorldCupMatchDetail() {
               />
             )}
 
-            {/* Stakes section — disabled until admin activates markets */}
-            <StakesSection fixture={fixture} isAuthenticated={isAuthenticated} />
+            {/* Stakes — mobile only (desktop version lives in the sidebar) */}
+            <div className="lg:hidden">
+              <StakesSection markets={markets} loading={marketsLoading} isAuthenticated={isAuthenticated} />
+            </div>
 
             {/* Tabs */}
             <div>
@@ -747,6 +850,9 @@ export default function WorldCupMatchDetail() {
           {/* ── RIGHT: sidebar ─────────────────────────────────────────────── */}
           <div className="hidden lg:block w-72 xl:w-80 shrink-0">
             <div className="sticky top-6 space-y-3 max-h-[calc(100vh-80px)] overflow-y-auto pr-1 scrollbar-hide">
+
+              {/* Stakes — desktop sidebar */}
+              <StakesSection markets={markets} loading={marketsLoading} isAuthenticated={isAuthenticated} />
 
               {/* Top ad */}
               <AdSlot label="Sponsored" />
