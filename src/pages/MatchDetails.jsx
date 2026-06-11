@@ -14,6 +14,7 @@ import { useCart } from '../hooks/useCart';
 import { AuthContext } from '../context/AuthContext';
 import TeamAvatar from '../components/ui/TeamAvatar';
 import { OfficialLineup } from '../components/OfficialLineup';
+import PotentialWinBanner from '../components/ui/PotentialWinBanner';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const TABS = [
@@ -1039,6 +1040,10 @@ export default function MatchDetails() {
           })}
         </div>
       </div>
+
+      {/* Floating potential-win betslip banner */}
+      <PotentialWinBanner />
+
     </div>
   );
 }

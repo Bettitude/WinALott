@@ -12,7 +12,16 @@ export function useLeaderboard(period = 'weekly') {
     matchApi.getLeaderboard(period)
       .then(res => {
         if (!cancelled) {
-          setRows(res.data?.data?.leaderboard || []);
+          const raw = res.data?.data?.leaderboard || [];
+          setRows(raw.map((r, i) => ({
+            rank:       r.rank ?? i + 1,
+            username:   r.username ?? 'Unknown',
+            wins:       r.total_wins ?? r.wins ?? 0,
+            totalPrize: (r.total_won ?? r.totalPrize ?? 0) / 100,
+            lastWin:    r.last_win
+              ? new Date(r.last_win).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              : '—',
+          })));
           setError(null);
         }
       })

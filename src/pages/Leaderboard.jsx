@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiAward, FiTrendingUp, FiUsers, FiDollarSign } from 'react-icons/fi';
 import { useLeaderboard } from '../hooks/useLeaderboard';
 import { useAuth } from '../hooks/useAuth';
+import { matchApi } from '../api/matchApi';
 
 const TABS = ['weekly', 'monthly', 'allTime'];
 const TAB_LABELS = { weekly: 'This Week', monthly: 'This Month', allTime: 'All Time' };
@@ -32,20 +33,56 @@ function RankBadge({ rank }) {
 const podiumColors  = ['bg-yellow-400', 'bg-gray-300', 'bg-orange-400'];
 const podiumHeights = ['h-24', 'h-16', 'h-12'];
 
+function fmt(cents) {
+  const dollars = cents / 100;
+  if (dollars >= 1_000_000) return `$${(dollars / 1_000_000).toFixed(1)}M`;
+  if (dollars >= 1_000)     return `$${(dollars / 1_000).toFixed(1)}K`;
+  return `$${dollars.toFixed(2)}`;
+}
+
 export default function Leaderboard() {
   const [tab, setTab] = useState('weekly');
   const { user }      = useAuth();
   const { rows, loading } = useLeaderboard(tab === 'allTime' ? 'alltime' : tab);
 
+  const [lbStats, setLbStats]       = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    matchApi.getLeaderboardStats()
+      .then(res => setLbStats(res.data?.data || null))
+      .catch(() => setLbStats(null))
+      .finally(() => setStatsLoading(false));
+  }, []);
+
   const top3 = rows.slice(0, 3);
-  const rest = rows.slice(3);
   const myUsername = user?.username || '';
 
   const stats = [
-    { icon: FiUsers,      label: 'Total Players',    value: '12,480', color: 'text-[#1A4D8F] dark:text-blue-400',  bg: 'bg-blue-50 dark:bg-blue-900/30',   border: 'border-l-[#1A4D8F]' },
-    { icon: FiAward,      label: 'Winners This Week', value: rows.length || '—', color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/30', border: 'border-l-yellow-400' },
-    { icon: FiDollarSign, label: 'Total Paid Out',   value: '$48.2K',  color: 'text-green-600 dark:text-green-400',  bg: 'bg-green-50 dark:bg-green-900/30',  border: 'border-l-green-400' },
-    { icon: FiTrendingUp, label: 'Avg Win Rate',     value: '64%',     color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/30', border: 'border-l-purple-400' },
+    {
+      icon: FiUsers,
+      label: 'Total Players',
+      value: statsLoading ? '…' : lbStats ? lbStats.total_players.toLocaleString() : '—',
+      color: 'text-[#1A4D8F] dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30', border: 'border-l-[#1A4D8F]',
+    },
+    {
+      icon: FiAward,
+      label: 'Winners This Week',
+      value: statsLoading ? '…' : lbStats ? lbStats.winners_this_week.toLocaleString() : '—',
+      color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/30', border: 'border-l-yellow-400',
+    },
+    {
+      icon: FiDollarSign,
+      label: 'Total Paid Out',
+      value: statsLoading ? '…' : lbStats ? fmt(lbStats.total_paid_out) : '—',
+      color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/30', border: 'border-l-green-400',
+    },
+    {
+      icon: FiTrendingUp,
+      label: 'Avg Win Rate',
+      value: statsLoading ? '…' : lbStats ? `${lbStats.avg_win_rate}%` : '—',
+      color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/30', border: 'border-l-purple-400',
+    },
   ];
 
   return (

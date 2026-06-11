@@ -6,7 +6,7 @@ import {
 import Logo from '../ui/Logo';
 
 const platformLinks = [
-  { label: 'Lobby',              to: '/lobby' },
+  { label: 'World Cup 2026',     to: '/worldcup' },
   { label: 'WAL Giveaway',       to: '/wal-giveaway' },
   { label: 'Winners',            to: '/winners' },
   { label: 'Leaderboard',        to: '/leaderboard' },
@@ -136,7 +136,7 @@ export default function Footer() {
             {/* Brand */}
             <div className="max-w-sm">
               <Link to="/">
-                <Logo variant="full" height={36} className="brightness-0 invert" />
+                <Logo variant="full" height={48} className="brightness-0 invert" />
               </Link>
               <p className="text-slate-400 text-sm mt-4 leading-relaxed">
                 bWinALOTT is Bettitude Inc.'s football sweepstakes and prediction platform.

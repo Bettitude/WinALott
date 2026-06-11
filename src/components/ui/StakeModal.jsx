@@ -301,6 +301,8 @@ export default function StakeModal({ match, open, onClose }) {
     prediction:  pick,
     tier:        chosen.tier,
     price:       chosen.price,
+    prizePool:   chosen.prizePool  || 0,
+    maxWinners:  chosen.maxWinners || 1,
     matchStatus: match.status,
     matchDate:   match.date,
     matchTime:   match.time,

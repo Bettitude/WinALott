@@ -9,7 +9,6 @@ import { useTheme } from '../../context/ThemeContext';
 import Logo from '../ui/Logo';
 
 const navLinks = [
-  { to: '/lobby',         label: 'Lobby' },
   { to: '/worldcup',      label: 'World Cup 2026', highlight: true },
   { to: '/how-to-play',   label: 'How to Play' },
   { to: '/leaderboard',   label: 'Leaderboard' },
@@ -18,11 +17,11 @@ const navLinks = [
 ];
 
 const bottomNavItems = [
-  { to: '/',          Icon: FiHome,       label: 'Home',   end: true  },
-  { to: '/lobby',     Icon: FiGrid,       label: 'Lobby',  end: false },
-  { to: '/my-stakes', Icon: FiTarget,     label: 'Stakes', end: false },
+  { to: '/',          Icon: FiHome,       label: 'Home',     end: true  },
+  { to: '/worldcup',  Icon: FiGrid,       label: 'World Cup', end: false },
+  { to: '/my-stakes', Icon: FiTarget,     label: 'Stakes',   end: false },
   { to: '/dashboard/wallet', Icon: FiDollarSign, label: 'Wallet', end: false },
-  { to: '/dashboard', Icon: FiUser,       label: 'Profile', end: true },
+  { to: '/dashboard', Icon: FiUser,       label: 'Profile',  end: true },
 ];
 
 export default function Navbar() {
@@ -74,7 +73,7 @@ export default function Navbar() {
 
             {/* Logo */}
             <Link to="/" className="shrink-0">
-              <Logo variant="full" height={30} className="dark:brightness-90 sm:h-9" />
+              <Logo variant="full" height={46} className="dark:brightness-90" />
             </Link>
 
             {/* Center nav links — desktop only */}

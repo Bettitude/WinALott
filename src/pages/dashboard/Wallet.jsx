@@ -38,6 +38,9 @@ const TYPE_FILTERS = {
 };
 
 // ── DepositModal ──────────────────────────────────────────────────────────
+// Set to false when payment gateways are live and configured.
+const PAYMENTS_DISABLED = true;
+
 function DepositModal({ onClose, onSuccess }) {
   const { user, isDemo } = useAuth();
   const [amount,   setAmount]   = useState('');
@@ -47,6 +50,7 @@ function DepositModal({ onClose, onSuccess }) {
   const presets = [5, 10, 20, 50, 100];
 
   const handleDeposit = async () => {
+    if (PAYMENTS_DISABLED) return;
     const n = Number(amount);
     if (!n || n < 1) { setError('Enter a valid amount (min $1)'); return; }
     setLoading(true);
@@ -54,7 +58,6 @@ function DepositModal({ onClose, onSuccess }) {
     try {
       const amountCents = Math.round(n * 100);
 
-      // Demo accounts can't hit the real payment gateway — simulate instantly
       if (isDemo) {
         await new Promise(r => setTimeout(r, 800));
         onSuccess?.(`$${n.toFixed(2)} added to your demo wallet!`, amountCents);
@@ -65,7 +68,6 @@ function DepositModal({ onClose, onSuccess }) {
         `${window.location.origin}/dashboard/wallet?verify=1&provider=${provider}`);
       const d = res.data?.data;
 
-      // Backend mock mode — no real payment keys configured
       if (d?.mock) {
         await matchApi.verifyDeposit({ mock: true, amount: amountCents });
         onSuccess?.(`$${n.toFixed(2)} added to your wallet (test mode)`, amountCents);
@@ -87,63 +89,69 @@ function DepositModal({ onClose, onSuccess }) {
   return (
     <div>
       <h3 className="font-black text-[#1A1A2E] dark:text-white text-lg mb-1">Add Funds</h3>
-      <p className="text-gray-400 dark:text-slate-500 text-sm mb-5">Credited instantly after payment confirmation.</p>
+      <p className="text-gray-400 dark:text-slate-500 text-sm mb-4">Credited instantly after payment confirmation.</p>
 
-      <p className="text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">Pay with</p>
-      <div className="grid grid-cols-3 gap-2 mb-5">
-        {[
-          { id: 'flutterwave',      name: 'Flutterwave',   sub: 'Card / USSD',   color: '#F5A623' },
-          { id: 'flutterwave_bank', name: 'Bank Transfer', sub: 'Direct Bank',   color: '#27AE60' },
-          { id: 'paystack',         name: 'Paystack',      sub: 'Card / Bank',   color: '#00c3f7' },
-        ].map(p => (
-          <button key={p.id} onClick={() => setProvider(p.id)}
-            className="flex flex-col items-center gap-1.5 py-2.5 px-2 rounded-xl border-2 transition-all"
-            style={provider === p.id ? { borderColor: p.color, background: `${p.color}12` } : { borderColor: '#e5e7eb' }}
-          >
-            <span className="text-xs font-black text-center leading-tight" style={{ color: provider === p.id ? p.color : '#6b7280' }}>{p.name}</span>
-            <span className="text-[9px] text-gray-400 dark:text-slate-500 text-center">{p.sub}</span>
-          </button>
-        ))}
+      {/* Coming soon notice */}
+      {PAYMENTS_DISABLED && (
+        <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3 mb-5">
+          <FiClock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-xs font-black text-amber-700 dark:text-amber-400">Payments Coming Soon</p>
+            <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+              Our payment gateway is being configured. Deposits will be available shortly.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Controls — visible but inert when disabled */}
+      <div className={PAYMENTS_DISABLED ? 'opacity-40 pointer-events-none select-none' : ''}>
+        <p className="text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">Pay with</p>
+        <div className="grid grid-cols-3 gap-2 mb-5">
+          {[
+            { id: 'flutterwave',      name: 'Flutterwave',   sub: 'Card / USSD', color: '#F5A623' },
+            { id: 'flutterwave_bank', name: 'Bank Transfer', sub: 'Direct Bank', color: '#27AE60' },
+            { id: 'paystack',         name: 'Paystack',      sub: 'Card / Bank', color: '#00c3f7' },
+          ].map(p => (
+            <button key={p.id} onClick={() => setProvider(p.id)}
+              className="flex flex-col items-center gap-1.5 py-2.5 px-2 rounded-xl border-2 transition-all"
+              style={provider === p.id ? { borderColor: p.color, background: `${p.color}12` } : { borderColor: '#e5e7eb' }}
+            >
+              <span className="text-xs font-black text-center leading-tight" style={{ color: provider === p.id ? p.color : '#6b7280' }}>{p.name}</span>
+              <span className="text-[9px] text-gray-400 dark:text-slate-500 text-center">{p.sub}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          {presets.map(p => (
+            <button key={p} onClick={() => setAmount(String(p))}
+              className={`px-3 py-1.5 rounded-xl text-sm font-bold border transition-all ${
+                amount === String(p) ? 'bg-[#1A4D8F] text-white border-[#1A4D8F]' : 'border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300'
+              }`}>
+              ${p}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative mb-5">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
+          <input type="number" min="1" placeholder="Custom amount" value={amount} onChange={e => setAmount(e.target.value)}
+            className="w-full pl-8 pr-4 py-3 border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-500 rounded-xl text-sm focus:outline-none" />
+        </div>
       </div>
 
-      {provider === 'paypal' ? (
-        <div>
-          <p className="text-xs text-gray-400 dark:text-slate-500 mb-3 leading-relaxed">
-            Click the button below to complete your WALP purchase securely via PayPal.
-            WALP will be credited to your wallet once payment is confirmed. (1 WALP = $1.00 USD)
-          </p>
-          <PayPalHostedButton className="mb-2" />
-        </div>
-      ) : (
-        <>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {presets.map(p => (
-              <button key={p} onClick={() => setAmount(String(p))}
-                className={`px-3 py-1.5 rounded-xl text-sm font-bold border transition-all ${
-                  amount === String(p) ? 'bg-[#1A4D8F] text-white border-[#1A4D8F]' : 'border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-[#1A4D8F] hover:text-[#1A4D8F]'
-                }`}>
-                ${p}
-              </button>
-            ))}
-          </div>
-
-          <div className="relative mb-5">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
-            <input type="number" min="1" placeholder="Custom amount" value={amount} onChange={e => setAmount(e.target.value)}
-              className="w-full pl-8 pr-4 py-3 border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F]" />
-          </div>
-
-          {error && <p className="text-red-500 text-xs mb-3 flex items-center gap-1"><FiAlertCircle className="w-3.5 h-3.5 shrink-0" />{error}</p>}
-
-          <button onClick={handleDeposit} disabled={!amount || isNaN(amount) || Number(amount) < 1 || loading}
-            className="w-full font-bold py-3 rounded-xl text-sm text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2 bg-[#1A4D8F] hover:bg-[#0D2B5E]">
-            {loading
-              ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Redirecting…</>
-              : `Deposit $${Number(amount || 0).toFixed(2)} via ${provider === 'flutterwave_bank' ? 'Bank Transfer' : provider === 'flutterwave' ? 'Flutterwave' : 'Paystack'}`
-            }
-          </button>
-        </>
-      )}
+      <button
+        disabled
+        className="w-full font-bold py-3 rounded-xl text-sm text-white transition-colors opacity-50 cursor-not-allowed flex items-center justify-center gap-2 bg-[#1A4D8F]"
+      >
+        {PAYMENTS_DISABLED
+          ? `Deposit $${Number(amount || 0).toFixed(2)} via ${provider === 'flutterwave_bank' ? 'Bank Transfer' : provider === 'flutterwave' ? 'Flutterwave' : 'Paystack'}`
+          : loading
+            ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Redirecting…</>
+            : `Deposit $${Number(amount || 0).toFixed(2)} via ${provider === 'flutterwave_bank' ? 'Bank Transfer' : provider === 'flutterwave' ? 'Flutterwave' : 'Paystack'}`
+        }
+      </button>
     </div>
   );
 }

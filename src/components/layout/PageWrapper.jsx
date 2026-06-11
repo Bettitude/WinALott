@@ -8,6 +8,7 @@ import RadioPlayer from '../ui/RadioPlayer';
 import LiveMatchIndicator from '../ui/LiveMatchIndicator';
 import CookieConsent from '../ui/CookieConsent';
 import SubscribeModal from '../ui/SubscribeModal';
+import PotentialWinBanner from '../ui/PotentialWinBanner';
 import { useRadio } from '../../context/RadioContext';
 
 const NO_TICKER = ['/auth/', '/verify'];
@@ -31,6 +32,7 @@ function Inner({ children }) {
       </main>
       <Footer />
       <CartDrawer />
+      <PotentialWinBanner />
       <LiveMatchIndicator />
       <RadioPlayer />
       <CookieConsent />

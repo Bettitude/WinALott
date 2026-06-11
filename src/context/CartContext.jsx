@@ -39,12 +39,18 @@ export function CartProvider({ children }) {
 
   const cartCount = items.length;
   const cartTotal = items.reduce((sum, i) => sum + (i.price || 0.99), 0);
+  const cartPotentialWin = items.reduce((sum, i) => {
+    const pool = i.prizePool || 0;
+    const winners = i.maxWinners || 1;
+    return sum + (pool > 0 ? Math.floor(pool / winners * 100) / 100 : 0);
+  }, 0);
 
   return (
     <CartContext.Provider value={{
       items,
       cartCount,
       cartTotal,
+      cartPotentialWin,
       isOpen,
       setIsOpen,
       addToCart,

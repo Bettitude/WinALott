@@ -32,7 +32,8 @@ export const matchApi = {
   getGiveawayWinners: (limit = 12)         => apiClient.get('/tickets/winners', { params: { limit, tier: 'free' } }),
 
   // Public leaderboard
-  getLeaderboard:   (period = 'weekly')  => apiClient.get('/users/leaderboard', { params: { period } }),
+  getLeaderboard:      (period = 'weekly') => apiClient.get('/users/leaderboard', { params: { period } }),
+  getLeaderboardStats: ()                  => apiClient.get('/users/leaderboard-stats'),
 
   // Notifications (auth required)
   getNotifications: (params)             => apiClient.get('/notifications', { params }),
@@ -56,6 +57,10 @@ export const matchApi = {
 
   // Bank list (Paystack)
   listBanks:            (country)        => apiClient.get('/transactions/banks', { params: { country } }),
+
+  // Payout / bank details (auth required)
+  getPayoutDetails:     ()               => apiClient.get('/users/me/payout-details'),
+  savePayoutDetails:    (data)           => apiClient.put('/users/me/payout-details', data),
 
   // Admin: approve withdrawal
   approveWithdrawal:    (ref)            => apiClient.post(`/transactions/withdraw/approve/${ref}`),

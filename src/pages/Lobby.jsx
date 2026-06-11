@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   FiSearch, FiChevronDown, FiChevronUp, FiFilter, FiX,
   FiRadio, FiUsers, FiStar, FiAward, FiZap, FiTrendingUp, FiGift, FiClock,
-  FiCheckCircle,
+  FiCheckCircle, FiArrowRight, FiFlag,
 } from 'react-icons/fi';
 import MatchCard from '../components/ui/MatchCard';
 import { useMatches } from '../hooks/useMatches';
@@ -34,7 +35,6 @@ const SORT_OPTIONS = [
   { key: 'soonest',     label: 'Soonest' },
 ];
 
-// Group separator shown between Open / Live / Coming Up sections
 function GroupSeparator({ label, dot }) {
   return (
     <div className="flex items-center gap-3 py-2 col-span-full">
@@ -48,9 +48,7 @@ function GroupSeparator({ label, dot }) {
 function isLive(m)     { return m.status === 'live'; }
 function isFinished(m) { return m.status === 'finished'; }
 function isOpen(m)     { return !isLive(m) && !isFinished(m); }
-function isUpcoming(m) { return false; } // all non-live non-finished = open
 
-// Renders the visible matches with group separators injected between buckets
 function InfiniteMatchList({ matches, allFiltered, sort }) {
   if (sort !== 'open_first') {
     return (
@@ -75,7 +73,6 @@ function InfiniteMatchList({ matches, allFiltered, sort }) {
     rows.push({ type: 'card', key: m.id, match: m });
   });
 
-  // Render in a CSS grid — separators span full width
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-2">
       {rows.map(row =>
@@ -87,7 +84,6 @@ function InfiniteMatchList({ matches, allFiltered, sort }) {
   );
 }
 
-// 2026 FIFA World Cup opening match — June 11 2026 19:00 UTC
 const WC_START = new Date('2026-06-11T19:00:00Z').getTime();
 
 function useCountdown(targetMs) {
@@ -145,7 +141,6 @@ export default function Lobby() {
     setVisibleCount(PAGE_SIZE);
   };
 
-  // Sorted into three buckets: open → live → upcoming. Never show finished.
   const filtered = useMemo(() => {
     let list = allMatches.filter(m => m.status !== 'finished');
 
@@ -183,23 +178,19 @@ export default function Lobby() {
       );
     }
 
-    // Sort within each bucket by date ASC (soonest first)
     const dateKey = m => `${m.date || ''}T${m.time || ''}`;
 
     if (sort === 'prize_high') return [...list].sort((a, b) => b.prizePool - a.prizePool);
     if (sort === 'entry_low')  return [...list].sort((a, b) => a.price - b.price);
     if (sort === 'soonest')    return [...list].sort((a, b) => dateKey(a).localeCompare(dateKey(b)));
 
-    // Default: open for staking → live → (no upcoming shown separately)
     const live = list.filter(m => m.status === 'live').sort((a,b) => dateKey(a).localeCompare(dateKey(b)));
     const open = list.filter(m => m.status !== 'live' && m.status !== 'finished').sort((a,b) => dateKey(a).localeCompare(dateKey(b)));
     return [...open, ...live];
   }, [allMatches, tierTab, selectedLeague, activeStatuses, search, sort]);
 
-  // Reset visible count when filters change
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [filtered]);
 
-  // IntersectionObserver — load more when sentinel enters viewport
   const loadMore = useCallback(() => {
     setVisibleCount(v => Math.min(v + PAGE_SIZE, filtered.length));
   }, [filtered.length]);
@@ -229,498 +220,307 @@ export default function Lobby() {
   const wc = useCountdown(WC_START);
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
+    <div className="relative">
 
-      {/* Mobile filter bottom sheet */}
-      {filterOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setFilterOpen(false)} />
-          <div className="relative bg-white dark:bg-slate-900 rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-700">
-              <h3 className="font-black text-[#1A1A2E] dark:text-white">Filters &amp; Sort</h3>
-              <button onClick={() => setFilterOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
-                <FiX className="w-5 h-5 text-gray-400 dark:text-slate-400" />
-              </button>
-            </div>
-
-            <div className="overflow-y-auto flex-1 p-5 space-y-6">
-              {/* Status filters */}
-              <div>
-                <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-3">Status</p>
-                <div className="space-y-3">
-                  {STATUS_FILTERS.map(s => (
-                    <div key={s} onClick={() => toggleStatus(s)} className="flex items-center justify-between cursor-pointer py-0.5">
-                      <span className="text-sm font-medium text-gray-600 dark:text-slate-300">{s}</span>
-                      <Toggle on={activeStatuses.has(s)} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Sort */}
-              <div>
-                <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-3">Sort by</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {SORT_OPTIONS.map(o => (
-                    <button
-                      key={o.key}
-                      onClick={() => setSort(o.key)}
-                      className={`px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition-all ${
-                        sort === o.key
-                          ? 'bg-[#1A4D8F] text-white'
-                          : 'bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-300 border border-gray-200 dark:border-slate-600'
-                      }`}
-                    >
-                      {o.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Leagues */}
-              <div>
-                <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-3">League</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => { setSelectedLeague(null); setVisibleCount(PAGE_SIZE); }}
-                    className={`px-3 py-2 rounded-xl text-xs font-medium text-left ${
-                      !selectedLeague
-                        ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-800'
-                        : 'bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-slate-600'
-                    }`}
-                  >
-                    All Leagues
-                  </button>
-                  {leagues.map((l, i) => (
-                    <button
-                      key={i}
-                      onClick={() => { setSelectedLeague(l); setVisibleCount(PAGE_SIZE); }}
-                      className={`px-3 py-2 rounded-xl text-xs font-medium text-left truncate ${
-                        selectedLeague === l
-                          ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-800'
-                          : 'bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-slate-600'
-                      }`}
-                    >
-                      {l}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-5 border-t border-gray-100 dark:border-slate-700 flex gap-3">
-              <button
-                onClick={() => { setActiveStatuses(new Set()); setSelectedLeague(null); setSort('open_first'); setVisibleCount(PAGE_SIZE); }}
-                className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:border-gray-300 dark:hover:border-slate-500 transition-colors"
-              >
-                Reset
-              </button>
-              <button
-                onClick={() => setFilterOpen(false)}
-                className="flex-1 py-3 rounded-xl bg-[#1A4D8F] text-white text-sm font-bold hover:bg-[#0D2B5E] transition-colors"
-              >
-                Show {filtered.length} results
-              </button>
-            </div>
+      {/* ── Coming Soon overlay ───────────────────────────────────────────── */}
+      <div className="fixed inset-0 z-40 bg-white/75 dark:bg-slate-900/80 backdrop-blur-[3px] flex items-center justify-center px-4 pt-16 pb-20">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 p-8 max-w-sm w-full text-center">
+          <div className="w-16 h-16 rounded-2xl bg-[#0D2B5E] flex items-center justify-center mx-auto mb-5 shadow-lg">
+            <FiClock className="w-8 h-8 text-[#F5C518]" />
           </div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F5C518]/15 border border-[#F5C518]/40 mb-4">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#F5C518] animate-pulse" />
+            <span className="text-[11px] font-black text-[#b89300] uppercase tracking-wide">Coming Soon</span>
+          </div>
+          <h2 className="text-2xl font-black text-[#1A1A2E] dark:text-white mb-3 leading-tight">
+            The Full Lobby<br />is Almost Here
+          </h2>
+          <p className="text-gray-500 dark:text-slate-400 text-sm mb-6 leading-relaxed">
+            Silver, Gold and Platinum tier prediction markets are launching very soon.
+            <br /><br />
+            In the meantime — play our <strong className="text-[#1A1A2E] dark:text-white">free World Cup 2026 predictions</strong> and win real cash prizes.
+          </p>
+          <Link
+            to="/worldcup"
+            className="inline-flex items-center justify-center gap-2 w-full bg-[#1A4D8F] text-white font-black px-6 py-3.5 rounded-xl hover:bg-[#0D2B5E] transition-colors shadow-md text-sm"
+          >
+            <FiFlag className="w-4 h-4" />
+            Play World Cup 2026 — Free
+            <FiArrowRight className="w-4 h-4" />
+          </Link>
+          <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-4">
+            Free to enter &nbsp;·&nbsp; Cash prizes &nbsp;·&nbsp; Real match predictions
+          </p>
         </div>
-      )}
-
-      {/* Page header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-black text-[#1A1A2E] dark:text-white mb-1">The Lobby</h1>
-        <p className="text-gray-500 dark:text-slate-400 text-sm">Browse all active prediction markets</p>
       </div>
 
-      <div className="flex gap-5 items-start">
+      {/* ── Full lobby UI (non-interactive behind overlay) ────────────────── */}
+      <div className="pointer-events-none select-none opacity-40">
 
-        {/* ── Left Sidebar ─────────────────────────────────────────────────── */}
-        <aside className="hidden lg:block w-[220px] shrink-0">
-          <div className="sticky top-24 flex flex-col gap-4">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
 
-            {/* Search */}
-            <div className="relative">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={e => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
-                placeholder="Search matches…"
-                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500"
-              />
-            </div>
-
-            {/* Status filters */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
-              <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-3">Filters</p>
-              <div className="space-y-2.5">
-                {STATUS_FILTERS.map(s => (
-                  <div key={s} onClick={() => toggleStatus(s)} className="flex items-center justify-between cursor-pointer gap-2 py-0.5 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 px-1 -mx-1 transition-colors">
-                    <span className="text-xs font-medium text-gray-600 dark:text-slate-300 select-none">{s}</span>
-                    <Toggle on={activeStatuses.has(s)} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Popular league quick-filters */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
-              <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-2.5">Popular Leagues</p>
-              <div className="flex flex-wrap gap-1.5">
-                {POPULAR_LEAGUES.filter(l => leagues.includes(l)).map(l => (
-                  <button
-                    key={l}
-                    onClick={() => { setSelectedLeague(selectedLeague === l ? null : l); setVisibleCount(PAGE_SIZE); }}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all ${
-                      selectedLeague === l
-                        ? 'bg-[#1A4D8F] text-white'
-                        : 'bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-slate-300 border border-gray-200 dark:border-slate-600 hover:border-[#1A4D8F] hover:text-[#1A4D8F] dark:hover:border-blue-500 dark:hover:text-blue-400'
-                    }`}
-                  >
-                    {l}
-                  </button>
-                ))}
-                {POPULAR_LEAGUES.filter(l => leagues.includes(l)).length === 0 && (
-                  <p className="text-[10px] text-gray-400 dark:text-slate-500">Leagues load from live data</p>
-                )}
-              </div>
-            </div>
-
-            {/* League accordion */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
-              <button
-                onClick={() => setLeagueOpen(v => !v)}
-                className="w-full flex items-center justify-between px-3.5 py-2.5 text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest"
-              >
-                Leagues
-                {leagueOpen
-                  ? <FiChevronUp className="w-3.5 h-3.5 text-gray-400 dark:text-slate-400" />
-                  : <FiChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-slate-400" />}
-              </button>
-              {leagueOpen && (
-                <div className="border-t border-gray-100 dark:border-slate-700 max-h-56 overflow-y-auto">
-                  <button
-                    onClick={() => { setSelectedLeague(null); setVisibleCount(PAGE_SIZE); }}
-                    className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors border-b border-gray-50 dark:border-slate-700 ${
-                      !selectedLeague
-                        ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400 font-bold'
-                        : 'text-gray-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-[#1A4D8F] dark:hover:text-blue-400'
-                    }`}
-                  >
-                    All Leagues
-                  </button>
-                  {leagues.map((l, i) => (
-                    <button
-                      key={i}
-                      onClick={() => { setSelectedLeague(l); setVisibleCount(PAGE_SIZE); }}
-                      className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors border-b border-gray-50 dark:border-slate-700 last:border-0 ${
-                        selectedLeague === l
-                          ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400 font-bold'
-                          : 'text-gray-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-[#1A4D8F] dark:hover:text-blue-400'
-                      }`}
-                    >
-                      {l}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Sort options */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
-              <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-2.5">Sort by</p>
-              <div className="flex flex-col gap-1">
-                {SORT_OPTIONS.map(o => (
-                  <button
-                    key={o.key}
-                    onClick={() => setSort(o.key)}
-                    className={`text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      sort === o.key
-                        ? 'bg-[#1A4D8F] text-white'
-                        : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400'
-                    }`}
-                  >
-                    {o.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Live stats snapshot */}
-            <div className="bg-gradient-to-br from-[#0D2B5E] to-[#1A4D8F] rounded-2xl p-3.5 text-white">
-              <p className="text-[10px] font-black uppercase tracking-widest mb-3 text-white/60">Live Stats</p>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/70">Live now</span>
-                  <span className="flex items-center gap-1 text-xs font-black">
-                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                    {liveCount}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/70">Total pool</span>
-                  <span className="text-xs font-black text-[#F5C518]">${(totalPool ?? 0).toFixed(0)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/70">Open markets</span>
-                  <span className="text-xs font-black">{activeMatches.length}</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </aside>
-
-        {/* ── Center Feed ──────────────────────────────────────────────────── */}
-        <div className="flex-1 min-w-0">
-
-          {/* Mobile: search + filter button */}
-          <div className="lg:hidden mb-4 flex gap-2">
-            <div className="relative flex-1">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={e => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
-                placeholder="Search matches…"
-                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1A4D8F]/30 focus:border-[#1A4D8F] bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500"
-              />
-            </div>
-            <button
-              onClick={() => setFilterOpen(true)}
-              className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-semibold transition-colors shrink-0 ${
-                activeFilterCount > 0
-                  ? 'bg-[#1A4D8F] text-white border-[#1A4D8F]'
-                  : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-600'
-              }`}
-            >
-              <FiFilter className="w-4 h-4" />
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="w-5 h-5 rounded-full bg-white/30 flex items-center justify-center text-[10px] font-black">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
+          {/* Page header */}
+          <div className="mb-6">
+            <h1 className="text-3xl font-black text-[#1A1A2E] dark:text-white mb-1">The Lobby</h1>
+            <p className="text-gray-500 dark:text-slate-400 text-sm">Browse all active prediction markets</p>
           </div>
 
-          {/* World Cup 2026 countdown banner */}
-          {!wc.started && (
-            <div
-              className="mb-5 rounded-2xl overflow-hidden border border-[#1A4D8F]/30 dark:border-blue-700/40 bg-gradient-to-r from-[#0D2B5E] via-[#1A4D8F] to-[#0D2B5E] cursor-pointer"
-              onClick={() => { setSelectedLeague(selectedLeague === 'World Cup' ? null : 'World Cup'); setVisibleCount(PAGE_SIZE); }}
-              title="Filter World Cup matches"
-            >
-              <div className="px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 shrink-0 rounded-xl bg-[#F5C518] flex items-center justify-center">
-                    <FiTrendingUp className="w-5 h-5 text-[#1A1A2E]" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-black text-white">World Cup 2026</span>
-                      <span className="px-2 py-0.5 rounded-full bg-[#F5C518] text-[#1A1A2E] text-[10px] font-black uppercase tracking-wide">
-                        Coming Soon
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-white/60 mt-0.5">USA · Canada · Mexico — Jun 11, 2026</p>
-                  </div>
+          <div className="flex gap-5 items-start">
+
+            {/* Left Sidebar */}
+            <aside className="hidden lg:block w-[220px] shrink-0">
+              <div className="sticky top-24 flex flex-col gap-4">
+
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    readOnly
+                    placeholder="Search matches…"
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl text-xs bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500"
+                  />
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <FiClock className="w-3.5 h-3.5 text-white/50" />
-                  <div className="flex items-center gap-1">
-                    {[
-                      { v: wc.days,  u: 'd' },
-                      { v: wc.hours, u: 'h' },
-                      { v: wc.mins,  u: 'm' },
-                      { v: wc.secs,  u: 's' },
-                    ].map(({ v, u }) => (
-                      <div key={u} className="flex items-baseline gap-0.5">
-                        <span className="font-mono font-black text-white text-sm tabular-nums">
-                          {String(v).padStart(2, '0')}
-                        </span>
-                        <span className="text-[10px] text-white/50 font-semibold">{u}</span>
-                        {u !== 's' && <span className="text-white/30 text-sm font-bold mx-0.5">:</span>}
+
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
+                  <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-3">Filters</p>
+                  <div className="space-y-2.5">
+                    {STATUS_FILTERS.map(s => (
+                      <div key={s} className="flex items-center justify-between gap-2 py-0.5 px-1">
+                        <span className="text-xs font-medium text-gray-600 dark:text-slate-300 select-none">{s}</span>
+                        <Toggle on={false} />
                       </div>
                     ))}
                   </div>
                 </div>
-              </div>
-              {selectedLeague === 'World Cup' && (
-                <div className="px-4 pb-2 text-[10px] text-[#F5C518]/80 font-semibold">
-                  Showing World Cup matches — click to clear
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* Tier tabs */}
-          <div className="flex gap-2 mb-5 overflow-x-auto scrollbar-hide pb-0.5">
-            {TIER_TABS.map(t => {
-              const active = tierTab === t.key;
-              const count  = t.key === 'all'
-                ? activeMatches.length
-                : t.key === 'free'
-                  ? activeMatches.filter(m => m.price === 0).length
-                  : activeMatches.filter(m => m.tier === t.key).length;
-              return (
-                <button
-                  key={t.key}
-                  onClick={() => { setTierTab(t.key); setVisibleCount(PAGE_SIZE); }}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-black whitespace-nowrap transition-all ${
-                    active
-                      ? `${t.activeBg} ${t.activeText} shadow-md`
-                      : 'bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500'
-                  }`}
-                >
-                  {t.Icon && <t.Icon className="w-3.5 h-3.5" />}
-                  {t.label}
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                    active ? 'bg-white/20' : 'bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-400'
-                  }`}>
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Results bar */}
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-xs text-gray-400 dark:text-slate-500 font-medium">
-              {filtered.length} market{filtered.length !== 1 ? 's' : ''} found
-            </p>
-            {hasFilters && (
-              <button
-                onClick={() => { setActiveStatuses(new Set()); setSelectedLeague(null); setSearch(''); setSort('open_first'); setVisibleCount(PAGE_SIZE); }}
-                className="text-xs text-[#1A4D8F] font-semibold hover:underline"
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
-
-          {/* Infinite scroll feed with group separators */}
-          {visible.length > 0 ? (
-            <InfiniteMatchList matches={visible} allFiltered={filtered} sort={sort} />
-          ) : (
-            <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700">
-              <FiFilter className="w-10 h-10 text-gray-200 dark:text-slate-600 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-slate-400 font-medium">No matches found</p>
-              <p className="text-gray-400 dark:text-slate-500 text-sm mt-1">Try adjusting your filters</p>
-            </div>
-          )}
-
-          {/* Sentinel — triggers next batch load */}
-          <div ref={sentinelRef} className="py-6 flex items-center justify-center">
-            {hasMore ? (
-              <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-slate-500">
-                <span className="w-4 h-4 border-2 border-[#1A4D8F]/30 border-t-[#1A4D8F] rounded-full animate-spin" />
-                Loading more matches…
-              </div>
-            ) : filtered.length > 0 ? (
-              <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-slate-500">
-                <FiCheckCircle className="w-4 h-4 text-green-400" />
-                You've seen all available matches
-              </div>
-            ) : null}
-          </div>
-
-        </div>
-
-        {/* ── Right Sidebar ─────────────────────────────────────────────────── */}
-        <aside className="hidden xl:block w-[260px] shrink-0">
-          <div className="sticky top-24 flex flex-col gap-4">
-
-            {/* Live scores ticker */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
-              <div className="flex items-center gap-2 px-3.5 py-2.5 bg-red-500">
-                <FiRadio className="w-3.5 h-3.5 text-white animate-pulse" />
-                <span className="text-xs font-black text-white uppercase tracking-wide">Live Scores</span>
-              </div>
-              <div className="divide-y divide-gray-50 dark:divide-slate-700 max-h-48 overflow-y-auto">
-                {liveOnly.length === 0 ? (
-                  <p className="text-xs text-gray-400 dark:text-slate-500 px-3.5 py-3">No live matches right now</p>
-                ) : liveOnly.map(f => (
-                  <div key={f.id} className="flex items-center gap-2 px-3.5 py-2">
-                    <span className="w-1.5 h-1.5 bg-red-400 rounded-full shrink-0 animate-pulse" />
-                    <span className="text-xs text-gray-600 dark:text-slate-300 font-medium truncate">
-                      {f.homeTeam.name} {f.score.home ?? 0} - {f.score.away ?? 0} {f.awayTeam.name}
-                    </span>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
+                  <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-2.5">Popular Leagues</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {POPULAR_LEAGUES.slice(0, 8).map(l => (
+                      <span
+                        key={l}
+                        className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-slate-300 border border-gray-200 dark:border-slate-600"
+                      >
+                        {l}
+                      </span>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Biggest pools */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-1.5">
-                  <FiTrendingUp className="w-3.5 h-3.5 text-[#1A4D8F]" />
-                  <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest">Biggest Pools</p>
                 </div>
-                <span className="text-[10px] text-gray-400 dark:text-slate-500">Top {showAllPools ? 10 : 5}</span>
-              </div>
-              <div className="space-y-2.5">
-                {(showAllPools ? biggestPools : biggestPools.slice(0, 5)).map((m, i) => (
-                  <div key={m.id} className="flex items-center gap-2">
-                    <span className={`w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[10px] font-black ${
-                      i === 0 ? 'bg-[#F5C518] text-[#1A1A2E]' :
-                      i === 1 ? 'bg-gray-300 dark:bg-slate-500 text-gray-700 dark:text-slate-200' :
-                      i === 2 ? 'bg-orange-200 dark:bg-orange-900/50 text-orange-700 dark:text-orange-400' :
-                      'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'
-                    }`}>
-                      {i + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-[#1A1A2E] dark:text-slate-200 truncate">
-                        {m.homeTeam.short} vs {m.awayTeam.short}
-                      </p>
-                      <p className="text-[10px] text-gray-400 dark:text-slate-500 truncate">{m.market}</p>
-                    </div>
-                    <span className="text-xs font-black text-green-600 dark:text-green-400 shrink-0">${(m.prizePool ?? 0).toFixed(0)}</span>
-                  </div>
-                ))}
-              </div>
-              {biggestPools.length > 5 && (
-                <button
-                  onClick={() => setShowAllPools(v => !v)}
-                  className="w-full mt-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-600 text-[10px] font-bold text-[#1A4D8F] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
-                >
-                  {showAllPools ? 'Show less' : `See all top 10`}
-                </button>
-              )}
-            </div>
 
-            {/* Recent winners */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
-              <div className="flex items-center gap-1.5 mb-3">
-                <FiUsers className="w-3.5 h-3.5 text-[#1A4D8F]" />
-                <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest">Recent Winners</p>
-              </div>
-              <div className="space-y-2.5">
-                {recentWinners.length === 0 ? (
-                  <p className="text-xs text-gray-400 dark:text-slate-500">No winners yet</p>
-                ) : recentWinners.map(w => (
-                  <div key={w.id} className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#F5C518] to-[#e6a800] flex items-center justify-center shrink-0">
-                      <span className="text-[10px] font-black text-[#1A1A2E]">
-                        {(w.username || '?')[0].toUpperCase()}
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                  <div className="w-full flex items-center justify-between px-3.5 py-2.5 text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest">
+                    Leagues
+                    <FiChevronUp className="w-3.5 h-3.5 text-gray-400 dark:text-slate-400" />
+                  </div>
+                  <div className="border-t border-gray-100 dark:border-slate-700">
+                    {['All Leagues', ...POPULAR_LEAGUES.slice(0, 6)].map((l, i) => (
+                      <div
+                        key={i}
+                        className={`w-full text-left px-3.5 py-2 text-xs font-medium border-b border-gray-50 dark:border-slate-700 last:border-0 ${
+                          i === 0 ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1A4D8F] dark:text-blue-400 font-bold' : 'text-gray-600 dark:text-slate-300'
+                        }`}
+                      >
+                        {l}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
+                  <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest mb-2.5">Sort by</p>
+                  <div className="flex flex-col gap-1">
+                    {SORT_OPTIONS.map((o, i) => (
+                      <div
+                        key={o.key}
+                        className={`text-left px-2.5 py-1.5 rounded-lg text-xs font-medium ${
+                          i === 0 ? 'bg-[#1A4D8F] text-white' : 'text-gray-500 dark:text-slate-400'
+                        }`}
+                      >
+                        {o.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-[#0D2B5E] to-[#1A4D8F] rounded-2xl p-3.5 text-white">
+                  <p className="text-[10px] font-black uppercase tracking-widest mb-3 text-white/60">Live Stats</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-white/70">Live now</span>
+                      <span className="flex items-center gap-1 text-xs font-black">
+                        <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                        {liveCount}
                       </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-[#1A1A2E] dark:text-slate-200">{w.username}</p>
-                      <p className="text-[10px] text-gray-400 dark:text-slate-500 truncate">{w.market}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-white/70">Total pool</span>
+                      <span className="text-xs font-black text-[#F5C518]">${(totalPool ?? 0).toFixed(0)}</span>
                     </div>
-                    <span className="text-xs font-black text-[#1A4D8F] dark:text-blue-400 shrink-0">+${(w.prize ?? 0).toFixed(2)}</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-white/70">Open markets</span>
+                      <span className="text-xs font-black">{activeMatches.length}</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </aside>
+
+            {/* Center Feed */}
+            <div className="flex-1 min-w-0">
+
+              {/* Mobile search + filter bar */}
+              <div className="lg:hidden mb-4 flex gap-2">
+                <div className="relative flex-1">
+                  <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    readOnly
+                    placeholder="Search matches…"
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl text-xs bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500"
+                  />
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-semibold bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-600 shrink-0">
+                  <FiFilter className="w-4 h-4" />
+                  Filters
+                </div>
+              </div>
+
+              {/* Tier tabs */}
+              <div className="flex gap-2 mb-5 overflow-x-auto pb-0.5">
+                {TIER_TABS.map((t, i) => (
+                  <div
+                    key={t.key}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-black whitespace-nowrap ${
+                      i === 0
+                        ? `${t.activeBg} ${t.activeText} shadow-md`
+                        : 'bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-600'
+                    }`}
+                  >
+                    {t.Icon && <t.Icon className="w-3.5 h-3.5" />}
+                    {t.label}
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      i === 0 ? 'bg-white/20' : 'bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-400'
+                    }`}>
+                      {i === 0 ? activeMatches.length : 0}
+                    </span>
                   </div>
                 ))}
               </div>
+
+              {/* Results bar */}
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs text-gray-400 dark:text-slate-500 font-medium">
+                  {filtered.length} market{filtered.length !== 1 ? 's' : ''} found
+                </p>
+              </div>
+
+              {/* Match grid */}
+              {visible.length > 0 ? (
+                <InfiniteMatchList matches={visible} allFiltered={filtered} sort={sort} />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-2">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="h-48 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 animate-pulse" />
+                  ))}
+                </div>
+              )}
+
+              <div className="py-6 flex items-center justify-center">
+                <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-slate-500">
+                  <FiCheckCircle className="w-4 h-4 text-green-400" />
+                  You've seen all available matches
+                </div>
+              </div>
+
             </div>
 
-          </div>
-        </aside>
+            {/* Right Sidebar */}
+            <aside className="hidden xl:block w-[260px] shrink-0">
+              <div className="sticky top-24 flex flex-col gap-4">
 
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                  <div className="flex items-center gap-2 px-3.5 py-2.5 bg-red-500">
+                    <FiRadio className="w-3.5 h-3.5 text-white" />
+                    <span className="text-xs font-black text-white uppercase tracking-wide">Live Scores</span>
+                  </div>
+                  <div className="divide-y divide-gray-50 dark:divide-slate-700 max-h-48 overflow-y-auto">
+                    {liveOnly.length === 0 ? (
+                      <p className="text-xs text-gray-400 dark:text-slate-500 px-3.5 py-3">No live matches right now</p>
+                    ) : liveOnly.map(f => (
+                      <div key={f.id} className="flex items-center gap-2 px-3.5 py-2">
+                        <span className="w-1.5 h-1.5 bg-red-400 rounded-full shrink-0" />
+                        <span className="text-xs text-gray-600 dark:text-slate-300 font-medium truncate">
+                          {f.homeTeam.name} {f.score.home ?? 0} - {f.score.away ?? 0} {f.awayTeam.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1.5">
+                      <FiTrendingUp className="w-3.5 h-3.5 text-[#1A4D8F]" />
+                      <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest">Biggest Pools</p>
+                    </div>
+                    <span className="text-[10px] text-gray-400 dark:text-slate-500">Top 5</span>
+                  </div>
+                  <div className="space-y-2.5">
+                    {(biggestPools.slice(0, 5).length === 0 ? [...Array(5)] : biggestPools.slice(0, 5)).map((m, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className={`w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[10px] font-black ${
+                          i === 0 ? 'bg-[#F5C518] text-[#1A1A2E]' :
+                          i === 1 ? 'bg-gray-300 dark:bg-slate-500 text-gray-700 dark:text-slate-200' :
+                          i === 2 ? 'bg-orange-200 dark:bg-orange-900/50 text-orange-700 dark:text-orange-400' :
+                          'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'
+                        }`}>
+                          {i + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-[#1A1A2E] dark:text-slate-200 truncate">
+                            {m ? `${m.homeTeam?.short} vs ${m.awayTeam?.short}` : '— vs —'}
+                          </p>
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500 truncate">{m?.market || 'Match Result'}</p>
+                        </div>
+                        <span className="text-xs font-black text-green-600 dark:text-green-400 shrink-0">
+                          ${m ? (m.prizePool ?? 0).toFixed(0) : '0'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-3.5">
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <FiUsers className="w-3.5 h-3.5 text-[#1A4D8F]" />
+                    <p className="text-[10px] font-black text-[#1A1A2E] dark:text-slate-200 uppercase tracking-widest">Recent Winners</p>
+                  </div>
+                  <div className="space-y-2.5">
+                    {recentWinners.length === 0 ? (
+                      <p className="text-xs text-gray-400 dark:text-slate-500">No winners yet</p>
+                    ) : recentWinners.map(w => (
+                      <div key={w.id} className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#F5C518] to-[#e6a800] flex items-center justify-center shrink-0">
+                          <span className="text-[10px] font-black text-[#1A1A2E]">
+                            {(w.username || '?')[0].toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-[#1A1A2E] dark:text-slate-200">{w.username}</p>
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500 truncate">{w.market}</p>
+                        </div>
+                        <span className="text-xs font-black text-[#1A4D8F] dark:text-blue-400 shrink-0">+${(w.prize ?? 0).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            </aside>
+
+          </div>
+        </div>
       </div>
     </div>
   );

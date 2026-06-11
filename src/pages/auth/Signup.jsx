@@ -22,7 +22,7 @@ export default function Signup() {
         <div className="absolute inset-0 bg-[#0D2B5E]/80" />
         <div className="relative z-10 text-white px-12 max-w-sm">
           <Link to="/" className="inline-block mb-10">
-            <Logo variant="full" height={40} className="brightness-200" />
+            <Logo variant="full" height={56} className="brightness-200" />
           </Link>
           <h2 className="text-3xl font-black mb-3 leading-tight">
             Your first win<br />starts here.
@@ -61,7 +61,7 @@ export default function Signup() {
           {/* Logo (mobile only) */}
           <div className="text-center mb-6 lg:hidden">
             <Link to="/" className="inline-block">
-              <Logo variant="full" height={40} />
+              <Logo variant="full" height={52} />
             </Link>
             <p className="text-gray-400 text-sm mt-2">Take a Side. Win the Pride.</p>
           </div>

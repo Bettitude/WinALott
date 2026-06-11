@@ -86,8 +86,16 @@ function AuthGate({ children }) {
   const { loading } = useAuth();
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
-        <p className="text-[#1A4D8F] text-2xl font-black tracking-tight mb-6">WinALot</p>
+      <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50 gap-6">
+        {/* Logo with whitespace clipped */}
+        <div style={{ height: 72, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+          <img
+            src="/bwinalott-logo.png"
+            alt="bWinALOTT"
+            style={{ height: Math.round(72 * 3.1), width: 'auto' }}
+            draggable={false}
+          />
+        </div>
         <div className="w-8 h-8 border-4 border-[#1A4D8F] border-t-transparent rounded-full animate-spin" />
       </div>
     );

@@ -309,10 +309,11 @@ function AdSlot({ label = 'Advertisement' }) {
 
 // ── Stakes section ────────────────────────────────────────────────────────────
 const TIER_STYLES = {
-  silver:   { bg: 'bg-gray-400/20',   text: 'text-gray-300',   label: 'Silver'   },
-  gold:     { bg: 'bg-[#F5C518]/20',  text: 'text-[#F5C518]',  label: 'Gold'     },
-  platinum: { bg: 'bg-purple-500/20', text: 'text-purple-300', label: 'Platinum' },
+  silver:   { bg: 'bg-gray-400/20',   border: 'border-gray-400/40',   text: 'text-gray-300',   label: 'Silver',   order: 0 },
+  gold:     { bg: 'bg-[#F5C518]/20',  border: 'border-[#F5C518]/40',  text: 'text-[#F5C518]',  label: 'Gold',     order: 1 },
+  platinum: { bg: 'bg-purple-500/20', border: 'border-purple-500/40', text: 'text-purple-300', label: 'Platinum', order: 2 },
 };
+const TIER_ORDER = ['silver', 'gold', 'platinum'];
 
 const MARKET_TYPE_LABELS = {
   match_winner:       'Match Winner',
@@ -334,38 +335,66 @@ function getMarketDisplay(market) {
       ),
     };
   }
-  // market_pick or api_pick — YES / NO vote against admin_pick
   return {
     question: market.admin_pick || 'Make your prediction',
     options: [
-      { key: 'yes', label: 'Yes' },
-      { key: 'no', label: 'No'  },
+      { key: 'yes', label: 'YES — Agree' },
+      { key: 'no',  label: 'NO — Disagree' },
     ],
   };
 }
 
-function MarketCard({ market, isAuthenticated = false }) {
-  const navigate = useNavigate();
-  const [selected,  setSelected]  = useState(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [submitting,setSubmitting]= useState(false);
-  const [error,     setError]     = useState(null);
+// Group markets by their question and deduplicate tiers within each group.
+// If admin created 10 markets for the same question (many duplicate tiers),
+// this collapses them to 1 card with up to 3 unique tier buttons.
+function groupMarkets(markets) {
+  const map = new Map();
+  markets.forEach(market => {
+    const { question } = getMarketDisplay(market);
+    const key = `${market.prediction_type}__${question}`;
+    if (!map.has(key)) map.set(key, { question, markets: [] });
+    const existing = map.get(key);
+    // Only keep one market per tier (first one wins)
+    const hasTier = existing.markets.some(m => m.tier === market.tier);
+    if (!hasTier) existing.markets.push(market);
+  });
+  return Array.from(map.values());
+}
 
-  const tier     = TIER_STYLES[market.tier] || TIER_STYLES.silver;
-  const isClosed = market.status === 'settled' || market.status === 'closed';
-  const { question, options } = getMarketDisplay(market);
+// A single market group card: shows the question once, lets user pick
+// their prediction AND their tier in one flow.
+function MarketGroupCard({ group, isAuthenticated }) {
+  const navigate = useNavigate();
+
+  // Build tierMap: tier → market (deduplicated, ordered)
+  const tierMap = {};
+  group.markets.forEach(m => { tierMap[m.tier] = m; });
+  const availableTiers = TIER_ORDER.filter(t => tierMap[t]);
+
+  const { question, options } = getMarketDisplay(group.markets[0]);
+
+  const [prediction,  setPrediction]  = useState(null);
+  const [selectedTier, setSelectedTier] = useState(availableTiers.length === 1 ? availableTiers[0] : null);
+  const [submitted,   setSubmitted]   = useState(false);
+  const [submitting,  setSubmitting]  = useState(false);
+  const [error,       setError]       = useState(null);
+
+  const market = selectedTier ? tierMap[selectedTier] : null;
+  const entryFee = market ? market.entry_fee / 100 : null;
+  const prizePool = market?.prize_pool ? market.prize_pool / 100 : 0;
+  const potentialWin = market && prizePool > 0 ? (prizePool / (market.winner_count || 1)) : 0;
+  const totalEntries = market?.total_entries ?? 0;
 
   const handleEnter = async () => {
     if (!isAuthenticated) { navigate('/auth/login'); return; }
-    if (!selected) return;
-    setSubmitting(true);
-    setError(null);
+    if (!prediction || !market) return;
+    setSubmitting(true); setError(null);
     try {
       const token = localStorage.getItem('winalott_token') || sessionStorage.getItem('winalott_token');
       const res = await fetch(`${API_BASE}/tickets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ market_id: market.id, match_id: market.match_id, user_prediction: selected }),
+        body: JSON.stringify({ market_id: market.id, match_id: market.match_id, user_prediction: prediction }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Purchase failed');
@@ -378,13 +407,14 @@ function MarketCard({ market, isAuthenticated = false }) {
   };
 
   if (submitted) {
+    const ts = TIER_STYLES[selectedTier] || TIER_STYLES.silver;
     return (
       <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-4 flex items-start gap-3">
         <FiCheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
         <div>
           <p className="text-green-300 font-black text-sm">Stake confirmed!</p>
-          <p className="text-white/40 text-xs mt-0.5">
-            Your ticket is active · {tier.label} tier
+          <p className="text-white/50 text-xs mt-0.5">
+            {question} · {ts.label} · ${entryFee?.toFixed(2)} entry
           </p>
         </div>
       </div>
@@ -392,73 +422,107 @@ function MarketCard({ market, isAuthenticated = false }) {
   }
 
   return (
-    <div className={`rounded-2xl border p-4 space-y-3 ${
-      isClosed ? 'border-white/10 bg-white/[0.03] opacity-60' : 'border-white/15 bg-white/[0.05]'
-    }`}>
-      <div className="flex items-center justify-between">
-        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${tier.bg} ${tier.text}`}>
-          {tier.label}
-        </span>
-        <div className="flex items-center gap-1.5 text-xs text-white/40">
-          <FiDollarSign className="w-3 h-3" />
-          ${(market.entry_fee / 100).toFixed(2)} entry
+    <div className="rounded-2xl border border-white/15 bg-white/[0.05] p-4 space-y-4">
+
+      {/* Question */}
+      <p className="text-white font-bold text-sm leading-snug">{question}</p>
+
+      {/* Step 1 — Prediction */}
+      <div>
+        <p className="text-white/35 text-[10px] font-black uppercase tracking-widest mb-2">Your Prediction</p>
+        <div className="flex flex-wrap gap-2">
+          {options.map(opt => (
+            <button
+              key={opt.key}
+              onClick={() => setPrediction(opt.key)}
+              className={`flex-1 min-w-[80px] px-3 py-2.5 rounded-xl text-xs font-bold border-2 transition-all ${
+                prediction === opt.key
+                  ? 'bg-[#F5C518] text-[#1A1A2E] border-[#F5C518] shadow-[0_0_16px_rgba(245,197,24,0.25)]'
+                  : 'bg-white/5 text-white/60 border-white/10 hover:border-white/30 hover:text-white'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      <p className="text-white font-bold text-sm">{question}</p>
-
-      {isClosed ? (
-        <p className="text-white/30 text-xs flex items-center gap-1.5">
-          <FiClock className="w-3 h-3" />
-          {market.status === 'settled' ? `Settled · correct: ${market.correct_outcome || '—'}` : 'Predictions closed'}
-        </p>
-      ) : (
-        <>
-          <div className="flex flex-wrap gap-2">
-            {options.map(opt => (
-              <button
-                key={opt.key}
-                onClick={() => setSelected(opt.key)}
-                className={`flex-1 min-w-[60px] px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
-                  selected === opt.key
-                    ? 'bg-[#F5C518] text-[#1A1A2E] border-[#F5C518]'
-                    : 'bg-white/5 text-white/60 border-white/10 hover:border-white/30 hover:text-white'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
+      {/* Step 2 — Tier (only show if more than one tier available) */}
+      {availableTiers.length > 1 && (
+        <div>
+          <p className="text-white/35 text-[10px] font-black uppercase tracking-widest mb-2">Select Tier</p>
+          <div className="flex gap-2">
+            {availableTiers.map(tier => {
+              const ts = TIER_STYLES[tier];
+              const m  = tierMap[tier];
+              const isActive = selectedTier === tier;
+              return (
+                <button
+                  key={tier}
+                  onClick={() => setSelectedTier(tier)}
+                  className={`flex-1 py-2.5 px-2 rounded-xl border-2 transition-all text-center ${
+                    isActive
+                      ? `${ts.bg} ${ts.border} ${ts.text}`
+                      : 'bg-white/5 border-white/10 text-white/40 hover:border-white/25 hover:text-white/70'
+                  }`}
+                >
+                  <p className={`text-xs font-black ${isActive ? ts.text : ''}`}>{ts.label}</p>
+                  <p className={`text-[11px] font-semibold mt-0.5 ${isActive ? ts.text : 'text-white/30'}`}>
+                    ${(m.entry_fee / 100).toFixed(2)}
+                  </p>
+                </button>
+              );
+            })}
           </div>
+        </div>
+      )}
 
-          {error && <p className="text-red-400 text-[11px]">{error}</p>}
-
-          {!isAuthenticated ? (
-            <button
-              onClick={() => navigate('/auth/login')}
-              className="w-full flex items-center justify-center gap-2 bg-white/10 border border-white/20 text-white text-xs font-bold py-2.5 rounded-xl hover:bg-white/15 transition-colors"
-            >
-              <FiLogIn className="w-3.5 h-3.5" /> Log in to stake
-            </button>
+      {/* Stats row: pool + entries */}
+      {market && (
+        <div className="flex items-center justify-between text-[11px] text-white/30 border-t border-white/5 pt-3">
+          <span className="flex items-center gap-1">
+            <FiUsers className="w-3 h-3" /> {totalEntries} staked
+          </span>
+          {prizePool > 0 ? (
+            <span className="text-green-400 font-semibold">
+              Pool ${prizePool.toFixed(2)} · Win up to ${potentialWin.toFixed(2)}
+            </span>
           ) : (
-            <button
-              disabled={!selected || submitting}
-              onClick={handleEnter}
-              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black transition-all ${
-                selected
-                  ? 'bg-[#1A4D8F] text-white hover:bg-[#0D2B5E] active:scale-[0.98]'
-                  : 'bg-white/5 text-white/20 cursor-not-allowed'
-              }`}
-            >
-              {submitting ? (
-                <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Processing…</>
-              ) : selected ? (
-                `Stake $${(market.entry_fee / 100).toFixed(2)}`
-              ) : (
-                'Pick an option'
-              )}
-            </button>
+            <span>${entryFee?.toFixed(2)} entry</span>
           )}
-        </>
+        </div>
+      )}
+
+      {error && <p className="text-red-400 text-[11px]">{error}</p>}
+
+      {/* CTA */}
+      {!isAuthenticated ? (
+        <button
+          onClick={() => navigate('/auth/login')}
+          className="w-full flex items-center justify-center gap-2 bg-white/10 border border-white/20 text-white text-xs font-bold py-2.5 rounded-xl hover:bg-white/15 transition-colors"
+        >
+          <FiLogIn className="w-3.5 h-3.5" /> Log in to stake
+        </button>
+      ) : (
+        <button
+          disabled={!prediction || !market || submitting}
+          onClick={handleEnter}
+          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black transition-all active:scale-[0.98] ${
+            prediction && market
+              ? 'bg-[#1A4D8F] text-white hover:bg-[#0D2B5E] shadow-lg'
+              : 'bg-white/5 text-white/20 cursor-not-allowed'
+          }`}
+        >
+          {submitting ? (
+            <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Processing…</>
+          ) : prediction && market ? (
+            `Stake $${entryFee?.toFixed(2)}${availableTiers.length > 1 ? ` · ${TIER_STYLES[selectedTier]?.label}` : ''}`
+          ) : !prediction ? (
+            'Pick your prediction first'
+          ) : (
+            'Select a tier'
+          )}
+        </button>
       )}
     </div>
   );
@@ -488,13 +552,7 @@ function StakesSection({ markets, loading, isAuthenticated }) {
             <p className="text-white/25 text-[11px]">No active stakes for this match yet</p>
           </div>
         </div>
-
-        {/* Ghost preview */}
         <div className="opacity-20 pointer-events-none space-y-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black bg-[#F5C518]/20 text-[#F5C518] px-2 py-0.5 rounded-full uppercase">Gold</span>
-            <span className="text-white/40 text-xs">$2.00 entry</span>
-          </div>
           <p className="text-white text-xs font-bold">Match Winner</p>
           <div className="flex gap-1.5">
             {['Home Win', 'Draw', 'Away Win'].map(opt => (
@@ -503,11 +561,14 @@ function StakesSection({ markets, loading, isAuthenticated }) {
               </div>
             ))}
           </div>
-          <div className="w-full py-2 rounded-xl bg-white/5 text-center">
-            <span className="text-white/20 text-xs font-black">Pick an option</span>
+          <div className="flex gap-1.5">
+            {['Silver', 'Gold', 'Platinum'].map(t => (
+              <div key={t} className="flex-1 px-2 py-2 rounded-lg border border-white/10 bg-white/5 text-center">
+                <p className="text-white text-[10px] font-bold">{t}</p>
+              </div>
+            ))}
           </div>
         </div>
-
         <p className="text-white/15 text-[10px] text-center mt-3 border-t border-white/5 pt-3">
           Admin will open stakes before kick-off
         </p>
@@ -515,17 +576,20 @@ function StakesSection({ markets, loading, isAuthenticated }) {
     );
   }
 
+  // Collapse duplicates: group by question, one tier per group
+  const groups = groupMarkets(openMarkets);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <FiZap className="w-4 h-4 text-[#F5C518]" />
         <h3 className="text-white font-black text-sm uppercase tracking-wide">Stakes</h3>
         <span className="bg-green-500/20 text-green-300 text-[10px] font-black px-2 py-0.5 rounded-full">
-          {openMarkets.length} Open
+          {groups.length} market{groups.length !== 1 ? 's' : ''} open
         </span>
       </div>
-      {openMarkets.map(market => (
-        <MarketCard key={market.id} market={market} isAuthenticated={isAuthenticated} />
+      {groups.map((group, i) => (
+        <MarketGroupCard key={i} group={group} isAuthenticated={isAuthenticated} />
       ))}
     </div>
   );
@@ -660,6 +724,15 @@ export default function WorldCupMatchDetail() {
           {/* ── LEFT: main content ─────────────────────────────────────────── */}
           <div className="flex-1 min-w-0 space-y-5">
 
+            {/* Free game prediction — shown FIRST, before match stats */}
+            {freeGame && (
+              <PredictionPanel
+                fixtureId={String(fixture.fixture.id)}
+                game={freeGame}
+                isAuthenticated={isAuthenticated}
+              />
+            )}
+
             {/* Match header card */}
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a1f45]">
               <div className="absolute inset-0 pointer-events-none">
@@ -739,15 +812,6 @@ export default function WorldCupMatchDetail() {
                 </div>
               </div>
             </div>
-
-            {/* Prediction panel */}
-            {freeGame && (
-              <PredictionPanel
-                fixtureId={String(fixture.fixture.id)}
-                game={freeGame}
-                isAuthenticated={isAuthenticated}
-              />
-            )}
 
             {/* Stakes — mobile only (desktop version lives in the sidebar) */}
             <div className="lg:hidden">
