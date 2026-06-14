@@ -473,7 +473,7 @@ export default function WorldCup() {
   const filtered = (() => {
     if (tab === 'Live Now')       return fixtures.filter(f => isLive(f.fixture.status.short));
     if (tab === 'With Free Game') return fixtures.filter(f => f.freeGame && f.freeGame.status === 'open');
-    return fixtures;
+    return fixtures.filter(f => !isFinished(f.fixture.status.short));
   })();
 
   const groups        = groupByDate(filtered);

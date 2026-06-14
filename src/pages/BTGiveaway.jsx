@@ -538,6 +538,41 @@ export default function WALGiveaway() {
   };
 
   return (
+    <div className="relative">
+
+      {/* ── Coming Soon overlay ───────────────────────────────────────────── */}
+      <div className="fixed inset-0 z-40 bg-white/75 dark:bg-slate-900/80 backdrop-blur-[3px] flex items-center justify-center px-4 pt-16 pb-20">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 p-8 max-w-sm w-full text-center">
+          <div className="w-16 h-16 rounded-2xl bg-[#0D2B5E] flex items-center justify-center mx-auto mb-5 shadow-lg">
+            <FiGift className="w-8 h-8 text-[#F5C518]" />
+          </div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F5C518]/15 border border-[#F5C518]/40 mb-4">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#F5C518] animate-pulse" />
+            <span className="text-[11px] font-black text-[#b89300] uppercase tracking-wide">Coming Soon</span>
+          </div>
+          <h2 className="text-2xl font-black text-[#1A1A2E] dark:text-white mb-3 leading-tight">
+            WAL Giveaway<br />Launching Soon
+          </h2>
+          <p className="text-gray-500 dark:text-slate-400 text-sm mb-6 leading-relaxed">
+            Answer the quiz, get all correct, and win real prizes — boots, cash, jerseys and more.
+            <br /><br />
+            In the meantime — play our <strong className="text-[#1A1A2E] dark:text-white">free World Cup 2026 predictions</strong> and win real cash prizes.
+          </p>
+          <Link
+            to="/worldcup"
+            className="inline-flex items-center justify-center gap-2 w-full bg-[#1A4D8F] text-white font-black px-6 py-3.5 rounded-xl hover:bg-[#0D2B5E] transition-colors shadow-md text-sm"
+          >
+            Play World Cup 2026 — Free
+            <FiArrowRight className="w-4 h-4" />
+          </Link>
+          <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-4">
+            Free to enter &nbsp;·&nbsp; Cash prizes &nbsp;·&nbsp; Real match predictions
+          </p>
+        </div>
+      </div>
+
+      {/* ── WAL Giveaway content (non-interactive behind overlay) ─────────── */}
+      <div className="pointer-events-none select-none opacity-40">
     <div>
       {/* Hero */}
       <div className="relative py-20 px-4 text-center overflow-hidden min-h-[260px] flex items-center justify-center">
@@ -701,6 +736,8 @@ export default function WALGiveaway() {
         />
       )}
       {showLogin && <LoginPrompt onClose={() => setShowLogin(false)} />}
+    </div>
+      </div>{/* end pointer-events-none */}
     </div>
   );
 }

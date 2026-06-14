@@ -6,11 +6,15 @@ export const authApi = {
   logout:         ()                => apiClient.post('/auth/logout'),
   me:             ()                => apiClient.get('/auth/me'),
 
-  forgotPassword: (email)           => apiClient.post('/auth/forgot-password',   { email }),
+  forgotPassword: (email)           => apiClient.post('/auth/forgot-password',   { email, origin: window.location.origin }),
 
-  // access_token comes from URL hash (#access_token=...&type=recovery) after reset email
-  resetPassword:  (access_token, new_password) =>
-                    apiClient.post('/auth/reset-password', { access_token, new_password }),
+  // token = { type: 'code', value } (PKCE) or { type: 'token', value } (implicit)
+  resetPassword:  (token, new_password) =>
+                    apiClient.post('/auth/reset-password',
+                      token?.type === 'code'
+                        ? { code: token.value, new_password }
+                        : { access_token: token?.value ?? token, new_password }
+                    ),
 
   changePassword: (current_password, new_password) =>
                     apiClient.post('/auth/change-password', { current_password, new_password }),

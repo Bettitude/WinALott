@@ -10,6 +10,7 @@ import Logo from '../ui/Logo';
 
 const navLinks = [
   { to: '/worldcup',      label: 'World Cup 2026', highlight: true },
+  { to: '/lobby',         label: 'Lobby' },
   { to: '/how-to-play',   label: 'How to Play' },
   { to: '/leaderboard',   label: 'Leaderboard' },
   { to: '/winners',       label: 'Winners' },

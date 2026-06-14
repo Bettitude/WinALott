@@ -42,19 +42,28 @@ export default function ResetPassword() {
   const [error,       setError]       = useState('');
   const navigate = useNavigate();
 
-  // Extract the Supabase recovery token from the URL hash.
-  // Supabase sends: /auth/reset-password#access_token=XXX&type=recovery
+  // Supabase sends the reset link in one of two formats depending on project settings:
+  //   Implicit flow: /auth/reset-password#access_token=XXX&type=recovery
+  //   PKCE flow:     /auth/reset-password?code=XXX
   useEffect(() => {
+    // 1. Try PKCE flow — query param ?code=XXX
+    const params = new URLSearchParams(window.location.search);
+    const code   = params.get('code');
+    if (code) {
+      setToken({ type: 'code', value: code });
+      window.history.replaceState(null, '', window.location.pathname);
+      return;
+    }
+
+    // 2. Try implicit flow — hash #access_token=XXX&type=recovery
     const hash   = new URLSearchParams(window.location.hash.slice(1));
     const aToken = hash.get('access_token');
     const type   = hash.get('type');
 
     if (aToken && type === 'recovery') {
-      setToken(aToken);
-      // Remove the token from the URL bar immediately for security
+      setToken({ type: 'token', value: aToken });
       window.history.replaceState(null, '', window.location.pathname);
     } else if (aToken) {
-      // Access token present but not a recovery type — redirect
       navigate('/auth/login', { replace: true });
     } else {
       setTokenError(true);
