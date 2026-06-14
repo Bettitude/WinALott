@@ -644,7 +644,22 @@ export default function WorldCupMatchDetail() {
       const lin = linRes.value?.data?.data;
       const st  = stRes.value?.data?.data;
       if (lin?.length) setLineups(lin);
-      if (st?.length)  setStats(st[0]?.statistics || st);
+      if (st?.length) {
+        // API-Football returns [{team, statistics:[{type,value}]}, ...]
+        // Merge both teams into {type, home, away} rows
+        if (st[0]?.statistics) {
+          const homeStats = st[0].statistics || [];
+          const awayStats = st[1]?.statistics || [];
+          const awayMap   = Object.fromEntries(awayStats.map(s => [s.type, s.value]));
+          setStats(homeStats.map(s => ({
+            type: s.type,
+            home: s.value    != null ? String(s.value)          : '0',
+            away: awayMap[s.type] != null ? String(awayMap[s.type]) : '0',
+          })));
+        } else {
+          setStats(st);
+        }
+      }
     }).catch(() => {});
   }, [fixtureId]);
 
@@ -856,9 +871,10 @@ export default function WorldCupMatchDetail() {
                     })}
                   </div>
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                    <div className="flex items-center justify-between text-white/40 text-xs font-semibold mb-2">
-                      <span>{teams.home.name} ({homeLineup.formation})</span>
-                      <span>({awayLineup.formation}) {teams.away.name}</span>
+                    <div className="flex items-center justify-between text-white/40 text-xs font-semibold mb-2 gap-2">
+                      <span className="truncate">{teams.home.name} <span className="text-[#F5C518]/60">({homeLineup.formation})</span></span>
+                      <span className="text-white/20 shrink-0">vs</span>
+                      <span className="truncate text-right"><span className="text-[#F5C518]/60">({awayLineup.formation})</span> {teams.away.name}</span>
                     </div>
                     <div className="flex gap-4 flex-wrap">
                       {[['G','GK','yellow'],['D','DEF','blue'],['M','MID','green'],['F','FWD','red']].map(([pos,label,color]) => (
