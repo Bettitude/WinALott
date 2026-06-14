@@ -3,10 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   FiClock, FiMapPin, FiCalendar, FiFlag, FiGift, FiUsers,
   FiCheckCircle, FiZap, FiAward, FiChevronRight, FiLogIn,
-  FiLock, FiChevronDown,
+  FiLock, FiChevronDown, FiTrendingUp, FiDollarSign,
 } from 'react-icons/fi';
 import { useAuth } from '../hooks/useAuth';
 import { requireAuth } from '../utils/requireAuth';
+import WCWinnersTicker from '../components/ui/WCWinnersTicker';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -442,15 +443,29 @@ function writeCache(data) {
   try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() })); } catch {}
 }
 
+const MOCK_LEADERBOARD = [
+  { username: 'mike23',    wins: 2, total_usd: 25.00 },
+  { username: 'jack11',    wins: 2, total_usd: 20.00 },
+  { username: 'sarah',     wins: 1, total_usd: 20.00 },
+  { username: 'james99',   wins: 2, total_usd: 15.00 },
+  { username: 'emma05',    wins: 1, total_usd: 15.00 },
+  { username: 'liam',      wins: 1, total_usd: 10.00 },
+  { username: 'olivia',    wins: 1, total_usd: 10.00 },
+  { username: 'harry',     wins: 1, total_usd: 10.00 },
+  { username: 'chris',     wins: 1, total_usd: 10.00 },
+  { username: 'charlotte', wins: 1, total_usd: 5.00  },
+];
+
 export default function WorldCup() {
   const { isAuthenticated } = useAuth();
   const token = localStorage.getItem('winalott_token');
 
   // Lazy init from cache — first render shows cached data immediately, no flash
-  const [fixtures,   setFixtures]   = useState(() => readCache() || []);
-  const [loading,    setLoading]    = useState(() => !readCache()); // only show spinner on first-ever load
-  const [refreshing, setRefreshing] = useState(false);             // silent bg refresh indicator
-  const [tab,        setTab]        = useState('All Games');
+  const [fixtures,     setFixtures]     = useState(() => readCache() || []);
+  const [loading,      setLoading]      = useState(() => !readCache());
+  const [refreshing,   setRefreshing]   = useState(false);
+  const [tab,          setTab]          = useState('All Games');
+  const [leaderboard,  setLeaderboard]  = useState(MOCK_LEADERBOARD);
 
   useEffect(() => {
     const hasCached = fixtures.length > 0;
@@ -467,6 +482,11 @@ export default function WorldCup() {
       })
       .catch(() => { if (!hasCached) setFixtures(MOCK_FIXTURES); })
       .finally(() => { setLoading(false); setRefreshing(false); });
+
+    fetch(`${API_BASE}/worldcup/leaderboard?limit=10`)
+      .then(r => r.json())
+      .then(d => { if (d.data?.length >= 3) setLeaderboard(d.data); })
+      .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -530,6 +550,9 @@ export default function WorldCup() {
         </div>
       </div>
 
+      {/* Winners ticker */}
+      <WCWinnersTicker />
+
       {/* Tabs + grid */}
       <div className="max-w-5xl mx-auto px-4 pb-16">
         <div className="flex gap-0 mb-8 border-b border-white/10">
@@ -581,6 +604,92 @@ export default function WorldCup() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* WC Leaderboard */}
+        {leaderboard.length > 0 && (
+          <div className="mt-16 border-t border-white/10 pt-12">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#F5C518]/20 border border-[#F5C518]/30 flex items-center justify-center">
+                  <FiTrendingUp className="w-5 h-5 text-[#F5C518]" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white">WC Leaderboard</h2>
+                  <p className="text-white/40 text-xs mt-0.5">Top winners across all World Cup free games</p>
+                </div>
+              </div>
+              <span className="flex items-center gap-1.5 text-xs text-green-400 font-semibold bg-green-400/10 border border-green-400/20 px-3 py-1.5 rounded-full">
+                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                Live
+              </span>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+              {/* Top 3 podium */}
+              {leaderboard.length >= 3 && (
+                <div className="flex items-end justify-center gap-4 px-6 pt-8 pb-6 border-b border-white/10">
+                  {[leaderboard[1], leaderboard[0], leaderboard[2]].map((p, i) => {
+                    const rank = i === 0 ? 2 : i === 1 ? 1 : 3;
+                    const heights = ['h-14', 'h-20', 'h-10'];
+                    const colors  = ['bg-gray-400', 'bg-[#F5C518]', 'bg-orange-400'];
+                    return (
+                      <div key={p.username} className="flex flex-col items-center gap-2 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
+                          <span className="text-xs font-black text-white">{p.username.slice(0, 2).toUpperCase()}</span>
+                        </div>
+                        <p className="text-white text-xs font-bold truncate max-w-[80px]">{p.username}</p>
+                        <p className="text-[#F5C518] text-xs font-black">${Number(p.total_usd).toFixed(2)}</p>
+                        <div className={`w-16 ${heights[i]} ${colors[i]} rounded-t-xl flex items-start justify-center pt-1.5`}>
+                          <span className="text-white font-black text-sm">#{rank}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Full table */}
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[11px] text-white/30 font-medium border-b border-white/10">
+                    <th className="text-left px-5 py-3">Rank</th>
+                    <th className="text-left py-3">Player</th>
+                    <th className="text-right py-3 hidden sm:table-cell">Wins</th>
+                    <th className="text-right py-3 pr-5">Total Won</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboard.map((p, idx) => (
+                    <tr key={p.username} className="border-t border-white/5 hover:bg-white/5 transition-colors">
+                      <td className="px-5 py-3">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black ${
+                          idx === 0 ? 'bg-[#F5C518] text-[#1A1A2E]' :
+                          idx === 1 ? 'bg-gray-400 text-white' :
+                          idx === 2 ? 'bg-orange-400 text-white' :
+                          'bg-white/10 text-white/50'
+                        }`}>{idx + 1}</div>
+                      </td>
+                      <td className="py-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                            <span className="text-[10px] font-black text-white/70">{p.username.slice(0, 2).toUpperCase()}</span>
+                          </div>
+                          <span className="text-white font-bold text-xs">{p.username}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 text-right hidden sm:table-cell">
+                        <span className="text-white/60 text-xs font-semibold">{p.wins}x</span>
+                      </td>
+                      <td className="py-3 pr-5 text-right">
+                        <span className="text-[#F5C518] font-black text-sm">${Number(p.total_usd).toFixed(2)}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

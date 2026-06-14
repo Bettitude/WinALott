@@ -885,8 +885,10 @@ export default function MatchDetails() {
     );
   }
 
-  const isLive = match.status === 'live';
-  const fixtureData = Array.isArray(fixture) ? fixture[0] : fixture;
+  const isLive       = match.status === 'live';
+  const isFinishedM  = match.status === 'finished';
+  const matchStarted = isLive || isFinishedM;   // stats/events only meaningful once kicked off
+  const fixtureData  = Array.isArray(fixture) ? fixture[0] : fixture;
   const venueStr = fixtureData?.fixture?.venue?.name || match._raw?.stadium || '';
 
   return (
@@ -967,9 +969,12 @@ export default function MatchDetails() {
                 </button>
               ))}
             </div>
-            {activeTab === 'overview'  && <OverviewTab  events={events} fixture={fixture} h2h={h2h} match={match} />}
+            {activeTab === 'overview'  && <OverviewTab  events={matchStarted ? events : null} fixture={fixture} h2h={h2h} match={match} />}
             {activeTab === 'lineups'   && <LineupsTab   lineups={lineups} match={match} />}
-            {activeTab === 'stats'     && <StatsTab     stats={stats} match={match} />}
+            {activeTab === 'stats'     && (!matchStarted
+              ? <NoData label="Stats available once the match kicks off" />
+              : <StatsTab stats={stats} match={match} />
+            )}
             {activeTab === 'standings' && <StandingsTab match={match} />}
             {activeTab === 'h2h'       && <H2HTab       h2h={h2h} match={match} />}
             {activeTab === 'odds'      && <OddsTab      odds={odds} match={match} />}

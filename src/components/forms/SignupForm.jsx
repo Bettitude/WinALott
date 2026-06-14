@@ -200,10 +200,6 @@ export default function SignupForm() {
         {loading ? 'Creating account…' : 'Create Account'}
       </button>
 
-      <p className="text-center text-sm text-gray-500">
-        Already have an account?{' '}
-        <Link to="/auth/login" className="text-[#1A4D8F] font-semibold hover:underline">Log In</Link>
-      </p>
     </form>
   );
 }

@@ -61,10 +61,15 @@ export function useMatchDetail(matchId) {
 
     fetchAll();
 
-    // Refresh events + stats every 30s if live
+    // Refresh events + stats every 30s — only while the match is actually live
+    const LIVE_STATUSES = new Set(['1H','HT','2H','ET','BT','P','INT']);
     const interval = setInterval(async () => {
-      if (!data.match?.api_football_id) return;
-      const id = data.match.api_football_id;
+      const id = data.match?.api_football_id;
+      if (!id) return;
+      // Skip polling if the stored fixture shows the match hasn't started
+      const fixtureStatus = data.fixture?.[0]?.fixture?.status?.short || data.fixture?.fixture?.status?.short;
+      if (fixtureStatus && !LIVE_STATUSES.has(fixtureStatus)) return;
+
       const [ev, st] = await Promise.allSettled([
         liveApi.getMatchEvents(id),
         liveApi.getMatchStats(id),

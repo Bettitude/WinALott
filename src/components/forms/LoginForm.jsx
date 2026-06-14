@@ -9,8 +9,7 @@ export default function LoginForm() {
   const [errors, setErrors]     = useState({});
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading]   = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const { login, loginWithGoogle } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const redirectPath = typeof window !== 'undefined' && localStorage.getItem('redirect_after_login');
@@ -44,12 +43,6 @@ export default function LoginForm() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGoogleLogin = () => {
-    setErrors({});
-    setGoogleLoading(true);
-    loginWithGoogle(); // browser redirect — no return value
   };
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -109,20 +102,6 @@ export default function LoginForm() {
       <button type="submit" disabled={loading}
         className="w-full bg-[#1A4D8F] text-white font-bold py-3 rounded-xl hover:bg-[#0D2B5E] transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-sm">
         {loading ? 'Logging in…' : 'Log In'}
-      </button>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100" /></div>
-        <div className="relative flex justify-center text-xs"><span className="bg-white px-3 text-gray-400">or continue with</span></div>
-      </div>
-
-      <button type="button" onClick={handleGoogleLogin} disabled={googleLoading || loading}
-        className="w-full flex items-center justify-center gap-3 border border-gray-200 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors font-medium disabled:opacity-60 disabled:cursor-not-allowed">
-        {googleLoading
-          ? <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-          : <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
-        }
-        {googleLoading ? 'Redirecting…' : 'Continue with Google'}
       </button>
 
       <p className="text-center text-sm text-gray-500">

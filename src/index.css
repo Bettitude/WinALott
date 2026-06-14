@@ -69,6 +69,14 @@ body {
 .marquee-inner:hover { animation-play-state: paused; }
 .marquee-wrap { overflow: hidden; }
 
+/* WC winners ticker — runs slightly faster than the score ticker */
+.wc-marquee-inner {
+  display: flex;
+  width: max-content;
+  animation: marquee 22s linear infinite;
+}
+.wc-marquee-inner:hover { animation-play-state: paused; }
+
 /* ── Scroll row (league logos) ─────────────────────────────────────── */
 @keyframes scrollLeft {
   from { transform: translateX(0); }

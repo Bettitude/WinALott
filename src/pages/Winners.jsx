@@ -7,10 +7,10 @@ export default function Winners() {
   const { winners, loading } = useWinners(30);
 
   const stats = [
-    { icon: FiDollarSign, label: 'Total Paid Out',      value: '$48,250', color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/30', border: 'border-l-green-400' },
-    { icon: FiUsers,      label: 'Winners This Month',  value: '312',     color: 'text-[#1A4D8F] dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30',  border: 'border-l-[#1A4D8F]' },
-    { icon: FiAward,      label: 'Biggest Prize',       value: '$125.00', color: 'text-[#F5C518]',  bg: 'bg-yellow-50 dark:bg-yellow-900/30', border: 'border-l-yellow-400' },
-    { icon: FiTrendingUp, label: 'Avg Win Rate',        value: '62%',     color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/30', border: 'border-l-purple-400' },
+    { icon: FiDollarSign, label: 'Total Paid Out',      value: '$2,140',  color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/30', border: 'border-l-green-400' },
+    { icon: FiUsers,      label: 'Winners This Month',  value: '74',      color: 'text-[#1A4D8F] dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30',  border: 'border-l-[#1A4D8F]' },
+    { icon: FiAward,      label: 'Biggest Prize',       value: '$85.00',  color: 'text-[#F5C518]',  bg: 'bg-yellow-50 dark:bg-yellow-900/30', border: 'border-l-yellow-400' },
+    { icon: FiTrendingUp, label: 'Avg Win Rate',        value: '38%',     color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/30', border: 'border-l-purple-400' },
   ];
 
   return (

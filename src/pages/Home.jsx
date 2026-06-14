@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FiArrowRight, FiUsers, FiCheckCircle, FiShield, FiZap, FiAward,
-  FiGift, FiClock, FiMapPin, FiFlag, FiTrendingUp, FiAlertCircle,
+  FiGift, FiClock, FiMapPin, FiFlag, FiAlertCircle,
 } from 'react-icons/fi';
 import { useWinners } from '../hooks/useWinners';
 
@@ -15,37 +15,28 @@ const TRUST_BADGES = [
   { Icon: FiAward,       label: 'Real Prizes',     sub: 'Cash & merch, no gimmicks' },
 ];
 
-const WC_DATE = new Date('2026-06-11T18:00:00Z');
-
-function useCountdown(target) {
-  const calc = () => {
-    const diff = target - Date.now();
-    if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-    return {
-      days:    Math.floor(diff / 86400000),
-      hours:   Math.floor((diff % 86400000) / 3600000),
-      minutes: Math.floor((diff % 3600000) / 60000),
-      seconds: Math.floor((diff % 60000) / 1000),
-    };
-  };
-  const [t, setT] = useState(calc);
-  useEffect(() => {
-    const id = setInterval(() => setT(calc()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return t;
-}
-
-function CountdownUnit({ value, label }) {
-  return (
-    <div className="flex flex-col items-center min-w-[36px]">
-      <span className="text-xl sm:text-3xl font-black text-white tabular-nums leading-none">
-        {String(value).padStart(2, '0')}
-      </span>
-      <span className="text-[9px] text-blue-400 uppercase tracking-wider mt-1">{label}</span>
-    </div>
-  );
-}
+const HERO_SLIDES = [
+  {
+    img:   'https://images.unsplash.com/photo-1540747913346-19212a4f87d1?w=1600&q=80&auto=format&fit=crop',
+    venue: 'MetLife Stadium · New York / New Jersey',
+  },
+  {
+    img:   'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1600&q=80&auto=format&fit=crop',
+    venue: 'AT&T Stadium · Arlington, Texas',
+  },
+  {
+    img:   'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1600&q=80&auto=format&fit=crop',
+    venue: 'SoFi Stadium · Los Angeles',
+  },
+  {
+    img:   'https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=1600&q=80&auto=format&fit=crop',
+    venue: 'NRG Stadium · Houston',
+  },
+  {
+    img:   'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1600&q=80&auto=format&fit=crop',
+    venue: 'Hard Rock Stadium · Miami',
+  },
+];
 
 // ── Fixture preview card (links to full WC match page) ────────────────────────
 function FixturePreviewCard({ item }) {
@@ -130,14 +121,30 @@ function FixturePreviewCard({ item }) {
   );
 }
 
+const HOME_CACHE_KEY = 'home_fixtures_v1';
+const HOME_CACHE_TTL = 2 * 60 * 1000;
+
+function readHomeCache() {
+  try {
+    const raw = localStorage.getItem(HOME_CACHE_KEY);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    return Date.now() - ts < HOME_CACHE_TTL ? data : null;
+  } catch { return null; }
+}
+
+function writeHomeCache(data) {
+  try { localStorage.setItem(HOME_CACHE_KEY, JSON.stringify({ data, ts: Date.now() })); } catch {}
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate();
-  const countdown = useCountdown(WC_DATE);
   const { winners } = useWinners(4);
-  const [fixtures, setFixtures] = useState([]);
-  const [loadingFixtures, setLoadingFixtures] = useState(true);
-  const [newsIdx, setNewsIdx]   = useState(0);
+  const [fixtures, setFixtures] = useState(() => readHomeCache() || []);
+  const [loadingFixtures, setLoadingFixtures] = useState(() => !readHomeCache());
+  const [newsIdx,   setNewsIdx]   = useState(0);
+  const [slideIdx,  setSlideIdx]  = useState(0);
 
   const BREAKING_NEWS = [
     'FIFA World Cup 2026 kicks off June 11 — USA, Canada & Mexico hosting',
@@ -152,10 +159,20 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const id = setInterval(() => setSlideIdx(i => (i + 1) % HERO_SLIDES.length), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const hasCached = fixtures.length > 0;
+    if (!hasCached) setLoadingFixtures(true);
     fetch(`${API_BASE}/worldcup/fixtures`)
       .then(r => r.json())
       .then(d => {
-        if (d.success) setFixtures(d.data || []);
+        if (d.success && d.data?.length) {
+          setFixtures(d.data);
+          writeHomeCache(d.data);
+        }
       })
       .catch(() => {})
       .finally(() => setLoadingFixtures(false));
@@ -192,37 +209,49 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <section className="relative bg-gradient-to-br from-[#0D2B5E] via-[#0f3470] to-[#1A1A2E] overflow-hidden">
-        {/* Background pattern */}
-        <div className="absolute inset-0 opacity-5 pointer-events-none">
-          <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-[#F5C518]" />
-          <div className="absolute -bottom-32 -right-32 w-[400px] h-[400px] rounded-full bg-[#1A4D8F]" />
-        </div>
+      {/* ── Hero carousel ────────────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden h-[72vh] min-h-[540px] max-h-[800px]">
 
-        <div className="relative z-10 max-w-5xl mx-auto px-4 py-12 sm:py-16 text-center">
-          {/* League badge */}
-          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-6">
+        {/* Slides */}
+        {HERO_SLIDES.map((slide, i) => (
+          <div
+            key={i}
+            className={`absolute inset-0 transition-opacity duration-1000 ${i === slideIdx ? 'opacity-100' : 'opacity-0'}`}
+          >
+            <img src={slide.img} alt={slide.venue} className="w-full h-full object-cover" />
+          </div>
+        ))}
+
+        {/* Gradient overlays */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0D2B5E]/95 via-[#0D2B5E]/55 to-[#0D2B5E]/25 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0D2B5E]/50 to-transparent pointer-events-none" />
+
+        {/* Content */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 z-10 text-center">
+
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-4">
             <img
               src="https://media.api-sports.io/football/leagues/1.png"
               alt="FIFA World Cup"
               className="w-5 h-5 object-contain"
-              onError={e => { e.target.style.display='none'; }}
+              onError={e => { e.target.style.display = 'none'; }}
             />
             <span className="text-[#F5C518] text-xs font-black uppercase tracking-widest">FIFA World Cup 2026</span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-4 leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-3 leading-tight">
             Predict. Play.<br />
             <span className="text-[#F5C518]">Win Real Prizes.</span>
           </h1>
-          <p className="text-blue-200 text-base sm:text-lg max-w-xl mx-auto mb-6 leading-relaxed">
-            Predict World Cup 2026 match outcomes for free. If you call it right, you enter a live draw for cash and prizes — no entry fee, no catch.
+
+          <p className="text-blue-200 text-sm sm:text-base max-w-lg mx-auto mb-6 leading-relaxed">
+            Free predictions on every World Cup 2026 match. Call it right, enter the draw, win cash.
           </p>
 
           {/* CTAs */}
-          <div className="flex items-center justify-center gap-3 flex-wrap mb-10">
+          <div className="flex items-center justify-center gap-3 flex-wrap mb-8">
             <Link
               to="/worldcup"
               className="inline-flex items-center gap-2 bg-[#F5C518] text-[#1A1A2E] font-black px-7 py-3.5 rounded-2xl hover:brightness-110 transition-all shadow-xl text-sm"
@@ -237,20 +266,18 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Countdown */}
-          <div className="inline-flex items-center gap-3 bg-white/10 border border-white/20 rounded-2xl px-6 py-4">
-            <div className="text-left">
-              <p className="text-[10px] text-blue-300 uppercase tracking-widest font-bold mb-1">Tournament kicks off in</p>
-              <div className="flex items-end gap-2">
-                <CountdownUnit value={countdown.days}    label="Days" />
-                <span className="text-white/30 font-black text-xl mb-2">:</span>
-                <CountdownUnit value={countdown.hours}   label="Hrs" />
-                <span className="text-white/30 font-black text-xl mb-2">:</span>
-                <CountdownUnit value={countdown.minutes} label="Min" />
-                <span className="text-white/30 font-black text-xl mb-2">:</span>
-                <CountdownUnit value={countdown.seconds} label="Sec" />
-              </div>
-            </div>
+          {/* Dots */}
+          <div className="flex items-center gap-2">
+            {HERO_SLIDES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setSlideIdx(i)}
+                className={`rounded-full transition-all duration-300 ${
+                  i === slideIdx ? 'w-6 h-2 bg-[#F5C518]' : 'w-2 h-2 bg-white/30 hover:bg-white/60'
+                }`}
+                aria-label={`Go to slide ${i + 1}`}
+              />
+            ))}
           </div>
         </div>
       </section>
