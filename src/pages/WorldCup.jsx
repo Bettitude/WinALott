@@ -474,11 +474,13 @@ export default function WorldCup() {
     else setRefreshing(true);
 
     fetch(`${API_BASE}/worldcup/fixtures`)
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(d => {
         if (d.success && d.data?.length) {
           setFixtures(d.data);
           writeCache(d.data);
+        } else if (!hasCached) {
+          setFixtures(MOCK_FIXTURES);
         }
       })
       .catch(() => { if (!hasCached) setFixtures(MOCK_FIXTURES); })
