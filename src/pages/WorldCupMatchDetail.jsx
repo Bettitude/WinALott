@@ -9,6 +9,7 @@ import { liveApi } from '../api/liveApi';
 import { useAuth } from '../hooks/useAuth';
 import { requireAuth } from '../utils/requireAuth';
 import { OfficialLineup } from '../components/OfficialLineup';
+import AdBanner from '../components/ui/AdBanner';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -296,7 +297,7 @@ function SidebarCard({ item, currentId, onClick }) {
   );
 }
 
-// ── Ad slot ───────────────────────────────────────────────────────────────────
+// ── Ad slot (kept for reference — replaced by AdBanner) ──────────────────────
 function AdSlot({ label = 'Advertisement' }) {
   return (
     <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.02] px-3 py-4 flex flex-col items-center justify-center gap-1 min-h-[80px]">
@@ -935,7 +936,7 @@ export default function WorldCupMatchDetail() {
               <StakesSection markets={markets} loading={marketsLoading} isAuthenticated={isAuthenticated} />
 
               {/* Top ad */}
-              <AdSlot label="Sponsored" />
+              <AdBanner slot="wc_sidebar" dark />
 
               {/* Header + filters */}
               <div>
@@ -980,14 +981,14 @@ export default function WorldCupMatchDetail() {
                   {filteredSidebar.map((item, idx) => (
                     <div key={item.fixture.id}>
                       <SidebarCard item={item} currentId={fixtureId} onClick={goToGame} />
-                      {(idx + 1) % 5 === 0 && <div className="pt-2"><AdSlot /></div>}
+                      {(idx + 1) % 5 === 0 && <div className="pt-2"><AdBanner slot="wc_sidebar" dark /></div>}
                     </div>
                   ))}
                 </div>
               )}
 
               {/* Bottom ad */}
-              <AdSlot label="Advertisement" />
+              <AdBanner slot="sidebar_right" dark />
             </div>
           </div>
         </div>

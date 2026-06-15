@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { requireAuth } from '../utils/requireAuth';
 import WCWinnersTicker from '../components/ui/WCWinnersTicker';
+import AdBanner from '../components/ui/AdBanner';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -552,6 +553,11 @@ export default function WorldCup() {
 
       {/* Winners ticker */}
       <WCWinnersTicker />
+
+      {/* Ad banner */}
+      <div className="max-w-5xl mx-auto px-4 py-4">
+        <AdBanner slot="leaderboard" dark />
+      </div>
 
       {/* Tabs + grid */}
       <div className="max-w-5xl mx-auto px-4 pb-16">

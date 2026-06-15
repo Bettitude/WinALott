@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { FiAward, FiTrendingUp, FiUsers, FiDollarSign } from 'react-icons/fi';
 import WinnerCard from '../components/ui/WinnerCard';
 import { useWinners } from '../hooks/useWinners';
+import AdBanner from '../components/ui/AdBanner';
 
 export default function Winners() {
   const { winners, loading } = useWinners(30);
@@ -52,6 +53,11 @@ export default function Winners() {
           ))}
         </div>
       </section>
+
+      {/* Ad banner */}
+      <div className="max-w-2xl mx-auto px-4 pb-4">
+        <AdBanner slot="leaderboard" />
+      </div>
 
       {/* Winners feed */}
       <section className="max-w-2xl mx-auto px-4 pb-14">

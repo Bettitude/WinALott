@@ -15,6 +15,7 @@ import { AuthContext } from '../context/AuthContext';
 import TeamAvatar from '../components/ui/TeamAvatar';
 import { OfficialLineup } from '../components/OfficialLineup';
 import PotentialWinBanner from '../components/ui/PotentialWinBanner';
+import AdBanner from '../components/ui/AdBanner';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const TABS = [
@@ -762,9 +763,7 @@ function OtherGames({ currentMatchId }) {
           );
         })}
       </div>
-      <div className="mt-3 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl p-3 text-center shrink-0">
-        <p className="text-[10px] text-gray-300 dark:text-slate-600 font-medium">Ad Space 240×400</p>
-      </div>
+      <AdBanner slot="sidebar_left" className="mt-3 shrink-0" />
     </div>
   );
 }
@@ -981,9 +980,7 @@ export default function MatchDetails() {
             {activeTab === 'media'     && <MediaTab />}
           </div>
 
-          <div className="border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl py-4 flex items-center justify-center mb-4">
-            <p className="text-[10px] text-gray-300 dark:text-slate-600 font-medium">Ad Space 728×90</p>
-          </div>
+          <AdBanner slot="leaderboard" className="mb-4" />
 
           {/* Mobile staking panel + stakes */}
           <div className="xl:hidden space-y-4">
@@ -996,9 +993,7 @@ export default function MatchDetails() {
         <aside className="hidden xl:block w-[300px] shrink-0 sticky top-28 space-y-4">
           <StakingPanel match={match} tiers={tiers} />
           <MyStakesPanel matchId={matchId} matchStatus={match.status} onWatchLive={handleWatchLive} />
-          <div className="border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl py-16 flex items-center justify-center">
-            <p className="text-[10px] text-gray-300 dark:text-slate-600 font-medium">Ad Space 300×250</p>
-          </div>
+          <AdBanner slot="sidebar_right" />
           {tiers.length > 0 && (
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-4">
               <p className="text-xs font-black uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-3">Tier Breakdown</p>
