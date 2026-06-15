@@ -218,7 +218,7 @@ export default function Home() {
             key={i}
             className={`absolute inset-0 transition-opacity duration-1000 ${i === slideIdx ? 'opacity-100' : 'opacity-0'}`}
           >
-            <img src={slide.img} alt={slide.venue} className="w-full h-full object-cover" />
+            <img src={slide.img} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
           </div>
         ))}
 
