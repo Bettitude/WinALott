@@ -229,33 +229,6 @@ export default function TeamPage() {
               </div>
             </div>
 
-            {/* Recent match results */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-5">
-              <h2 className="font-black text-[#1A1A2E] dark:text-slate-200 mb-4 text-sm uppercase tracking-wide">Last 5 Results</h2>
-              <div className="space-y-2">
-                {RECENT_MATCHES.map((m, i) => (
-                  <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-50 dark:border-slate-700 last:border-0">
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
-                      m.res === 'W' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400'
-                      : m.res === 'D' ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400'
-                      : 'bg-red-100 dark:bg-red-900/50 text-red-500 dark:text-red-400'
-                    }`}>{m.res}</span>
-
-                    <span className="text-[10px] text-gray-400 dark:text-slate-500 w-12 shrink-0">
-                      {m.isHome ? 'HOME' : 'AWAY'}
-                    </span>
-
-                    <span className="text-sm font-medium text-[#1A1A2E] dark:text-slate-200 flex-1 truncate">
-                      {m.isHome ? `${team.name}` : m.opponent} vs {m.isHome ? m.opponent : `${team.name}`}
-                    </span>
-
-                    <span className="text-sm font-black text-[#1A1A2E] dark:text-slate-200 tabular-nums shrink-0">
-                      {m.hg} – {m.ag}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* Right col — performance stats */}

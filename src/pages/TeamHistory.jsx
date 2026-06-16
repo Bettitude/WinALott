@@ -24,7 +24,6 @@ const TABS = [
   { key: 'form',     label: 'Form',        Icon: FiActivity },
   { key: 'stats',    label: 'Stats',       Icon: FiBarChart2 },
   { key: 'squad',    label: 'Squad',       Icon: FiUsers },
-  { key: 'matches',  label: 'Matches',     Icon: FiList },
   { key: 'h2h',      label: 'H2H',         Icon: FiWifi },
   { key: 'table',    label: 'Table',       Icon: FiGrid },
 ];
@@ -809,8 +808,6 @@ export default function TeamHistory() {
           <StatsTab stats={teamStats} team={team} opponent={opponent} />
         ) : tab === 'squad' ? (
           <SquadTab stats={teamStats} loading={loadingStats} />
-        ) : tab === 'matches' ? (
-          <MatchesTab stats={teamStats} />
         ) : tab === 'h2h' ? (
           <H2HTab h2h={loadingH2h ? null : h2h} homeTeam={homeTeam} awayTeam={awayTeam} />
         ) : tab === 'table' ? (

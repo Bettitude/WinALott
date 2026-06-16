@@ -691,9 +691,9 @@ export default function WorldCupMatchDetail() {
   const live     = isLive(fStatus.short);
   const finished = isFinished(fStatus.short);
 
-  const homeLineup = lineups?.[0] || mockLineup(teams.home.name, teams.home.id || 1);
-  const awayLineup = lineups?.[1] || mockLineup(teams.away.name, (teams.away.id || 2) + 1);
-  const statRows   = stats || mockStats();
+  const homeLineup = lineups?.[0] || ((live || finished) ? mockLineup(teams.home.name, teams.home.id || 1) : null);
+  const awayLineup = lineups?.[1] || ((live || finished) ? mockLineup(teams.away.name, (teams.away.id || 2) + 1) : null);
+  const statRows   = stats || ((live || finished) ? mockStats() : null);
 
   const d       = new Date(fixture.fixture.date);
   const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', timeZone: 'UTC' });
@@ -853,77 +853,106 @@ export default function WorldCupMatchDetail() {
               {/* Overview */}
               {tab === 'overview' && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { label: 'Possession', find: 'possession' },
-                      { label: 'Shots',      find: 'total shot' },
-                      { label: 'Corners',    find: 'corner'     },
-                    ].map(({ label, find }) => {
-                      const row = statRows.find(s => s.type?.toLowerCase().includes(find));
-                      return (
-                        <div key={label} className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-white font-black text-base">{row?.home || '—'}</span>
-                            <span className="text-white font-black text-base">{row?.away || '—'}</span>
+                  {statRows ? (
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { label: 'Possession', find: 'possession' },
+                        { label: 'Shots',      find: 'total shot' },
+                        { label: 'Corners',    find: 'corner'     },
+                      ].map(({ label, find }) => {
+                        const row = statRows.find(s => s.type?.toLowerCase().includes(find));
+                        return (
+                          <div key={label} className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-white font-black text-base">{row?.home || '—'}</span>
+                              <span className="text-white font-black text-base">{row?.away || '—'}</span>
+                            </div>
+                            <p className="text-white/30 text-[10px] font-semibold uppercase tracking-wider">{label}</p>
                           </div>
-                          <p className="text-white/30 text-[10px] font-semibold uppercase tracking-wider">{label}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                    <div className="flex items-center justify-between text-white/40 text-xs font-semibold mb-2 gap-2">
-                      <span className="truncate">{teams.home.name} <span className="text-[#F5C518]/60">({homeLineup.formation})</span></span>
-                      <span className="text-white/20 shrink-0">vs</span>
-                      <span className="truncate text-right"><span className="text-[#F5C518]/60">({awayLineup.formation})</span> {teams.away.name}</span>
+                        );
+                      })}
                     </div>
-                    <div className="flex gap-4 flex-wrap">
-                      {[['G','GK','yellow'],['D','DEF','blue'],['M','MID','green'],['F','FWD','red']].map(([pos,label,color]) => (
-                        <div key={pos} className="flex items-center gap-1.5 text-[11px] text-white/40">
-                          <div className={`w-2.5 h-2.5 rounded-full bg-${color}-500`} />
-                          {label}
-                        </div>
-                      ))}
+                  ) : (
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+                      <FiBarChart2 className="w-8 h-8 text-white/20 mx-auto mb-2" />
+                      <p className="text-white/40 text-sm font-semibold">Stats available once the match kicks off</p>
                     </div>
-                  </div>
+                  )}
+                  {homeLineup && awayLineup ? (
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <div className="flex items-center justify-between text-white/40 text-xs font-semibold mb-2 gap-2">
+                        <span className="truncate">{teams.home.name} <span className="text-[#F5C518]/60">({homeLineup.formation})</span></span>
+                        <span className="text-white/20 shrink-0">vs</span>
+                        <span className="truncate text-right"><span className="text-[#F5C518]/60">({awayLineup.formation})</span> {teams.away.name}</span>
+                      </div>
+                      <div className="flex gap-4 flex-wrap">
+                        {[['G','GK','yellow'],['D','DEF','blue'],['M','MID','green'],['F','FWD','red']].map(([pos,label,color]) => (
+                          <div key={pos} className="flex items-center gap-1.5 text-[11px] text-white/40">
+                            <div className={`w-2.5 h-2.5 rounded-full bg-${color}-500`} />
+                            {label}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+                      <p className="text-white/30 text-xs font-semibold">Lineups announced closer to kick-off</p>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Lineups */}
               {tab === 'lineups' && (
-                <OfficialLineup
-                  home={{ ...homeLineup, team: teams.home }}
-                  away={{ ...awayLineup, team: teams.away }}
-                  venue={fixture.fixture.venue?.name}
-                  date={new Date(fixture.fixture.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
-                />
+                homeLineup && awayLineup ? (
+                  <OfficialLineup
+                    home={{ ...homeLineup, team: teams.home }}
+                    away={{ ...awayLineup, team: teams.away }}
+                    venue={fixture.fixture.venue?.name}
+                    date={new Date(fixture.fixture.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
+                  />
+                ) : (
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-10 text-center">
+                    <FiUsers className="w-10 h-10 text-white/20 mx-auto mb-3" />
+                    <p className="text-white/50 text-sm font-semibold">Lineups not yet announced</p>
+                    <p className="text-white/25 text-xs mt-1">Check back closer to kick-off</p>
+                  </div>
+                )
               )}
 
               {/* Stats */}
               {tab === 'stats' && (
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <img src={teams.home.logo} alt="" className="w-5 h-5 object-contain" onError={e=>{e.target.style.display='none';}} />
-                      <span className="text-white font-black text-xs">{teams.home.name}</span>
+                statRows ? (
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <img src={teams.home.logo} alt="" className="w-5 h-5 object-contain" onError={e=>{e.target.style.display='none';}} />
+                        <span className="text-white font-black text-xs">{teams.home.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-black text-xs">{teams.away.name}</span>
+                        <img src={teams.away.logo} alt="" className="w-5 h-5 object-contain" onError={e=>{e.target.style.display='none';}} />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-white font-black text-xs">{teams.away.name}</span>
-                      <img src={teams.away.logo} alt="" className="w-5 h-5 object-contain" onError={e=>{e.target.style.display='none';}} />
+                    {statRows.map((s, i) => (
+                      <StatBar key={i} stat={{ type: s.type, home: s.home ?? s.value, away: s.away ?? '' }} />
+                    ))}
+                    <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/10">
+                      <div className="flex items-center gap-1.5 text-[11px] text-white/40">
+                        <div className="w-3 h-1.5 rounded-full bg-[#1A4D8F]" />{teams.home.name}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px] text-white/40">
+                        <div className="w-3 h-1.5 rounded-full bg-purple-600" />{teams.away.name}
+                      </div>
                     </div>
                   </div>
-                  {statRows.map((s, i) => (
-                    <StatBar key={i} stat={{ type: s.type, home: s.home ?? s.value, away: s.away ?? '' }} />
-                  ))}
-                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/10">
-                    <div className="flex items-center gap-1.5 text-[11px] text-white/40">
-                      <div className="w-3 h-1.5 rounded-full bg-[#1A4D8F]" />{teams.home.name}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[11px] text-white/40">
-                      <div className="w-3 h-1.5 rounded-full bg-purple-600" />{teams.away.name}
-                    </div>
+                ) : (
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-10 text-center">
+                    <FiBarChart2 className="w-10 h-10 text-white/20 mx-auto mb-3" />
+                    <p className="text-white/50 text-sm font-semibold">No stats yet</p>
+                    <p className="text-white/25 text-xs mt-1">Stats will appear once the match kicks off</p>
                   </div>
-                </div>
+                )
               )}
             </div>
           </div>
