@@ -1,13 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   FiCheckCircle, FiXCircle, FiClock, FiTrendingUp, FiRefreshCw,
-  FiChevronLeft, FiChevronRight, FiCalendar, FiAlertCircle, FiGift, FiUsers,
+  FiChevronLeft, FiChevronRight, FiCalendar, FiAlertCircle,
 } from 'react-icons/fi';
 import { useTickets } from '../../hooks/useTickets';
 import { useAuth } from '../../hooks/useAuth';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 const MONTHS = [
   'January','February','March','April','May','June',
@@ -213,87 +211,6 @@ function HistoryCard({ ticket }) {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────
-function FreeEntriesSection() {
-  const navigate  = useNavigate();
-  const [entries, setEntries] = useState(null);
-
-  useEffect(() => {
-    const token = localStorage.getItem('winalott_token');
-    if (!token) return;
-    fetch(`${API_BASE}/worldcup/my-entries`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(d => setEntries(d.data || []))
-      .catch(() => setEntries([]));
-  }, []);
-
-  if (!entries || entries.length === 0) return null;
-
-  return (
-    <div className="mb-8">
-      <div className="flex items-center gap-2 mb-3">
-        <FiGift className="w-4 h-4 text-[#F5C518]" />
-        <h2 className="text-sm font-black text-[#1A1A2E] dark:text-white uppercase tracking-wider">Free Game Entries</h2>
-      </div>
-      <div className="space-y-2">
-        {entries.map((e, i) => {
-          const pickedLabel = e.options?.find(o => o.key === e.option_key)?.label ?? e.option_key;
-          const isSettled   = e.status === 'settled';
-          const won         = isSettled && e.correct_option === e.option_key;
-          const prize       = e.prize_type === 'cash' ? `$${e.prize_usd}` : e.prize_description;
-          return (
-            <div
-              key={i}
-              className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm p-4 ${
-                won ? 'border-[#F5C518]/50' : isSettled ? 'border-red-200 dark:border-red-800/40' : 'border-gray-200 dark:border-slate-700'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    {won ? (
-                      <span className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-[10px] font-black px-2 py-0.5 rounded-full border border-yellow-200 dark:border-yellow-700">
-                        <FiCheckCircle className="w-2.5 h-2.5" /> WON
-                      </span>
-                    ) : isSettled ? (
-                      <span className="flex items-center gap-1 bg-red-50 dark:bg-red-900/30 text-red-500 text-[10px] font-black px-2 py-0.5 rounded-full border border-red-200 dark:border-red-700">
-                        <FiXCircle className="w-2.5 h-2.5" /> NOT SELECTED
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-yellow-200 dark:border-yellow-700/40">
-                        <FiGift className="w-2.5 h-2.5" /> FREE ENTRY
-                      </span>
-                    )}
-                    <p className="text-sm font-bold text-[#1A1A2E] dark:text-white truncate">
-                      {e.home_team} vs {e.away_team}
-                    </p>
-                  </div>
-                  <p className="text-xs text-gray-400 dark:text-slate-500 truncate">{e.question}</p>
-                  <div className="mt-1.5 flex items-center gap-4 text-xs text-gray-500 dark:text-slate-400 flex-wrap">
-                    <span>Pick: <strong className="text-[#1A1A2E] dark:text-white">{pickedLabel}</strong></span>
-                    {isSettled && <span>Correct: <strong className="text-[#1A1A2E] dark:text-white">{e.options?.find(o => o.key === e.correct_option)?.label ?? '—'}</strong></span>}
-                    <span>Prize: <strong className={won ? 'text-[#F5C518]' : 'text-[#1A1A2E] dark:text-white'}>{prize}</strong></span>
-                  </div>
-                  <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-1">
-                    {new Date(e.entered_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </p>
-                </div>
-                {e.fixture_id && (
-                  <button
-                    onClick={() => navigate(`/worldcup/match/${e.fixture_id}/pool`)}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors shrink-0"
-                  >
-                    <FiUsers className="w-3.5 h-3.5" /> Pool
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 export default function MyHistory() {
   const { user } = useAuth();
   const now = new Date();
@@ -397,8 +314,6 @@ export default function MyHistory() {
           + Enter New Match
         </Link>
       </div>
-
-      <FreeEntriesSection />
 
       {/* Quick range filters + mobile calendar toggle */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">

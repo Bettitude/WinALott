@@ -15,7 +15,6 @@ import Winners from './pages/Winners';
 import WALGiveaway from './pages/BTGiveaway';
 import WorldCup from './pages/WorldCup';
 import WorldCupMatchDetail from './pages/WorldCupMatchDetail';
-import WorldCupPool from './pages/WorldCupPool';
 import PartnerWithUs from './pages/PartnerWithUs';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
@@ -119,7 +118,6 @@ function AppRoutes() {
           <Route path="/btgiveaway" element={<Navigate to="/wal-giveaway" replace />} />
           <Route path="/worldcup" element={<WorldCup />} />
           <Route path="/worldcup/match/:fixtureId" element={<WorldCupMatchDetail />} />
-          <Route path="/worldcup/match/:fixtureId/pool" element={<WorldCupPool />} />
           <Route path="/partner-with-us" element={<PartnerWithUs />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
