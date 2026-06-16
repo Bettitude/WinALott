@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import {
   FiRadio, FiPlay, FiPause, FiVolume2, FiVolumeX,
   FiX, FiChevronUp, FiMusic,
@@ -27,13 +27,94 @@ export default function RadioPlayer() {
     openPlayer, closePlayer, togglePlay, setStation, setVolume, toggleMute, setPickerOpen,
   } = useRadio();
 
-  const volRef = useRef(null);
+  const volRef  = useRef(null);
+  const pillRef = useRef(null);
+
+  // null = CSS default (bottom-20 right-4), object = dragged {x, y}
+  const [pos,      setPos]      = useState(null);
+  const [snapping, setSnapping] = useState(false);
+  const dragging  = useRef(false);
+  const offset    = useRef({ dx: 0, dy: 0 });
+
+  const snapToEdge = useCallback(() => {
+    dragging.current = false;
+    setPos(prev => {
+      if (!prev || !pillRef.current) return prev;
+      const w      = pillRef.current.offsetWidth || 120;
+      const snapX  = prev.x + w / 2 < window.innerWidth / 2
+        ? 8
+        : window.innerWidth - w - 8;
+      return { ...prev, x: snapX };
+    });
+    setSnapping(true);
+    setTimeout(() => setSnapping(false), 350);
+  }, []);
+
+  const startDrag = useCallback((clientX, clientY) => {
+    const rect = pillRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    offset.current   = { dx: clientX - rect.left, dy: clientY - rect.top };
+    dragging.current = true;
+    setSnapping(false);
+  }, []);
+
+  const moveDrag = useCallback((clientX, clientY) => {
+    if (!dragging.current || !pillRef.current) return;
+    const w = pillRef.current.offsetWidth  || 120;
+    const h = pillRef.current.offsetHeight ||  40;
+    const x = Math.max(8, Math.min(clientX - offset.current.dx, window.innerWidth  - w - 8));
+    const y = Math.max(8, Math.min(clientY - offset.current.dy, window.innerHeight - h - 8));
+    setPos({ x, y });
+  }, []);
+
+  useEffect(() => {
+    const onMove  = (e) => moveDrag(e.clientX, e.clientY);
+    const onTMove = (e) => { e.preventDefault(); moveDrag(e.touches[0].clientX, e.touches[0].clientY); };
+    window.addEventListener('mousemove',  onMove);
+    window.addEventListener('mouseup',    snapToEdge);
+    window.addEventListener('touchmove',  onTMove, { passive: false });
+    window.addEventListener('touchend',   snapToEdge);
+    return () => {
+      window.removeEventListener('mousemove',  onMove);
+      window.removeEventListener('mouseup',    snapToEdge);
+      window.removeEventListener('touchmove',  onTMove);
+      window.removeEventListener('touchend',   snapToEdge);
+    };
+  }, [moveDrag, snapToEdge]);
+
+  const handleOpen = () => { setPos(null); openPlayer(); };
+
+  const pillStyle = pos
+    ? {
+        position:   'fixed',
+        left:       pos.x,
+        top:        pos.y,
+        zIndex:     9999,
+        transition: snapping ? 'left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
+      }
+    : {};
+
+  const pillBase  = 'flex items-center gap-2 bg-[#0D2B5E] border border-white/10 rounded-full shadow-2xl px-3 py-2 select-none';
+  const pillFixed = !pos ? 'fixed bottom-20 right-4 z-[9999]' : '';
 
   return (
     <>
-      {/* ── Mini floating pill — always visible when bar is hidden ── */}
+      {/* ── Mini floating pill — draggable + snap-to-edge ── */}
       {!isOpen && (
-        <div className="fixed bottom-4 right-4 z-[9999] flex items-center gap-2 bg-[#0D2B5E] border border-white/10 rounded-full shadow-2xl px-3 py-2 select-none">
+        <div
+          ref={pillRef}
+          style={pillStyle}
+          className={`${pillFixed} ${pillBase} ${dragging.current ? 'cursor-grabbing' : 'cursor-grab'}`}
+          onMouseDown={(e) => {
+            if (e.target.closest('button')) return;
+            e.preventDefault();
+            startDrag(e.clientX, e.clientY);
+          }}
+          onTouchStart={(e) => {
+            if (e.target.closest('button')) return;
+            startDrag(e.touches[0].clientX, e.touches[0].clientY);
+          }}
+        >
           <FiRadio className="w-3.5 h-3.5 text-[#F5C518] shrink-0" />
           {isPlaying && <EqBars playing />}
           <button
@@ -46,7 +127,7 @@ export default function RadioPlayer() {
               : <FiPlay  className="w-3 h-3 text-white" />}
           </button>
           <button
-            onClick={openPlayer}
+            onClick={handleOpen}
             className="w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
             title="Open player"
           >
@@ -55,17 +136,14 @@ export default function RadioPlayer() {
         </div>
       )}
 
-      {/* ── Full player bar at bottom ── */}
+      {/* ── Full player bar ── */}
       {isOpen && (
         <>
           {pickerOpen && (
-            <div
-              className="fixed inset-0 z-[9998]"
-              onClick={() => setPickerOpen(false)}
-            />
+            <div className="fixed inset-0 z-[9998]" onClick={() => setPickerOpen(false)} />
           )}
 
-          <div className="fixed bottom-0 inset-x-0 z-[9999] bg-[#0D2B5E] border-t border-white/10 shadow-2xl">
+          <div className="fixed bottom-16 md:bottom-0 inset-x-0 z-[9999] bg-[#0D2B5E] border-t border-white/10 shadow-2xl">
             <div className="max-w-6xl mx-auto flex items-center gap-3 px-4 py-2.5">
 
               <FiRadio className="w-4 h-4 text-[#F5C518] shrink-0" />
@@ -122,8 +200,8 @@ export default function RadioPlayer() {
                     : <FiVolume2 className="w-4 h-4" />}
                 </button>
                 <input
-                  ref={volRef}
                   type="range"
+                  ref={volRef}
                   min={0} max={1} step={0.05}
                   value={isMuted ? 0 : volume}
                   onChange={e => setVolume(Number(e.target.value))}
