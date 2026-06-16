@@ -201,123 +201,156 @@ function SkeletonRows({ n = 5 }) {
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
-function FormTab({ stats, team }) {
-  if (!stats) return <SkeletonRows />;
-  const { form, record, homeRecord, awayRecord, goals, cleanSheets, currentStreak, leaguePosition, biggestWin, biggestLoss, xG, xGA } = stats;
+function NoData({ label = 'No data available from API' }) {
   return (
-    <div className="space-y-6">
-      {/* Form + quick summary */}
-      <div>
-        <p className="section-label">Last 5 Results</p>
-        <div className="flex gap-2.5 mb-4">
-          {(form || []).map((r, i) => <FormPill key={i} result={r} size="lg" />)}
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          <StatCard label="Wins"   value={record?.wins   ?? 0} color="text-green-600" bg="bg-green-50 dark:bg-green-950/40" />
-          <StatCard label="Draws"  value={record?.draws  ?? 0} color="text-yellow-600" bg="bg-yellow-50 dark:bg-yellow-950/40" />
-          <StatCard label="Losses" value={record?.losses ?? 0} color="text-red-500" bg="bg-red-50 dark:bg-red-950/40" />
-        </div>
-      </div>
-
-      {/* League snapshot */}
-      <div>
-        <p className="section-label">Season Snapshot</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <StatCard label="Position"    value={`#${leaguePosition ?? '—'}`} color="text-[#1A4D8F]" />
-          <StatCard label="Clean Sheets" value={cleanSheets ?? 0} color="text-purple-600" bg="bg-purple-50 dark:bg-purple-950/40" />
-          <StatCard label="xG"          value={xG ?? '—'} color="text-orange-500" bg="bg-orange-50 dark:bg-orange-950/40" sub="Expected goals" />
-          <StatCard label="xGA"         value={xGA ?? '—'} color="text-red-500" bg="bg-red-50 dark:bg-red-950/40" sub="Expected conceded" />
-        </div>
-      </div>
-
-      {/* Goals */}
-      <div>
-        <p className="section-label">Goals</p>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-blue-50 dark:bg-blue-950/40 rounded-2xl p-4 text-center">
-            <p className="text-3xl font-black text-[#1A4D8F] dark:text-blue-400">{goals?.scored ?? '—'}</p>
-            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">Scored</p>
-            <p className="text-[10px] text-gray-400 dark:text-slate-500">{goals?.avgScored ?? '—'} per game</p>
-          </div>
-          <div className="bg-red-50 dark:bg-red-950/40 rounded-2xl p-4 text-center">
-            <p className="text-3xl font-black text-red-500">{goals?.conceded ?? '—'}</p>
-            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">Conceded</p>
-            <p className="text-[10px] text-gray-400 dark:text-slate-500">{goals?.avgConceded ?? '—'} per game</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Home vs Away split */}
-      <div>
-        <p className="section-label">Home vs Away Record</p>
-        <div className="grid grid-cols-2 gap-3">
-          {[{ label: 'Home', r: homeRecord, color: 'text-[#1A4D8F]', bg: 'bg-blue-50 dark:bg-blue-950/40' },
-            { label: 'Away', r: awayRecord,  color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950/40' }].map(({ label, r, color, bg }) => (
-            <div key={label} className={`${bg} rounded-2xl p-4`}>
-              <p className={`text-xs font-black uppercase tracking-wider mb-2 ${color}`}>{label}</p>
-              <div className="flex justify-between text-sm">
-                <div className="text-center">
-                  <p className="text-lg font-black text-green-600">{r?.wins ?? 0}</p>
-                  <p className="text-[10px] text-gray-400 dark:text-slate-500">W</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-black text-yellow-600">{r?.draws ?? 0}</p>
-                  <p className="text-[10px] text-gray-400 dark:text-slate-500">D</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-black text-red-500">{r?.losses ?? 0}</p>
-                  <p className="text-[10px] text-gray-400 dark:text-slate-500">L</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Records */}
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl px-3 py-2.5 flex justify-between">
-          <span className="text-gray-500 dark:text-slate-400 text-xs">Biggest Win</span>
-          <span className="font-black text-green-600">{biggestWin ?? '—'}</span>
-        </div>
-        <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl px-3 py-2.5 flex justify-between">
-          <span className="text-gray-500 dark:text-slate-400 text-xs">Biggest Loss</span>
-          <span className="font-black text-red-500">{biggestLoss ?? '—'}</span>
-        </div>
-        <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl px-3 py-2.5 flex justify-between col-span-2">
-          <span className="text-gray-500 dark:text-slate-400 text-xs">Current Streak</span>
-          <span className="font-black text-[#1A4D8F] dark:text-blue-400">{currentStreak ?? '—'}</span>
-        </div>
-      </div>
+    <div className="py-10 text-center">
+      <FiBarChart2 className="w-8 h-8 text-gray-200 dark:text-slate-600 mx-auto mb-2" />
+      <p className="text-gray-400 dark:text-slate-500 text-sm">{label}</p>
     </div>
   );
 }
 
-function StatsTab({ stats, team, opponent }) {
+function FormTab({ stats, team }) {
+  if (!stats) return <SkeletonRows />;
+  const { form, record, homeRecord, awayRecord, goals, cleanSheets, currentStreak, biggestWin, biggestLoss } = stats;
+  const hasRecord = record && (record.wins != null || record.draws != null || record.losses != null);
+  return (
+    <div className="space-y-6">
+      {/* Form pills */}
+      {form?.length ? (
+        <div>
+          <p className="section-label">Recent Form</p>
+          <div className="flex gap-2.5 mb-4">
+            {form.map((r, i) => <FormPill key={i} result={r} size="lg" />)}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Win/Draw/Loss */}
+      {hasRecord ? (
+        <div>
+          <p className="section-label">Season Record</p>
+          <div className="grid grid-cols-3 gap-2">
+            <StatCard label="Wins"   value={record?.wins   ?? '—'} color="text-green-600" bg="bg-green-50 dark:bg-green-950/40" />
+            <StatCard label="Draws"  value={record?.draws  ?? '—'} color="text-yellow-600" bg="bg-yellow-50 dark:bg-yellow-950/40" />
+            <StatCard label="Losses" value={record?.losses ?? '—'} color="text-red-500" bg="bg-red-50 dark:bg-red-950/40" />
+          </div>
+        </div>
+      ) : null}
+
+      {/* Goals */}
+      {goals && (goals.scored != null || goals.conceded != null) && (
+        <div>
+          <p className="section-label">Goals</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-blue-50 dark:bg-blue-950/40 rounded-2xl p-4 text-center">
+              <p className="text-3xl font-black text-[#1A4D8F] dark:text-blue-400">{goals?.scored ?? '—'}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">Scored</p>
+              {goals?.avgScored && <p className="text-[10px] text-gray-400 dark:text-slate-500">{goals.avgScored} per game</p>}
+            </div>
+            <div className="bg-red-50 dark:bg-red-950/40 rounded-2xl p-4 text-center">
+              <p className="text-3xl font-black text-red-500">{goals?.conceded ?? '—'}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">Conceded</p>
+              {goals?.avgConceded && <p className="text-[10px] text-gray-400 dark:text-slate-500">{goals.avgConceded} per game</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Home vs Away split */}
+      {homeRecord && awayRecord && (
+        <div>
+          <p className="section-label">Home vs Away Record</p>
+          <div className="grid grid-cols-2 gap-3">
+            {[{ label: 'Home', r: homeRecord, color: 'text-[#1A4D8F]', bg: 'bg-blue-50 dark:bg-blue-950/40' },
+              { label: 'Away', r: awayRecord,  color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950/40' }].map(({ label, r, color, bg }) => (
+              <div key={label} className={`${bg} rounded-2xl p-4`}>
+                <p className={`text-xs font-black uppercase tracking-wider mb-2 ${color}`}>{label}</p>
+                <div className="flex justify-between text-sm">
+                  <div className="text-center">
+                    <p className="text-lg font-black text-green-600">{r?.wins ?? '—'}</p>
+                    <p className="text-[10px] text-gray-400 dark:text-slate-500">W</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-black text-yellow-600">{r?.draws ?? '—'}</p>
+                    <p className="text-[10px] text-gray-400 dark:text-slate-500">D</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-black text-red-500">{r?.losses ?? '—'}</p>
+                    <p className="text-[10px] text-gray-400 dark:text-slate-500">L</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Records */}
+      {(cleanSheets != null || biggestWin || currentStreak) && (
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        {cleanSheets != null && (
+          <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl px-3 py-2.5 flex justify-between">
+            <span className="text-gray-500 dark:text-slate-400 text-xs">Clean Sheets</span>
+            <span className="font-black text-purple-600">{cleanSheets}</span>
+          </div>
+        )}
+        {biggestWin && (
+          <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl px-3 py-2.5 flex justify-between">
+            <span className="text-gray-500 dark:text-slate-400 text-xs">Biggest Win</span>
+            <span className="font-black text-green-600">{biggestWin}</span>
+          </div>
+        )}
+        {biggestLoss && (
+          <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl px-3 py-2.5 flex justify-between">
+            <span className="text-gray-500 dark:text-slate-400 text-xs">Biggest Loss</span>
+            <span className="font-black text-red-500">{biggestLoss}</span>
+          </div>
+        )}
+        {currentStreak && (
+          <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl px-3 py-2.5 flex justify-between col-span-2">
+            <span className="text-gray-500 dark:text-slate-400 text-xs">Current Streak</span>
+            <span className="font-black text-[#1A4D8F] dark:text-blue-400">{currentStreak}</span>
+          </div>
+        )}
+      </div>
+      )}
+
+      {/* No data at all */}
+      {!form?.length && !hasRecord && !goals && (
+        <NoData label="No season data available from the API for this team" />
+      )}
+    </div>
+  );
+}
+
+function StatsTab({ stats, team }) {
   if (!stats) return <SkeletonRows />;
   const s = stats;
-  const oppStats = mockTeamStats(opponent);
+
+  const rows = [
+    { label: 'Goals Scored',   val: s.goals?.scored },
+    { label: 'Goals Conceded', val: s.goals?.conceded },
+    { label: 'Clean Sheets',   val: s.cleanSheets },
+    { label: 'Yellow Cards',   val: s.yellowCards },
+    { label: 'Red Cards',      val: s.redCards },
+  ].filter(r => r.val != null);
+
+  if (!rows.length) return <NoData label="No stats available from the API for this team" />;
+
   return (
     <div>
-      <div className="flex items-center justify-between text-sm font-bold mb-5 px-1">
-        <span className="text-[#1A4D8F] dark:text-blue-400 truncate max-w-[120px]">{team?.name?.split(' ')[0]}</span>
-        <span className="text-gray-400 dark:text-slate-500 text-xs">Season Comparison</span>
-        <span className="text-red-500 truncate max-w-[120px] text-right">{opponent?.name?.split(' ')[0]}</span>
+      <p className="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">
+        {team?.name} — Season Stats
+      </p>
+      <div className="space-y-3">
+        {rows.map(({ label, val }) => (
+          <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-slate-700 last:border-0">
+            <span className="text-sm text-gray-600 dark:text-slate-300">{label}</span>
+            <span className="text-sm font-black text-[#1A1A2E] dark:text-white">{val}</span>
+          </div>
+        ))}
       </div>
-      <StatBar label="Goals Scored"     homeVal={s.goals?.scored}    awayVal={oppStats.goals.scored} />
-      <StatBar label="Goals Conceded"   homeVal={s.goals?.conceded}  awayVal={oppStats.goals.conceded} />
-      <StatBar label="Clean Sheets"     homeVal={s.cleanSheets}      awayVal={oppStats.cleanSheets} />
-      <StatBar label="xG"               homeVal={s.xG}               awayVal={oppStats.xG} />
-      <StatBar label="Shots"            homeVal={s.shots}            awayVal={oppStats.shots} />
-      <StatBar label="Shots on Target"  homeVal={s.shotsOnTarget}    awayVal={oppStats.shotsOnTarget} />
-      <StatBar label="Possession %"     homeVal={s.possession}       awayVal={100 - (s.possession || 50)} />
-      <StatBar label="Pass Accuracy %"  homeVal={s.passAccuracy?.replace('%','')} awayVal={oppStats.passAccuracy?.replace('%','')} />
-      <StatBar label="Corners"          homeVal={s.corners}          awayVal={oppStats.corners} />
-      <StatBar label="Fouls"            homeVal={s.fouls}            awayVal={oppStats.fouls} />
-      <StatBar label="Offsides"         homeVal={s.offsides}         awayVal={oppStats.offsides} />
-      <StatBar label="Yellow Cards"     homeVal={s.yellowCards}      awayVal={oppStats.yellowCards} />
-      <StatBar label="Red Cards"        homeVal={s.redCards}         awayVal={oppStats.redCards} />
-      <StatBar label="Saves"            homeVal={s.saves}            awayVal={oppStats.saves} />
     </div>
   );
 }
@@ -400,6 +433,7 @@ function MatchesTab({ stats }) {
 function H2HTab({ h2h, homeTeam, awayTeam }) {
   if (!h2h) return <SkeletonRows />;
   const { summary, meetings } = h2h;
+  if (!summary || !meetings?.length) return <NoData label="No head-to-head data available for these teams" />;
   const total = (summary.homeWins || 0) + (summary.draws || 0) + (summary.awayWins || 0);
   return (
     <div className="space-y-5">
@@ -555,62 +589,77 @@ export default function TeamHistory() {
         const found = res.data?.data?.teams?.[0] || res.data?.data?.[0];
         const teamId = found?.team?.id;
 
-        if (teamId) {
-          const [statsRes, squadRes] = await Promise.allSettled([
-            leagueId ? liveApi.getTeamStats(teamId, leagueId) : Promise.resolve(null),
-            liveApi.getTeamSquad(teamId),
-          ]);
+        if (!teamId) { setTeamStats({}); return; }
 
-          const apiStats = statsRes.status === 'fulfilled' ? statsRes.value?.data?.data : null;
-          const apiSquad = squadRes.status === 'fulfilled' ? squadRes.value?.data?.data : null;
+        const [statsRes, squadRes] = await Promise.allSettled([
+          leagueId ? liveApi.getTeamStats(teamId, leagueId) : Promise.resolve(null),
+          liveApi.getTeamSquad(teamId),
+        ]);
 
-          if (apiStats || apiSquad) {
-            const mock = mockTeamStats(team);
-            const f = apiStats?.fixtures;
-            const g = apiStats?.goals;
-            setTeamStats({
-              ...mock,
-              leaguePosition: apiStats?.league?.round ? parseInt(apiStats.league.round) : mock.leaguePosition,
-              played: f?.played?.total || mock.played,
-              record: {
-                wins:   f?.wins?.total  || mock.record.wins,
-                draws:  f?.draws?.total || mock.record.draws,
-                losses: f?.loses?.total || mock.record.losses,
-              },
-              homeRecord: {
-                wins:   f?.wins?.home  || mock.homeRecord.wins,
-                draws:  f?.draws?.home || mock.homeRecord.draws,
-                losses: f?.loses?.home || mock.homeRecord.losses,
-              },
-              awayRecord: {
-                wins:   f?.wins?.away  || mock.awayRecord.wins,
-                draws:  f?.draws?.away || mock.awayRecord.draws,
-                losses: f?.loses?.away || mock.awayRecord.losses,
-              },
-              goals: {
-                scored:      g?.for?.total?.total   || mock.goals.scored,
-                conceded:    g?.against?.total?.total || mock.goals.conceded,
-                avgScored:   g?.for?.average?.total  || mock.goals.avgScored,
-                avgConceded: g?.against?.average?.total || mock.goals.avgConceded,
-              },
-              cleanSheets: apiStats?.clean_sheet?.total || mock.cleanSheets,
-              squad: apiSquad?.length
-                ? apiSquad.map(p => ({
-                    name:   p.player?.name || p.name || '—',
-                    number: p.player?.number || p.statistics?.[0]?.games?.number || '—',
-                    pos:    p.player?.position?.[0]?.toUpperCase() === 'G' ? 'GK'
-                            : p.player?.position?.[0]?.toUpperCase() === 'D' ? 'DEF'
-                            : p.player?.position?.[0]?.toUpperCase() === 'M' ? 'MID' : 'FWD',
-                    nat:    p.player?.nationality || '—',
-                  }))
-                : mock.squad,
-            });
-            return;
-          }
-        }
-        setTeamStats(mockTeamStats(team));
+        const apiStats = statsRes.status === 'fulfilled' ? statsRes.value?.data?.data : null;
+        const apiSquad = squadRes.status === 'fulfilled' ? squadRes.value?.data?.data : null;
+
+        const f = apiStats?.fixtures;
+        const g = apiStats?.goals;
+
+        setTeamStats({
+          played: f?.played?.total ?? null,
+          points: apiStats?.league?.standings?.[0]?.[0]?.points ?? null,
+          leaguePosition: apiStats?.league?.standings?.[0]?.[0]?.rank ?? null,
+          record: f ? {
+            wins:   f.wins?.total  ?? null,
+            draws:  f.draws?.total ?? null,
+            losses: f.loses?.total ?? null,
+          } : null,
+          homeRecord: f ? {
+            wins:   f.wins?.home  ?? null,
+            draws:  f.draws?.home ?? null,
+            losses: f.loses?.home ?? null,
+          } : null,
+          awayRecord: f ? {
+            wins:   f.wins?.away  ?? null,
+            draws:  f.draws?.away ?? null,
+            losses: f.loses?.away ?? null,
+          } : null,
+          goals: g ? {
+            scored:      g.for?.total?.total      ?? null,
+            conceded:    g.against?.total?.total  ?? null,
+            avgScored:   g.for?.average?.total    ?? null,
+            avgConceded: g.against?.average?.total ?? null,
+          } : null,
+          cleanSheets:  apiStats?.clean_sheet?.total ?? null,
+          failedToScore: apiStats?.failed_to_score?.total ?? null,
+          // Stats endpoint doesn't give per-game possession/shots — leave null
+          possession:   null,
+          shots:        null,
+          shotsOnTarget: null,
+          passAccuracy:  null,
+          corners:       null,
+          fouls:         null,
+          offsides:      null,
+          yellowCards:   apiStats?.cards?.yellow ? Object.values(apiStats.cards.yellow).reduce((a, v) => a + (v?.total || 0), 0) : null,
+          redCards:      apiStats?.cards?.red    ? Object.values(apiStats.cards.red).reduce((a, v)    => a + (v?.total || 0), 0) : null,
+          xG:  null,
+          xGA: null,
+          form: null,
+          biggestWin:  apiStats?.biggest?.wins?.total   || null,
+          biggestLoss: apiStats?.biggest?.loses?.total  || null,
+          currentStreak: apiStats?.biggest?.streak?.wins
+            ? `${apiStats.biggest.streak.wins}W`
+            : null,
+          squad: apiSquad?.length
+            ? apiSquad.map(p => ({
+                name:   p.player?.name || p.name || '—',
+                number: p.player?.number || p.statistics?.[0]?.games?.number || '—',
+                pos:    p.player?.position?.[0]?.toUpperCase() === 'G' ? 'GK'
+                        : p.player?.position?.[0]?.toUpperCase() === 'D' ? 'DEF'
+                        : p.player?.position?.[0]?.toUpperCase() === 'M' ? 'MID' : 'FWD',
+                nat:    p.player?.nationality || '—',
+              }))
+            : [],
+        });
       })
-      .catch(() => setTeamStats(mockTeamStats(team)))
+      .catch(() => setTeamStats({}))
       .finally(() => setLoadingStats(false));
   }, [team?.name, leagueId]);
 
@@ -645,10 +694,10 @@ export default function TeamHistory() {
             }),
           });
         } else {
-          setH2h(mockH2H(homeTeam, awayTeam));
+          setH2h({ summary: null, meetings: [] });
         }
       })
-      .catch(() => setH2h(mockH2H(homeTeam, awayTeam)))
+      .catch(() => setH2h({ summary: null, meetings: [] }))
       .finally(() => setLoadingH2h(false));
   }, [tab, homeTeam?.name, awayTeam?.name]);
 
@@ -675,10 +724,10 @@ export default function TeamHistory() {
             isCurrentTeam: r.team?.name === team?.name,
           })));
         } else {
-          setStandings(mockStandings(team?.name, match?.league));
+          setStandings([]);
         }
       })
-      .catch(() => setStandings(mockStandings(team?.name, match?.league)))
+      .catch(() => setStandings([]))
       .finally(() => setLoadingStandings(false));
   }, [tab, leagueId, team?.name]);
 
@@ -762,14 +811,14 @@ export default function TeamHistory() {
         ))}
       </div>
 
-      {/* Quick stats row */}
-      {teamStats && (
+      {/* Quick stats row — only shown when real API data is present */}
+      {teamStats && (teamStats.goals?.scored != null || teamStats.record?.wins != null) && (
         <div className="grid grid-cols-4 gap-2 mb-5">
           {[
-            { label: 'Position', value: `#${teamStats.leaguePosition}`,  color: 'text-[#1A4D8F] dark:text-blue-400' },
-            { label: 'Points',   value: teamStats.points,                color: 'text-green-600 dark:text-green-400' },
-            { label: 'Scored',   value: teamStats.goals?.scored,         color: 'text-orange-500' },
-            { label: 'Conceded', value: teamStats.goals?.conceded,       color: 'text-red-500' },
+            { label: 'Played',   value: teamStats.played                          ?? '—', color: 'text-[#1A4D8F] dark:text-blue-400' },
+            { label: 'Wins',     value: teamStats.record?.wins                    ?? '—', color: 'text-green-600 dark:text-green-400' },
+            { label: 'Scored',   value: teamStats.goals?.scored                   ?? '—', color: 'text-orange-500' },
+            { label: 'Conceded', value: teamStats.goals?.conceded                 ?? '—', color: 'text-red-500' },
           ].map(({ label, value, color }) => (
             <div key={label} className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl p-2.5 text-center shadow-sm">
               <p className={`text-lg font-black ${color}`}>{value}</p>

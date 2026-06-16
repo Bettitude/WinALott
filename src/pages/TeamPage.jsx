@@ -63,23 +63,6 @@ export default function TeamPage() {
     return r === 0 ? 'W' : r === 1 ? 'D' : 'L';
   });
 
-  const possession    = seeded(seed + 5, 42, 62);
-  const shotsPerGame  = seeded(seed + 6, 8, 18);
-  const passAccuracy  = seeded(seed + 7, 72, 91);
-  const cleanSheets   = seeded(seed + 8, 4, 16);
-  const xG            = (seeded(seed + 9, 8, 22) / 10).toFixed(1);
-  const pressureScore = seeded(seed + 10, 55, 90);
-
-  const RECENT_MATCHES = Array.from({ length: 5 }, (_, i) => {
-    const opponents = ['Manchester City', 'Arsenal', 'Liverpool', 'Chelsea', 'Tottenham',
-                       'Bayer Leverkusen', 'PSG', 'Bayern Munich', 'Real Madrid', 'Barcelona'];
-    const opp = opponents[(seed + i * 7) % opponents.length];
-    const isHome = seeded(seed + i * 3, 0, 1) === 0;
-    const hg = seeded(seed + i * 17, 0, 4);
-    const ag = seeded(seed + i * 19, 0, 3);
-    const res = isHome ? (hg > ag ? 'W' : hg < ag ? 'L' : 'D') : (ag > hg ? 'W' : ag < hg ? 'L' : 'D');
-    return { opponent: opp, isHome, hg, ag, res };
-  });
 
   return (
     <div className="min-h-screen bg-[#F5F7FA] dark:bg-slate-900">
@@ -231,36 +214,8 @@ export default function TeamPage() {
 
           </div>
 
-          {/* Right col — performance stats */}
+          {/* Right col */}
           <div className="space-y-5">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-5">
-              <h2 className="font-black text-[#1A1A2E] dark:text-slate-200 mb-4 text-sm uppercase tracking-wide">Season Stats</h2>
-              <div className="space-y-4">
-                <StatBar label="Possession %" value={possession} max={100} color="bg-[#1A4D8F]" />
-                <StatBar label="Shots / game" value={shotsPerGame} max={20} color="bg-purple-500" />
-                <StatBar label="Pass accuracy %" value={passAccuracy} max={100} color="bg-green-500" />
-                <StatBar label="Clean sheets" value={cleanSheets} max={20} color="bg-[#F5C518]" />
-                <StatBar label="Pressure score" value={pressureScore} max={100} color="bg-orange-500" />
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-5">
-              <h2 className="font-black text-[#1A1A2E] dark:text-slate-200 mb-4 text-sm uppercase tracking-wide">Advanced</h2>
-              <div className="space-y-2">
-                {[
-                  { label: 'xG (Expected Goals)', value: xG },
-                  { label: 'Goals For', value: goalsFor },
-                  { label: 'Goals Against', value: goalsAgainst },
-                  { label: 'Formation', value: formation },
-                ].map(s => (
-                  <div key={s.label} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-slate-700 last:border-0">
-                    <span className="text-xs text-gray-500 dark:text-slate-400">{s.label}</span>
-                    <span className="text-sm font-black text-[#1A1A2E] dark:text-slate-200">{s.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             <Link
               to="/lobby"
               className="block w-full bg-[#1A4D8F] hover:bg-[#0D2B5E] text-white font-black text-sm py-3 rounded-xl text-center transition-colors"
