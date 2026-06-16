@@ -88,12 +88,30 @@ function PredictionPanel({ fixtureId, game, isAuthenticated }) {
   const navigate = useNavigate();
   const [selected,  setSelected]  = useState(null);
   const [submitted, setSubmitted] = useState(false);
+  const [myPick,    setMyPick]    = useState(null);   // option_key already entered
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState(null);
 
   const badge   = prizeBadge(game);
   const settled = game.status === 'settled';
   const closed  = game.status === 'closed';
+
+  // Check if this user already entered when authenticated
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const token = localStorage.getItem('winalott_token');
+    fetch(`${API_BASE}/worldcup/games/${fixtureId}/my-entry`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.data?.option_key) {
+          setMyPick(d.data.option_key);
+          setSubmitted(true);
+        }
+      })
+      .catch(() => {});
+  }, [fixtureId, isAuthenticated]);
 
   const handleSubmit = async () => {
     if (!requireAuth(navigate, isAuthenticated)) return;
@@ -135,16 +153,25 @@ function PredictionPanel({ fixtureId, game, isAuthenticated }) {
   }
 
   if (submitted) {
+    const pickedLabel = game.options?.find(o => o.key === (myPick || selected))?.label;
     return (
-      <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 flex items-start gap-3">
-        <FiCheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-        <div>
-          <p className="text-green-300 font-black text-sm">You're in the draw!</p>
-          <p className="text-white/40 text-xs mt-0.5">
-            If your pick is correct you'll enter the draw for{' '}
-            <span className={badge?.isPurple ? 'text-purple-300' : 'text-[#F5C518]'}>{badge?.label}</span>.
-          </p>
+      <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 space-y-3">
+        <div className="flex items-start gap-3">
+          <FiCheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-green-300 font-black text-sm">You're in the draw!</p>
+            <p className="text-white/40 text-xs mt-0.5">
+              Your pick: <span className="text-white font-bold">{pickedLabel ?? '—'}</span>
+              {' · '}Prize: <span className={badge?.isPurple ? 'text-purple-300' : 'text-[#F5C518]'}>{badge?.label}</span>
+            </p>
+          </div>
         </div>
+        <button
+          onClick={() => navigate(`/worldcup/match/${fixtureId}/pool`)}
+          className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 hover:bg-white/10 text-white/60 hover:text-white text-xs font-semibold py-2 rounded-xl transition-colors"
+        >
+          <FiUsers className="w-3.5 h-3.5" /> View entry pool
+        </button>
       </div>
     );
   }
@@ -171,10 +198,13 @@ function PredictionPanel({ fixtureId, game, isAuthenticated }) {
             <p className="text-white/40 text-[11px]">Win {badge?.label}</p>
           </div>
         </div>
-        <div className="text-right">
+        <button
+          onClick={() => navigate(`/worldcup/match/${fixtureId}/pool`)}
+          className="text-right hover:opacity-80 transition-opacity"
+        >
           <p className="text-white/50 text-xs">{game.entry_count ?? 0} entered</p>
           <p className="text-white/30 text-[10px]">{game.winner_count} winner{game.winner_count !== 1 ? 's' : ''}</p>
-        </div>
+        </button>
       </div>
 
       {/* Question */}
