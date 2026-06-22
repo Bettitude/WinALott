@@ -16,6 +16,10 @@ import TeamAvatar from '../components/ui/TeamAvatar';
 import { OfficialLineup } from '../components/OfficialLineup';
 import PotentialWinBanner from '../components/ui/PotentialWinBanner';
 import AdBanner from '../components/ui/AdBanner';
+import OddsMovementChart from '../components/ui/OddsMovementChart';
+import CrowdConsensusBars from '../components/ui/CrowdConsensusBars';
+
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const TABS = [
@@ -400,6 +404,25 @@ function StakingPanel({ match, tiers }) {
   const chosen   = tiers.find(t => t.tier === selTier);
   const total    = (chosen?.price || 0) * qty;
 
+  const [moveOptions, setMoveOptions] = useState([]);
+  const [movePoints,  setMovePoints]  = useState([]);
+  const [moveLoading, setMoveLoading] = useState(true);
+
+  useEffect(() => {
+    if (!chosen?.marketId) return;
+    setMoveLoading(true);
+    fetch(`${API}/markets/${chosen.marketId}/movement`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          setMoveOptions(d.data.options || []);
+          setMovePoints(d.data.points || []);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setMoveLoading(false));
+  }, [chosen?.marketId]);
+
   const closesMs  = new Date(`${match.date}T${match.time}:00`).getTime() - Date.now();
   const closesMin = Math.max(0, Math.floor(closesMs / 60000));
   const closingSoon = closesMin > 0 && closesMin < 15;
@@ -513,6 +536,21 @@ function StakingPanel({ match, tiers }) {
                 <div className="h-full bg-[#1A4D8F] rounded-full" style={{ width: `${chosen.fillPercent}%` }} />
               </div>
               <p className="text-[10px] text-gray-400 dark:text-slate-500">{chosen.fillPercent}% filled · {chosen.stakers} staking</p>
+            </div>
+          )}
+
+          {chosen && chosen.optionBreakdown?.length > 0 && (
+            <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-3">
+              <p className="text-gray-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-wider mb-2">Live Crowd Consensus</p>
+              <CrowdConsensusBars options={chosen.optionBreakdown} />
+              <p className="text-[9px] text-gray-300 dark:text-slate-600 mt-2">No login required · calculated from real entries</p>
+            </div>
+          )}
+
+          {chosen && (
+            <div className="bg-[#0D2B5E] rounded-xl p-3">
+              <p className="text-white/40 text-[10px] font-black uppercase tracking-wider mb-1.5">Prediction Movement</p>
+              <OddsMovementChart options={moveOptions} points={movePoints} loading={moveLoading} height={130} />
             </div>
           )}
 

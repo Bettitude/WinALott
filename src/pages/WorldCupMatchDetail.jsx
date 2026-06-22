@@ -10,6 +10,7 @@ import { useAuth } from '../hooks/useAuth';
 import { requireAuth } from '../utils/requireAuth';
 import { OfficialLineup } from '../components/OfficialLineup';
 import AdBanner from '../components/ui/AdBanner';
+import OddsMovementChart from '../components/ui/OddsMovementChart';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -95,6 +96,23 @@ function PredictionPanel({ fixtureId, game, isAuthenticated }) {
   const settled = game.status === 'settled';
   const closed  = game.status === 'closed';
 
+  const [moveOptions, setMoveOptions] = useState([]);
+  const [movePoints,  setMovePoints]  = useState([]);
+  const [moveLoading,  setMoveLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/worldcup/games/${fixtureId}/movement`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          setMoveOptions(d.data.options || []);
+          setMovePoints(d.data.points || []);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setMoveLoading(false));
+  }, [fixtureId]);
+
   const handleSubmit = async () => {
     if (!requireAuth(navigate, isAuthenticated)) return;
     if (!selected) return;
@@ -120,15 +138,21 @@ function PredictionPanel({ fixtureId, game, isAuthenticated }) {
   if (settled) {
     const won = game.options?.find(o => o.key === game.correct_option);
     return (
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
-        <FiCheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-        <div>
-          <p className="text-white font-black text-sm">Draw Complete</p>
-          <p className="text-white/40 text-xs mt-0.5">
-            Correct answer: <span className="text-white font-bold">{won?.label || '—'}</span>
-            {' · '}{game.winner_count} winner{game.winner_count !== 1 ? 's' : ''}
-            {' · '}<span className={badge?.isPurple ? 'text-purple-300' : 'text-[#F5C518]'}>{badge?.label}</span> each
-          </p>
+      <div className="space-y-3">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
+          <FiCheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-white font-black text-sm">Draw Complete</p>
+            <p className="text-white/40 text-xs mt-0.5">
+              Correct answer: <span className="text-white font-bold">{won?.label || '—'}</span>
+              {' · '}{game.winner_count} winner{game.winner_count !== 1 ? 's' : ''}
+              {' · '}<span className={badge?.isPurple ? 'text-purple-300' : 'text-[#F5C518]'}>{badge?.label}</span> each
+            </p>
+          </div>
+        </div>
+        <div className="bg-black/20 border border-white/10 rounded-xl p-3">
+          <p className="text-white/40 text-[10px] font-black uppercase tracking-wider mb-1.5">Final Prediction Movement</p>
+          <OddsMovementChart options={moveOptions.length ? moveOptions : game.options} points={movePoints} loading={moveLoading} height={140} />
         </div>
       </div>
     );
@@ -195,6 +219,12 @@ function PredictionPanel({ fixtureId, game, isAuthenticated }) {
             {opt.label}
           </button>
         ))}
+      </div>
+
+      {/* Live prediction movement — real % share over time, no dummy data */}
+      <div className="bg-black/20 border border-white/10 rounded-xl p-3">
+        <p className="text-white/40 text-[10px] font-black uppercase tracking-wider mb-1.5">Prediction Movement</p>
+        <OddsMovementChart options={moveOptions.length ? moveOptions : game.options} points={movePoints} loading={moveLoading} height={140} />
       </div>
 
       {error && <p className="text-red-400 text-xs">{error}</p>}

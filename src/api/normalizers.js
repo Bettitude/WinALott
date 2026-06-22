@@ -107,14 +107,15 @@ export function normalizeMarketToTier(market) {
   const priceCents = market.ticket_price || 0;
   const maxTickets = market.max_tickets  || 0;
   return {
-    marketId:    market.id,
-    tier:        market.tier        || 'silver',
-    price:       priceCents / 100,
-    maxWinners:  market.max_winners || 5,
-    prizePool:   Math.floor(priceCents * maxTickets * 0.9) / 100,
-    stakers:     market.stakers     || 0,
-    fillPercent: market.fill_percent || 0,
-    name:        market.name        || '',
+    marketId:        market.id,
+    tier:            market.tier        || 'silver',
+    price:           priceCents / 100,
+    maxWinners:      market.max_winners || 5,
+    prizePool:       Math.floor(priceCents * maxTickets * 0.9) / 100,
+    stakers:         market.stakers     || 0,
+    fillPercent:     market.fill_percent || 0,
+    name:            market.name        || '',
+    optionBreakdown: market.option_breakdown || [],
   };
 }
 

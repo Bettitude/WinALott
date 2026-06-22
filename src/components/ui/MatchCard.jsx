@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fi';
 import TeamAvatar from './TeamAvatar';
 import StakeModal from './StakeModal';
+import CrowdConsensusBars from './CrowdConsensusBars';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
 import { requireAuth } from '../../utils/requireAuth';
@@ -85,6 +86,9 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
     ? (match._raw?.markets?.[0]?.auto_options
        || generateOptions(match.market, match.homeTeam?.name, match.awayTeam?.name))
     : [];
+
+  const optionBreakdown = match._raw?.markets?.[0]?.option_breakdown || [];
+  const hasConsensus    = optionBreakdown.some(o => o.pct > 0);
 
   const isUnavailable = match.marketAvailable === false;
   const isHot       = (match.fillPercent ?? 0) > 50;
@@ -232,6 +236,13 @@ export default function MatchCard({ match, loading = false, homeMode = false }) 
                     +{previewOptions.length - 4} more
                   </span>
                 )}
+              </div>
+            )}
+
+            {/* Live crowd consensus — real entries, no login required */}
+            {hasConsensus && (
+              <div className="mt-2 pt-2 border-t border-blue-100 dark:border-blue-900">
+                <CrowdConsensusBars options={optionBreakdown} compact />
               </div>
             )}
           </div>
