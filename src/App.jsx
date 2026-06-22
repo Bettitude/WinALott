@@ -28,6 +28,7 @@ import AuthCallback from './pages/auth/AuthCallback';
 // Dashboard
 import Dashboard from './pages/dashboard/Dashboard';
 import MyStakes from './pages/MyStakes';
+import Pools from './pages/dashboard/Pools';
 import MyHistory from './pages/dashboard/MyTickets';
 import MyProfile from './pages/dashboard/MyProfile';
 import MyWinnings from './pages/dashboard/MyWinnings';
@@ -41,7 +42,7 @@ import Leaderboard from './pages/Leaderboard';
 import Verify from './pages/Verify';
 import TicketDetail from './pages/TicketDetail';
 import TeamPage from './pages/TeamPage';
-import Team from './pages/Team';
+import TeamSquad from './pages/TeamSquad';
 import TeamHistory from './pages/TeamHistory';
 import ResetPassword from './pages/auth/ResetPassword';
 
@@ -132,6 +133,7 @@ function AppRoutes() {
           {/* Protected Dashboard */}
           <Route path="/my-stakes" element={<ProtectedRoute><MyStakes /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/dashboard/pools" element={<ProtectedRoute><Pools /></ProtectedRoute>} />
           <Route path="/dashboard/tickets" element={<ProtectedRoute><MyHistory /></ProtectedRoute>} />
           <Route path="/dashboard/history" element={<ProtectedRoute><MyHistory /></ProtectedRoute>} />
           <Route path="/dashboard/profile" element={<ProtectedRoute><MyProfile /></ProtectedRoute>} />
@@ -145,7 +147,7 @@ function AppRoutes() {
           <Route path="/verify" element={<Verify />} />
           <Route path="/ticket/:ticketNumber" element={<TicketDetail />} />
           <Route path="/team/:slug" element={<TeamPage />} />
-          <Route path="/team/:teamSlug" element={<Team />} />
+          <Route path="/team/:id/squad" element={<TeamSquad />} />
           <Route path="/match/:matchId/team/:side" element={<TeamHistory />} />
 
           {/* Static */}

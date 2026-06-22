@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { FiShoppingCart, FiChevronDown, FiUser, FiLogOut, FiList,
          FiBell, FiTrendingUp, FiGift, FiSun, FiMoon, FiEye, FiEyeOff,
-         FiHome, FiGrid, FiTag, FiDollarSign, FiTarget } from 'react-icons/fi';
+         FiHome, FiGrid, FiTag, FiDollarSign, FiTarget, FiUsers } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
 import { useTheme } from '../../context/ThemeContext';
@@ -188,6 +188,10 @@ export default function Navbar() {
                         <Link to="/my-stakes" onClick={() => setDropdownOpen(false)}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
                           <FiTarget className="w-4 h-4" /> My Stakes
+                        </Link>
+                        <Link to="/dashboard/pools" onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">
+                          <FiUsers className="w-4 h-4" /> My Pools
                         </Link>
                         <Link to="/my-stakes?tab=history&filter=wins" onClick={() => setDropdownOpen(false)}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-[#1A4D8F] dark:hover:text-blue-400 transition-colors">

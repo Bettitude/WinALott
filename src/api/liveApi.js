@@ -26,7 +26,8 @@ export const liveApi = {
 
   // Teams (TheSportsDB — no secret key needed)
   searchTeam:         (name)                      => apiClient.get('/live/team/search', { params: { name } }),
-  getTeamStats:       (id, leagueId)              => apiClient.get(`/live/team/${id}/stats`, { params: { leagueId } }),
+  getTeamInfo:        (id)                        => apiClient.get(`/live/team/${id}/info`),
+  getTeamStats:       (id, leagueId, season)      => apiClient.get(`/live/team/${id}/stats`, { params: { leagueId, season } }),
   getTeamSquad:       (id)                        => apiClient.get(`/live/team/${id}/squad`),
 
   // Odds

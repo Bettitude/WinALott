@@ -1,11 +1,37 @@
-import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   FiCheckCircle, FiXCircle, FiClock, FiTrendingUp, FiRefreshCw,
   FiChevronLeft, FiChevronRight, FiCalendar, FiAlertCircle,
+  FiGift, FiUsers,
 } from 'react-icons/fi';
 import { useTickets } from '../../hooks/useTickets';
 import { useAuth } from '../../hooks/useAuth';
+import { matchApi } from '../../api/matchApi';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+function freeEntryToTicket(e) {
+  const isSettled = e.status === 'settled';
+  const won       = isSettled && e.correct_option === e.option_key;
+  const status    = won ? 'won' : isSettled ? 'lost' : 'pending';
+  return {
+    id:           `free-${e.fixture_id}-${e.entered_at}`,
+    type:         'free',
+    status,
+    match:        `${e.home_team} vs ${e.away_team}`,
+    market:       e.question,
+    myPick:       e.options?.find(o => o.key === e.option_key)?.label ?? e.option_key,
+    adminPick:    isSettled ? (e.options?.find(o => o.key === e.correct_option)?.label ?? '—') : null,
+    ticketNumber: `FREE-${e.fixture_id}`,
+    date:         new Date(e.entered_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+    entryFee:     0,
+    prize:        won ? (e.prize_usd ?? 0) : 0,
+    prizeLabel:   e.prize_type === 'cash' ? `$${e.prize_usd}` : e.prize_description,
+    fixtureId:    e.fixture_id,
+    _raw:         { created_at: e.entered_at },
+  };
+}
 
 const MONTHS = [
   'January','February','March','April','May','June',
@@ -140,6 +166,8 @@ function MiniCalendar({ year, month, stakeDays, selectedDay, onSelectDay, onChan
 
 // ── Ticket card ───────────────────────────────────────────────────────────
 function HistoryCard({ ticket }) {
+  const navigate  = useNavigate();
+  const isFree    = ticket.type === 'free';
   const isWin     = ticket.status === 'won';
   const isLoss    = ticket.status === 'lost';
   const isPending = ticket.status === 'pending' || ticket.status === 'active';
@@ -224,16 +252,27 @@ export default function MyHistory() {
 
   const { tickets, loading, error } = useTickets({ limit: 500 });
 
+  const [freeEntries, setFreeEntries] = useState([]);
+  useEffect(() => {
+    let cancelled = false;
+    matchApi.getMyFreeEntries()
+      .then(res => { if (!cancelled) setFreeEntries(res.data?.data?.entries || []); })
+      .catch(() => { if (!cancelled) setFreeEntries([]); });
+    return () => { cancelled = true; };
+  }, []);
+
   const localStakes = useMemo(() => {
     if (!user?.id) return [];
     try { return JSON.parse(localStorage.getItem(`winalot_stakes_${user.id}`) || '[]'); }
     catch { return []; }
   }, [user?.id]);
 
+  const freeTickets = useMemo(() => freeEntries.map(freeEntryToTicket), [freeEntries]);
+
   const allTickets = useMemo(() => {
     const apiNums = new Set(tickets.map(t => t.ticketNumber));
-    return [...tickets, ...localStakes.filter(t => !apiNums.has(t.ticketNumber))];
-  }, [tickets, localStakes]);
+    return [...tickets, ...freeTickets, ...localStakes.filter(t => !apiNums.has(t.ticketNumber))];
+  }, [tickets, freeTickets, localStakes]);
 
   // Map "YYYY-MM-DD" → [statuses] — powers the dot indicators
   const stakeDays = useMemo(() => {

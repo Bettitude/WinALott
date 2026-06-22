@@ -58,12 +58,16 @@ export function normalizeMatch(match) {
   };
 }
 
-// Convert Supabase ticket row to dashboard-compatible shape
+// Convert Supabase ticket row to dashboard-compatible shape.
+// Backend may return market/match info nested (t.markets.matches) or flattened
+// onto the ticket itself (t.team_home, t.market_type, t.tier, ...) — support both.
 export function normalizeTicket(t) {
-  const market  = t.markets || {};
-  const match   = market.matches || {};
-  const matchTitle = match.title || `${match.team_home || ''} vs ${match.team_away || ''}`;
-  const dateObj = t.created_at ? new Date(t.created_at) : null;
+  const market   = t.markets || {};
+  const match    = market.matches || {};
+  const teamHome = match.team_home || t.team_home || '';
+  const teamAway = match.team_away || t.team_away || '';
+  const matchTitle = match.title || (teamHome || teamAway ? `${teamHome} vs ${teamAway}` : '');
+  const dateObj  = t.created_at ? new Date(t.created_at) : null;
 
   // status: active → pending (UI calls active tickets "pending" in display)
   const statusMap = { active: 'pending', won: 'won', lost: 'lost', voided: 'voided' };
@@ -72,9 +76,9 @@ export function normalizeTicket(t) {
     id:          t.id,
     ticketNumber: t.ticket_number || '',
     match:       matchTitle,
-    market:      market.name     || '',
+    market:      market.name || t.market_type || '',
     myPick:      t.user_prediction || '',
-    adminPick:   market.correct_prediction || '—',
+    adminPick:   market.correct_prediction || t.correct_outcome || '—',
     entryFee:    (t.amount_paid  || 0) / 100,
     prize:       (t.prize_amount || 0) / 100,
     status:      statusMap[t.status] || t.status,

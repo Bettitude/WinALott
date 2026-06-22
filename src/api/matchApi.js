@@ -16,6 +16,11 @@ export const matchApi = {
   getMyTickets:     (params)             => apiClient.get('/tickets', { params }),
   getTicketByNumber:(number)             => apiClient.get(`/tickets/by-number/${number}`),
 
+  // Pools — live "who's entering" activity feeds
+  getMarketActivity:   (marketId)        => apiClient.get(`/markets/${marketId}/activity`),
+  getFreeGameActivity: (fixtureId)       => apiClient.get(`/worldcup/games/${fixtureId}/activity`),
+  getMyFreeEntries:    ()                => apiClient.get('/worldcup/my-entries'),
+
   // Draws
   verifyDraw:       (drawId)             => apiClient.get(`/draws/verify/${drawId}`),
 

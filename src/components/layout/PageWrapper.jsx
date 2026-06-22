@@ -12,6 +12,7 @@ import PotentialWinBanner from '../ui/PotentialWinBanner';
 import { useRadio } from '../../context/RadioContext';
 
 const NO_TICKER = ['/auth/', '/verify'];
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 function Inner({ children }) {
   const { pathname } = useLocation();
@@ -19,6 +20,14 @@ function Inner({ children }) {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [pathname]);
+
+  useEffect(() => {
+    fetch(`${API}/analytics/page-view`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ path: pathname }),
+    }).catch(() => {});
   }, [pathname]);
 
   const showTicker = !NO_TICKER.some(p => pathname.startsWith(p));

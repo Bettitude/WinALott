@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { FiCheck, FiSend, FiMonitor, FiLink, FiBarChart2 } from 'react-icons/fi';
+import { FiCheck, FiSend, FiMonitor, FiLink, FiBarChart2, FiAlertCircle } from 'react-icons/fi';
+
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 const tiers = [
   {
@@ -44,6 +46,7 @@ export default function PartnerWithUs() {
   const [errors, setErrors] = useState({});
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -61,10 +64,24 @@ export default function PartnerWithUs() {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
+    setSubmitError('');
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setLoading(false);
-    setSent(true);
+    try {
+      const res = await fetch(`${API}/enquiries`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ category: 'partnership', ...form, subject: form.type }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || 'Something went wrong. Please try again.');
+      }
+      setSent(true);
+    } catch (err) {
+      setSubmitError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -132,6 +149,12 @@ export default function PartnerWithUs() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} noValidate className="space-y-4">
+              {submitError && (
+                <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 flex items-start gap-2">
+                  <FiAlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  {submitError}
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Name</label>
