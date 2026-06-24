@@ -15,6 +15,7 @@ import Winners from './pages/Winners';
 import WALGiveaway from './pages/BTGiveaway';
 import WorldCup from './pages/WorldCup';
 import WorldCupMatchDetail from './pages/WorldCupMatchDetail';
+import MyPredictions from './pages/MyPredictions';
 import PartnerWithUs from './pages/PartnerWithUs';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
@@ -132,6 +133,7 @@ function AppRoutes() {
 
           {/* Protected Dashboard */}
           <Route path="/my-stakes" element={<ProtectedRoute><MyStakes /></ProtectedRoute>} />
+          <Route path="/my-predictions" element={<ProtectedRoute><MyPredictions /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/dashboard/pools" element={<ProtectedRoute><Pools /></ProtectedRoute>} />
           <Route path="/dashboard/tickets" element={<ProtectedRoute><MyHistory /></ProtectedRoute>} />
