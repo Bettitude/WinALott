@@ -8,6 +8,7 @@ import {
 import { liveApi } from '../api/liveApi';
 import { useAuth } from '../hooks/useAuth';
 import { requireAuth } from '../utils/requireAuth';
+import { getToken } from '../utils/tokenStorage';
 import { OfficialLineup } from '../components/OfficialLineup';
 import AdBanner from '../components/ui/AdBanner';
 import OddsMovementChart from '../components/ui/OddsMovementChart';
@@ -113,11 +114,29 @@ function PredictionPanel({ fixtureId, game, isAuthenticated }) {
       .finally(() => setMoveLoading(false));
   }, [fixtureId]);
 
+  // Restore "already predicted" state after a refresh — without this, reloading
+  // the page looked like it had cancelled the user's prediction.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const token = getToken();
+    fetch(`${API_BASE}/worldcup/games/${fixtureId}/my-entry`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && d.data) {
+          setSelected(d.data.option_key);
+          setSubmitted(true);
+        }
+      })
+      .catch(() => {});
+  }, [fixtureId, isAuthenticated]);
+
   const handleSubmit = async () => {
     if (!requireAuth(navigate, isAuthenticated)) return;
     if (!selected) return;
     setLoading(true); setError(null);
-    const token = localStorage.getItem('winalott_token');
+    const token = getToken();
     try {
       const res  = await fetch(`${API_BASE}/worldcup/games/${fixtureId}/predict`, {
         method: 'POST',
@@ -159,15 +178,30 @@ function PredictionPanel({ fixtureId, game, isAuthenticated }) {
   }
 
   if (submitted) {
+    const pick = game.options?.find(o => o.key === selected);
     return (
-      <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 flex items-start gap-3">
-        <FiCheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-        <div>
-          <p className="text-green-300 font-black text-sm">You're in the draw!</p>
-          <p className="text-white/40 text-xs mt-0.5">
-            If your pick is correct you'll enter the draw for{' '}
-            <span className={badge?.isPurple ? 'text-purple-300' : 'text-[#F5C518]'}>{badge?.label}</span>.
-          </p>
+      <div className="space-y-3">
+        <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 flex items-start gap-3">
+          <FiCheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-green-300 font-black text-sm">Your pick: {pick?.label || '—'}</p>
+            <p className="text-white/40 text-xs mt-0.5">
+              If your pick is correct you'll enter the draw for{' '}
+              <span className={badge?.isPurple ? 'text-purple-300' : 'text-[#F5C518]'}>{badge?.label}</span>.
+            </p>
+          </div>
+          <button
+            onClick={() => setSubmitted(false)}
+            className="text-white/40 text-xs font-semibold hover:text-white underline underline-offset-2 shrink-0"
+          >
+            Change
+          </button>
+        </div>
+
+        {/* Keep showing the live pool movement after picking */}
+        <div className="bg-black/20 border border-white/10 rounded-xl p-3">
+          <p className="text-white/40 text-[10px] font-black uppercase tracking-wider mb-1.5">Prediction Movement</p>
+          <OddsMovementChart options={moveOptions.length ? moveOptions : game.options} points={movePoints} loading={moveLoading} height={140} />
         </div>
       </div>
     );
@@ -421,7 +455,7 @@ function MarketGroupCard({ group, isAuthenticated }) {
     if (!prediction || !market) return;
     setSubmitting(true); setError(null);
     try {
-      const token = localStorage.getItem('winalott_token') || sessionStorage.getItem('winalott_token');
+      const token = getToken();
       const res = await fetch(`${API_BASE}/tickets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },

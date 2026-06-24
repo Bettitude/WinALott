@@ -7,8 +7,10 @@ import {
 } from 'react-icons/fi';
 import { useAuth } from '../hooks/useAuth';
 import { requireAuth } from '../utils/requireAuth';
+import { getToken } from '../utils/tokenStorage';
 import WCWinnersTicker from '../components/ui/WCWinnersTicker';
 import AdBanner from '../components/ui/AdBanner';
+import OddsMovementChart from '../components/ui/OddsMovementChart';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -193,12 +195,47 @@ function PredictionPanel({ fixtureId, game, isAuthenticated }) {
   const closed   = game.status === 'closed';
   const { label: prizeLabel, color: prizeColor } = prizeBadge(game);
 
+  const [moveOptions, setMoveOptions] = useState([]);
+  const [movePoints,  setMovePoints]  = useState([]);
+  const [moveLoading, setMoveLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/worldcup/games/${fixtureId}/movement`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          setMoveOptions(d.data.options || []);
+          setMovePoints(d.data.points || []);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setMoveLoading(false));
+  }, [fixtureId]);
+
+  // Restore "already predicted" state after a refresh — submitted/selected above
+  // are local state only, so without this a reload looked like it cancelled the pick.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const token = getToken();
+    fetch(`${API_BASE}/worldcup/games/${fixtureId}/my-entry`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && d.data) {
+          setSelected(d.data.option_key);
+          setSubmitted(true);
+        }
+      })
+      .catch(() => {});
+  }, [fixtureId, isAuthenticated]);
+
   const handleSubmit = async () => {
     if (!requireAuth(navigate, isAuthenticated)) return;
     if (!selected) return;
     setLoading(true);
     setError(null);
-    const token = localStorage.getItem('winalott_token');
+    const token = getToken();
     try {
       const res  = await fetch(`${API_BASE}/worldcup/games/${fixtureId}/predict`, {
         method:  'POST',
@@ -246,16 +283,29 @@ function PredictionPanel({ fixtureId, game, isAuthenticated }) {
     );
   }
 
-  // Submitted confirmation
+  // Submitted confirmation — still editable until the game closes
   if (submitted) {
+    const pick = game.options?.find(o => o.key === selected);
     return (
-      <div className="mt-3 pt-3 border-t border-white/10">
+      <div className="mt-3 pt-3 border-t border-white/10 space-y-2.5">
         <div className="flex items-center gap-2 rounded-xl bg-green-500/10 border border-green-500/20 px-3 py-2.5">
           <FiCheckCircle className="w-4 h-4 text-green-400 shrink-0" />
-          <div>
-            <p className="text-green-300 text-xs font-black">Prediction submitted!</p>
+          <div className="flex-1">
+            <p className="text-green-300 text-xs font-black">Your pick: {pick?.label || '—'}</p>
             <p className="text-white/40 text-[11px]">If you're correct you'll enter the draw for <span className={prizeColor.split(' ')[0]}>{prizeLabel}</span>.</p>
           </div>
+          <button
+            onClick={() => setSubmitted(false)}
+            className="text-white/40 text-[11px] font-semibold hover:text-white underline underline-offset-2 shrink-0"
+          >
+            Change
+          </button>
+        </div>
+
+        {/* Keep showing the live pool movement after picking */}
+        <div className="bg-black/20 border border-white/10 rounded-lg p-2.5">
+          <p className="text-white/40 text-[9px] font-black uppercase tracking-wider mb-1">Prediction Movement</p>
+          <OddsMovementChart options={moveOptions.length ? moveOptions : game.options} points={movePoints} loading={moveLoading} height={110} />
         </div>
       </div>
     );
@@ -293,6 +343,12 @@ function PredictionPanel({ fixtureId, game, isAuthenticated }) {
             {opt.label}
           </button>
         ))}
+      </div>
+
+      {/* Live prediction movement — real % share over time, no dummy data */}
+      <div className="bg-black/20 border border-white/10 rounded-lg p-2.5">
+        <p className="text-white/40 text-[9px] font-black uppercase tracking-wider mb-1">Prediction Movement</p>
+        <OddsMovementChart options={moveOptions.length ? moveOptions : game.options} points={movePoints} loading={moveLoading} height={110} />
       </div>
 
       {error && <p className="text-red-400 text-[11px]">{error}</p>}
@@ -459,7 +515,6 @@ const MOCK_LEADERBOARD = [
 
 export default function WorldCup() {
   const { isAuthenticated } = useAuth();
-  const token = localStorage.getItem('winalott_token');
 
   // Lazy init from cache — first render shows cached data immediately, no flash
   const [fixtures,     setFixtures]     = useState(() => readCache() || []);
