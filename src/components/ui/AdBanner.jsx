@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
-import { FiX } from 'react-icons/fi';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+// Ads can be hosted anywhere as any media type — detect video vs image from
+// the URL itself so admins can paste an image, GIF, or video link and it just works.
+const isVideoUrl = (url = '') => /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url);
 
 // Slot → fallback dimensions for the placeholder
 const SLOT_SIZES = {
@@ -24,8 +27,7 @@ const SLOT_LABELS = {
 const adCache = {};
 
 export default function AdBanner({ slot = 'leaderboard', className = '', dark = false }) {
-  const [ad,        setAd]        = useState(adCache[slot] ?? undefined); // undefined = loading, null = no ad
-  const [dismissed, setDismissed] = useState(false);
+  const [ad, setAd] = useState(adCache[slot] ?? undefined); // undefined = loading, null = no ad
 
   useEffect(() => {
     if (adCache[slot] !== undefined) {
@@ -55,7 +57,7 @@ export default function AdBanner({ slot = 'leaderboard', className = '', dark = 
   }
 
   // No active ad — show the dashed placeholder (same look as before)
-  if (!ad || dismissed) {
+  if (!ad) {
     return (
       <div className={`${sizeClass} border-2 border-dashed rounded-2xl flex flex-col items-center justify-center ${dark ? 'border-white/10 bg-white/[0.02]' : 'border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40'} ${className}`}>
         <span className={`text-[10px] font-bold uppercase tracking-widest ${dark ? 'text-white/15' : 'text-gray-300 dark:text-slate-600'}`}>Ad Space</span>
@@ -64,40 +66,39 @@ export default function AdBanner({ slot = 'leaderboard', className = '', dark = 
     );
   }
 
-  // Active ad — display it
+  // Active ad — display it. Always shown, no dismiss/close option.
+  const isVideo = isVideoUrl(ad.image_url);
+  const media = isVideo ? (
+    <video
+      src={ad.image_url}
+      className={ad.bg_color ? 'max-w-full max-h-full object-contain' : 'w-full h-full object-cover rounded-2xl'}
+      autoPlay
+      muted
+      loop
+      playsInline
+      onError={e => { e.target.style.display = 'none'; }}
+    />
+  ) : (
+    <img
+      src={ad.image_url}
+      alt={ad.title}
+      className={ad.bg_color ? 'max-w-full max-h-full object-contain' : 'w-full h-full object-cover rounded-2xl'}
+      onError={e => { e.target.style.display = 'none'; }}
+    />
+  );
+
   const inner = (
-    <div className="relative w-full h-full group">
+    <div className="relative w-full h-full">
       {ad.bg_color ? (
         <div className="w-full h-full rounded-2xl flex items-center justify-center overflow-hidden" style={{ backgroundColor: ad.bg_color }}>
-          <img
-            src={ad.image_url}
-            alt={ad.title}
-            className="max-w-full max-h-full object-contain"
-            onError={e => { e.target.style.display = 'none'; }}
-          />
+          {media}
         </div>
-      ) : (
-        <img
-          src={ad.image_url}
-          alt={ad.title}
-          className="w-full h-full object-cover rounded-2xl"
-          onError={e => { e.target.style.display = 'none'; }}
-        />
-      )}
+      ) : media}
 
       {/* Sponsored badge */}
       <span className="absolute bottom-1.5 left-2 text-[9px] font-bold text-white/60 bg-black/30 px-1.5 py-0.5 rounded-full leading-none">
         Sponsored
       </span>
-
-      {/* Dismiss button */}
-      <button
-        onClick={e => { e.preventDefault(); e.stopPropagation(); setDismissed(true); }}
-        className="absolute top-1.5 right-1.5 w-5 h-5 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-        title="Close ad"
-      >
-        <FiX className="w-2.5 h-2.5 text-white" />
-      </button>
     </div>
   );
 
