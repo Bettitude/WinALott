@@ -81,8 +81,12 @@ export default function OddsMovementChart({ options = [], points = [], loading =
           />
         ))}
 
+        {/* Tiny per-series pixel stagger — when two options tie in value (very
+            common with few entries, e.g. both at 0%) their lines would otherwise
+            be pixel-identical and the later-drawn one would fully hide the rest. */}
         {keys.map((k, i) => {
-          const d = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${xScale(tss[idx])} ${yScale(p.pcts[k] || 0)}`).join(' ');
+          const offset = (i - (keys.length - 1) / 2) * 2;
+          const d = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${xScale(tss[idx])} ${yScale(p.pcts[k] || 0) + offset}`).join(' ');
           return <path key={k} d={d} fill="none" stroke={PALETTE[i % PALETTE.length]} strokeWidth="2" strokeLinejoin="round" />;
         })}
 
@@ -92,19 +96,23 @@ export default function OddsMovementChart({ options = [], points = [], loading =
 
         {keys.map((k, i) => {
           const lastPct = points[points.length - 1].pcts[k] || 0;
+          const offset  = (i - (keys.length - 1) / 2) * 2;
           return (
             <g key={k}>
-              <circle cx={xScale(tss[tss.length - 1])} cy={yScale(lastPct)} r="3" fill={PALETTE[i % PALETTE.length]} />
-              <text x={W - padR + 6} y={yScale(lastPct) + 3} fontSize="10" fontWeight="700" fill={PALETTE[i % PALETTE.length]}>
+              <circle cx={xScale(tss[tss.length - 1])} cy={yScale(lastPct) + offset} r="3" fill={PALETTE[i % PALETTE.length]} />
+              <text x={W - padR + 6} y={yScale(lastPct) + offset + 3} fontSize="10" fontWeight="700" fill={PALETTE[i % PALETTE.length]}>
                 {lastPct}%
               </text>
             </g>
           );
         })}
 
-        {hoverIdx != null && keys.map((k, i) => (
-          <circle key={k} cx={hx} cy={yScale(hp.pcts[k] || 0)} r="3.5" fill={PALETTE[i % PALETTE.length]} stroke="#0D2B5E" strokeWidth="1.5" />
-        ))}
+        {hoverIdx != null && keys.map((k, i) => {
+          const offset = (i - (keys.length - 1) / 2) * 2;
+          return (
+            <circle key={k} cx={hx} cy={yScale(hp.pcts[k] || 0) + offset} r="3.5" fill={PALETTE[i % PALETTE.length]} stroke="#0D2B5E" strokeWidth="1.5" />
+          );
+        })}
       </svg>
 
       {hoverIdx != null && (
