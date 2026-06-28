@@ -246,9 +246,7 @@ function PredictionPanel({ fixtureId, game, isAuthenticated }) {
       if (!res.ok) throw new Error(data.error || 'Failed to submit');
       setSubmitted(true);
     } catch (err) {
-      // Mock success in dev
-      if (err.message.includes('fetch')) { setSubmitted(true); return; }
-      setError(err.message);
+      setError(err.message.includes('fetch') ? 'Could not reach the server — check your connection and try again.' : err.message);
     } finally {
       setLoading(false);
     }

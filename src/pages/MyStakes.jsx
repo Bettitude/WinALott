@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   FiCheckCircle, FiXCircle, FiClock, FiTrendingUp, FiZap, FiAward, FiStar,
-  FiAlertCircle, FiRefreshCw, FiGift, FiCalendar,
+  FiAlertCircle, FiRefreshCw, FiGift, FiCalendar, FiChevronRight,
 } from 'react-icons/fi';
 import { useTickets } from '../hooks/useTickets';
 import { useAuth } from '../hooks/useAuth';
+import { matchApi } from '../api/matchApi';
 
 const TIER_BADGE = {
   silver:   { Icon: FiStar,  cls: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 border border-gray-300 dark:border-slate-600' },
@@ -145,6 +146,18 @@ export default function MyStakes() {
 
   const { tickets, loading, error, refetch } = useTickets({ limit: 100 });
 
+  // Free World Cup predictions live in a separate table (no entry fee), so they're
+  // surfaced here as a summary card linking to the dedicated My Predictions page
+  // rather than merged into the paid-stakes stats above.
+  const [freeEntries, setFreeEntries] = useState([]);
+  useEffect(() => {
+    matchApi.getMyFreeEntries()
+      .then(res => setFreeEntries(res.data?.data?.entries || []))
+      .catch(() => setFreeEntries([]));
+  }, []);
+  const freeOpenCount    = freeEntries.filter(e => e.status !== 'settled').length;
+  const freeSettledCount = freeEntries.filter(e => e.status === 'settled').length;
+
   // Merge API tickets with any locally-persisted stakes (mock / offline mode)
   const localStakes = useMemo(() => {
     if (!user?.id) return [];
@@ -201,6 +214,27 @@ export default function MyStakes() {
           icon={FiTrendingUp}
         />
       </div>
+
+      {/* Free World Cup picks — separate from paid stakes, link to dedicated page */}
+      {freeEntries.length > 0 && (
+        <Link
+          to="/my-predictions"
+          className="flex items-center justify-between gap-3 bg-gradient-to-r from-[#F5C518]/10 to-transparent border border-[#F5C518]/30 rounded-2xl px-4 py-3.5 mb-6 hover:border-[#F5C518]/60 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#F5C518]/15 flex items-center justify-center shrink-0">
+              <FiGift className="w-4 h-4 text-[#F5C518]" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-[#1A1A2E] dark:text-white">Free World Cup Predictions</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500">
+                {freeOpenCount} open · {freeSettledCount} settled — these don't cost a stake, viewed separately
+              </p>
+            </div>
+          </div>
+          <FiChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
+        </Link>
+      )}
 
       {/* Win rate bar */}
       {history.length > 0 && (
